@@ -27,22 +27,21 @@ html_bootstrap3_createHeader("en","Update | SubLim3-JukeBox",$conf['base_url']);
 
 <?php
 
-$cmd = "sudo -u pi /home/pi/SubLim3-JukeBox/run-update.sh 2>&1";
+$repoDir = "/home/pi/SubLim3-JukeBox";
+$cmd = "sudo -u pi bash -c 'cd $repoDir && git pull -q origin main && bash SubLim3-Updates.sh' 2>&1";
 
 exec($cmd, $output, $returnCode);
 
 echo "<pre>";
-
 foreach ($output as $line) {
     echo htmlspecialchars($line) . "\n";
 }
-
 echo "</pre>";
 
 if ($returnCode === 0) {
     echo "<div class='alert alert-success'>Update completed successfully.</div>";
 } else {
-    echo "<div class='alert alert-danger'>Update completed with errors.</div>";
+    echo "<div class='alert alert-danger'>Update failed or completed with errors.</div>";
 }
 
 ?>
