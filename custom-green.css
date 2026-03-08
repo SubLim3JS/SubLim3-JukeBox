@@ -93,9 +93,9 @@ a:focus {
 .btn-group .btn-success,
 .btn-group .btn-info,
 .btn-group .btn-default {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(#FFFFFF00) !important;
+  border-color: var(FFFFFF00) !important;
+  color: (--primary-green) !important;
 }
 
 #playerControls .btn:hover,
