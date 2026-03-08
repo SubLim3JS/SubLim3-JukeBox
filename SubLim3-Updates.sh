@@ -87,6 +87,10 @@ copy_with_backup "$SOURCE_DIR/systemInfo.php" \
 "$TARGET_DIR/htdocs/systemInfo.php" \
 "systemInfo.php"
 
+copy_with_backup "$SOURCE_DIR/update.php" \
+"$TARGET_DIR/htdocs/update.php" \
+"update.php"
+
 copy_with_backup "$SOURCE_DIR/version-number" \
 "$TARGET_DIR/settings/version-number" \
 "version-number"
