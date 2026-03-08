@@ -21,6 +21,7 @@ printf "
 sleep 1
 
 copy_with_backup() {
+
     local source_file="$1"
     local target_file="$2"
     local label="$3"
@@ -29,23 +30,24 @@ copy_with_backup() {
     printf "*** Updating %s ***\n" "$label"
     printf "********************************************************\n\n"
 
-    sleep 1
+    # Ensure destination directory exists
+    mkdir -p "$(dirname "$target_file")"
 
-    # Back up existing target first
+    # Backup existing file
     if [ -f "$target_file" ]; then
-        mv -f "$target_file" "${target_file}${BACKUP_SUFFIX}"
+        mv -f "$target_file" "${target_file}-BACKUP"
         printf " - Existing %s archived. - \n\n" "$label"
     else
         printf " - Target %s did not exist yet. - \n\n" "$label"
     fi
 
-    # Copy replacement if source exists
+    # Copy new file
     if [ -f "$source_file" ]; then
         cp -f "$source_file" "$target_file"
         printf " - Custom %s copied successfully. - \n\n\n" "$label"
     else
         printf " - ERROR: Source %s not found at %s - \n\n\n" "$label" "$source_file"
-        ERRORS=$((ERRORS + 1))
+        ERRORS=$((ERRORS+1))
     fi
 }
 
