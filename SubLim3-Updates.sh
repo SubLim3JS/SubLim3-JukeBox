@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -u
-
 SOURCE_DIR="/home/pi/SubLim3-JukeBox"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 BACKUP_SUFFIX="-BACKUP"
@@ -33,6 +31,7 @@ copy_with_backup() {
 
     sleep 1
 
+    # Back up existing target first
     if [ -f "$target_file" ]; then
         mv -f "$target_file" "${target_file}${BACKUP_SUFFIX}"
         printf " - Existing %s archived. - \n\n" "$label"
@@ -40,6 +39,7 @@ copy_with_backup() {
         printf " - Target %s did not exist yet. - \n\n" "$label"
     fi
 
+    # Copy replacement if source exists
     if [ -f "$source_file" ]; then
         cp -f "$source_file" "$target_file"
         printf " - Custom %s copied successfully. - \n\n\n" "$label"
@@ -50,7 +50,7 @@ copy_with_backup() {
 }
 
 copy_with_backup "$SOURCE_DIR/func.php" "$TARGET_DIR/htdocs/func.php" "func.php"
-copy_with_backup "$SOURCE_DIR/htdocs/_assets/css/custom-green.css" "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
+copy_with_backup "$SOURCE_DIR/custom-green.css" "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
 copy_with_backup "$SOURCE_DIR/index.php" "$TARGET_DIR/htdocs/index.php" "index.php"
 copy_with_backup "$SOURCE_DIR/lang-en-UK.php" "$TARGET_DIR/htdocs/lang/lang-en-UK.php" "lang-en-UK.php"
 copy_with_backup "$SOURCE_DIR/search.php" "$TARGET_DIR/htdocs/search.php" "search.php"
@@ -58,13 +58,12 @@ copy_with_backup "$SOURCE_DIR/settings.php" "$TARGET_DIR/htdocs/settings.php" "s
 copy_with_backup "$SOURCE_DIR/systemInfo.php" "$TARGET_DIR/htdocs/systemInfo.php" "systemInfo.php"
 copy_with_backup "$SOURCE_DIR/version-number" "$TARGET_DIR/settings/version-number" "version-number"
 
+printf "***************************************************\n"
 if [ "$ERRORS" -eq 0 ]; then
-    printf "***************************************************\n"
     printf "***  - All operations completed successfully. - ***\n"
     printf "***************************************************\n\n"
     exit 0
 else
-    printf "***************************************************\n"
     printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
     printf "***************************************************\n\n"
     exit 1
