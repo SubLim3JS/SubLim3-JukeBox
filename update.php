@@ -27,40 +27,21 @@ html_bootstrap3_createHeader("en","Update | SubLim3-JukeBox",$conf['base_url']);
 
 <?php
 
-$script = "/home/pi/SubLim3-JukeBox/SubLim3-Updates.sh";
+$repoDir = "/home/pi/SubLim3-JukeBox";
+$cmd = "sudo -u pi bash -c 'cd $repoDir && git pull -q origin main && bash SubLim3-Updates.sh' 2>&1";
 
-if (!file_exists($script)) {
+exec($cmd, $output, $returnCode);
 
-    echo "<div class='alert alert-danger'>";
-    echo "<strong>Error:</strong> Update script not found at $script";
-    echo "</div>";
+echo "<pre>";
+foreach ($output as $line) {
+    echo htmlspecialchars($line) . "\n";
+}
+echo "</pre>";
 
+if ($returnCode === 0) {
+    echo "<div class='alert alert-success'>Update completed successfully.</div>";
 } else {
-
-    echo "<pre>";
-
-    $cmd = "sudo -u pi bash $script 2>&1";
-
-    exec($cmd, $output, $returnCode);
-
-    foreach ($output as $line) {
-        echo htmlspecialchars($line) . "\n";
-    }
-
-    echo "</pre>";
-
-    if ($returnCode === 0) {
-
-        echo "<div class='alert alert-success'>";
-        echo "Update completed successfully.";
-        echo "</div>";
-
-    } else {
-
-        echo "<div class='alert alert-danger'>";
-        echo "Update completed with errors.";
-        echo "</div>";
-    }
+    echo "<div class='alert alert-danger'>Update failed or completed with errors.</div>";
 }
 
 ?>
