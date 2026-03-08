@@ -2,7 +2,7 @@
 /* Theme color: #32CD56 */
 
 :root {
-  --primary-green: #32CD56;
+  --primary-green: #FF0000;
   --primary-green-dark: #28a745;
   --primary-green-light: #7dff9a;
 }
@@ -95,7 +95,7 @@ a:focus {
 .btn-group .btn-default {
   background-color: transparent !important;
   border-color: transparent !important;
-  color: var(#FF0000) !important;
+  color: var(--primary-green) !important;
   box-shadow: none !important;
 }
 
