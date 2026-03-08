@@ -6,22 +6,8 @@ SubLim3 JukeBox Files - This will create a folder with SubLim3's custom configs.
 
 _____________________________________________________________________________________________________________________________________________________________________
 
-## OS Update Code
-Execute at the root folder.
-```bash
-sudo apt-get update && sudo apt-get upgrade
-```
-_____________________________________________________________________________________________________________________________________________________________________
-
-## MagicMirror Installation Script
-Execute at the root folder.
-```bash
-bash -c  "$(curl -sL https://github.com/SubLim3JS/SubLim3-JukeBox/blob/main/SubLim3-Updates.sh)"
-```
-_____________________________________________________________________________________________________________________________________________________________________
-
-## SubLim3 Installation Code
-Execute at the root folder.
+## SubLim3 Update Code
+Executes at the root folder.
 ```bash
 cd ~
 git clone https://github.com/SubLim3JS/SubLim3-JukeBox
