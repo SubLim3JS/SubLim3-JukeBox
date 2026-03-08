@@ -21,7 +21,7 @@ ________________________________________________________________________________
 Executes at the root folder.
 ```bash
 cd /home/pi/SubLim3-JukeBox
-git pull origin main
+git pull -q origin main
 bash SubLim3-Updates.sh
 ```
 
