@@ -9,7 +9,7 @@ ________________________________________________________________________________
 ## SubLim3 Update Code
 Executes at the root folder.
 ```bash
-cd ~/SubLim3-JukeBox || exit
+cd ~/SubLim3-JukeBox
 git pull -q origin main
 bash SubLim3-Updates.sh
 ```
