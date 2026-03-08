@@ -11,8 +11,8 @@ printf "
 .
 .    ___      _    _    _       ____     _      _       ___
 .   / __|_  _| |__| |  (_)_ __ |__ /  _ | |_  _| |_____| _ ) _____ __
-.   \\__ \\ || | '_ \\ |__| | '  \\ |_ \\ | || | || | / / -_) _ \\/ _ \\ \\ /
-.   |___/\\_,_|_.__/____|_|_|_|_|___/  \\__/ \\_,_|_\\_\\___|___/\\___/_\\_\\
+.   \__ \ || | '_ \ |__| | '  \ |_ \ | || | || | / / -_) _ \/ _ \ \ /
+.   |___/\_,_|_.__/____|_|_|_|_|___/  \__/ \_,_|_\_\___|___/\___/_\_\
 .
 .
 .
@@ -30,18 +30,18 @@ copy_with_backup() {
     printf "*** Updating %s ***\n" "$label"
     printf "********************************************************\n\n"
 
-    # Ensure destination directory exists
+    # ensure destination directory exists
     mkdir -p "$(dirname "$target_file")"
 
-    # Backup existing file
+    # backup existing file
     if [ -f "$target_file" ]; then
-        mv -f "$target_file" "${target_file}-BACKUP"
+        mv -f "$target_file" "${target_file}${BACKUP_SUFFIX}"
         printf " - Existing %s archived. - \n\n" "$label"
     else
         printf " - Target %s did not exist yet. - \n\n" "$label"
     fi
 
-    # Copy new file
+    # copy new file
     if [ -f "$source_file" ]; then
         cp -f "$source_file" "$target_file"
         printf " - Custom %s copied successfully. - \n\n\n" "$label"
@@ -51,16 +51,52 @@ copy_with_backup() {
     fi
 }
 
-copy_with_backup "$SOURCE_DIR/func.php" "$TARGET_DIR/htdocs/func.php" "func.php"
-copy_with_backup "$SOURCE_DIR/custom-green.css" "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
-copy_with_backup "$SOURCE_DIR/index.php" "$TARGET_DIR/htdocs/index.php" "index.php"
-copy_with_backup "$SOURCE_DIR/lang-en-UK.php" "$TARGET_DIR/htdocs/lang/lang-en-UK.php" "lang-en-UK.php"
-copy_with_backup "$SOURCE_DIR/search.php" "$TARGET_DIR/htdocs/search.php" "search.php"
-copy_with_backup "$SOURCE_DIR/settings.php" "$TARGET_DIR/htdocs/settings.php" "settings.php"
-copy_with_backup "$SOURCE_DIR/systemInfo.php" "$TARGET_DIR/htdocs/systemInfo.php" "systemInfo.php"
-copy_with_backup "$SOURCE_DIR/version-number" "$TARGET_DIR/settings/version-number" "version-number"
+# ------------------------------------------------
+# Update files
+# ------------------------------------------------
+
+copy_with_backup "$SOURCE_DIR/func.php" \
+"$TARGET_DIR/htdocs/func.php" \
+"func.php"
+
+copy_with_backup "$SOURCE_DIR/custom-green.css" \
+"$TARGET_DIR/htdocs/_assets/css/custom-green.css" \
+"custom-green.css"
+
+copy_with_backup "$SOURCE_DIR/circle.css" \
+"$TARGET_DIR/htdocs/_assets/css/circle.css" \
+"circle.css"
+
+copy_with_backup "$SOURCE_DIR/index.php" \
+"$TARGET_DIR/htdocs/index.php" \
+"index.php"
+
+copy_with_backup "$SOURCE_DIR/lang-en-UK.php" \
+"$TARGET_DIR/htdocs/lang/lang-en-UK.php" \
+"lang-en-UK.php"
+
+copy_with_backup "$SOURCE_DIR/search.php" \
+"$TARGET_DIR/htdocs/search.php" \
+"search.php"
+
+copy_with_backup "$SOURCE_DIR/settings.php" \
+"$TARGET_DIR/htdocs/settings.php" \
+"settings.php"
+
+copy_with_backup "$SOURCE_DIR/systemInfo.php" \
+"$TARGET_DIR/htdocs/systemInfo.php" \
+"systemInfo.php"
+
+copy_with_backup "$SOURCE_DIR/version-number" \
+"$TARGET_DIR/settings/version-number" \
+"version-number"
+
+# ------------------------------------------------
+# Final status
+# ------------------------------------------------
 
 printf "***************************************************\n"
+
 if [ "$ERRORS" -eq 0 ]; then
     printf "***  - All operations completed successfully. - ***\n"
     printf "***************************************************\n\n"
