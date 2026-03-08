@@ -252,7 +252,7 @@ include("inc.addSystemInfo.php");
           <?php print $lang['infoDebugLogClear']; ?>
         </a>
         <a href="update.php" class="btn btn-success" style="margin-left:10px;">
-          Run SubLim3 Update
+          .
         </a>
       </div>
       <div style="clear:both;"></div>
