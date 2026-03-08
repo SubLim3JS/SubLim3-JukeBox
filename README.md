@@ -9,10 +9,9 @@ ________________________________________________________________________________
 ## SubLim3 Update Code
 Executes at the root folder.
 ```bash
-cd ~
-git pull https://github.com/SubLim3JS/SubLim3-JukeBox
-cd SubLim3-JukeBox
-. SubLim3-Updates.sh
+cd ~/SubLim3-JukeBox
+git pull
+bash SubLim3-Updates.sh
 ```
 
 _____________________________________________________________________________________________________________________________________________________________________
