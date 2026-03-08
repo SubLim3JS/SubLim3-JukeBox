@@ -241,12 +241,21 @@ include("inc.addSystemInfo.php");
 
 <div class="panel-group">
   <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title">
-        <i class='mdi mdi-text'></i> <?php print $lang['infoDebugLogTail']; ?>
-        <br><br>
-        <a href="systemInfo.php?DebugLogClear=true" class="btn btn-info"><?php print $lang['infoDebugLogClear']; ?></a>
-      </h4>
+    <div class="panel-heading clearfix">
+      <div style="float:left;">
+        <h4 class="panel-title" style="margin-top:8px;">
+          <i class='mdi mdi-text'></i> <?php print $lang['infoDebugLogTail']; ?>
+        </h4>
+      </div>
+      <div style="float:right;">
+        <a href="systemInfo.php?DebugLogClear=true" class="btn btn-info">
+          <?php print $lang['infoDebugLogClear']; ?>
+        </a>
+        <a href="update.php" class="btn btn-success" style="margin-left:10px;">
+          Run SubLim3 Update
+        </a>
+      </div>
+      <div style="clear:both;"></div>
     </div><!-- /.panel-heading -->
 
     <div class="panel-body">
