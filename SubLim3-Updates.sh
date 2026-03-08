@@ -83,9 +83,9 @@ chmod +x "$SOURCE_DIR/run-update.sh"
 
 copy_with_backup "$SOURCE_DIR/SubLim3-Updates.sh" \
 "$SOURCE_DIR/SubLim3-Updates.sh" \
-"run-update.sh"
+"SubLim3-Updates.sh"
 
-chmod +x "$SOURCE_DIR/run-update.sh"
+chmod +x "$SOURCE_DIR/SubLim3-Updates.sh"
 
 copy_with_backup "$SOURCE_DIR/search.php" \
 "$TARGET_DIR/htdocs/search.php" \
