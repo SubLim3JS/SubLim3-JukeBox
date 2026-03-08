@@ -75,6 +75,18 @@ copy_with_backup "$SOURCE_DIR/lang-en-UK.php" \
 "$TARGET_DIR/htdocs/lang/lang-en-UK.php" \
 "lang-en-UK.php"
 
+copy_with_backup "$SOURCE_DIR/run-update.sh" \
+"$SOURCE_DIR/run-update.sh" \
+"run-update.sh"
+
+chmod +x "$SOURCE_DIR/run-update.sh"
+
+copy_with_backup "$SOURCE_DIR/SubLim3-Updates.sh" \
+"$SOURCE_DIR/SubLim3-Updates.sh" \
+"run-update.sh"
+
+chmod +x "$SOURCE_DIR/run-update.sh"
+
 copy_with_backup "$SOURCE_DIR/search.php" \
 "$TARGET_DIR/htdocs/search.php" \
 "search.php"
