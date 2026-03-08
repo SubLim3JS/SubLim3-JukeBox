@@ -50,7 +50,7 @@ copy_with_backup() {
 }
 
 copy_with_backup "$SOURCE_DIR/func.php" "$TARGET_DIR/htdocs/func.php" "func.php"
-copy_with_backup "$SOURCE_DIR/custom-green.css" "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
+copy_with_backup "$SOURCE_DIR/htdocs/_assets/css/custom-green.css" "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
 copy_with_backup "$SOURCE_DIR/index.php" "$TARGET_DIR/htdocs/index.php" "index.php"
 copy_with_backup "$SOURCE_DIR/lang-en-UK.php" "$TARGET_DIR/htdocs/lang/lang-en-UK.php" "lang-en-UK.php"
 copy_with_backup "$SOURCE_DIR/search.php" "$TARGET_DIR/htdocs/search.php" "search.php"
