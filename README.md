@@ -10,7 +10,7 @@ ________________________________________________________________________________
 Executes at the root folder.
 ```bash
 cd ~
-git clone https://github.com/SubLim3JS/SubLim3-JukeBox
+git pull https://github.com/SubLim3JS/SubLim3-JukeBox
 cd SubLim3-JukeBox
 . SubLim3-Updates.sh
 ```
