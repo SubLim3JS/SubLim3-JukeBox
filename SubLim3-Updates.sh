@@ -19,7 +19,7 @@ sleep 2
 printf ""
 printf ""
 printf "********************************************************\n"
-printf "*** Rename func.php so the custom file can be added. ***\n"   <------------------------------------------------------------------------- func.php
+printf "*** Rename func.php so the custom file can be added. ***\n"
 printf "********************************************************\n\n"
 
 sleep 3
@@ -37,7 +37,7 @@ else
 fi
 
 printf "************************************************************\n"
-printf "**** Move SubLim3 custom func.php to the htdocs folder. ****\n"   <------------------------------------------------------------------------- func.php
+printf "**** Move SubLim3 custom func.php to the htdocs folder. ****\n"
 printf "************************************************************\n\n"
 
 sleep 3
@@ -56,7 +56,7 @@ fi
 
 
 printf "****************************************************************\n"
-printf "*** Rename custom-green.css so the custom file can be added. ***\n"   <------------------------------------------------------------------------- custom-green.css
+printf "*** Rename custom-green.css so the custom file can be added. ***\n"
 printf "****************************************************************\n\n"
 
 sleep 3
@@ -74,7 +74,7 @@ else
 fi
 
 printf "*************************************************************\n"
-printf "**** Move SubLim3 custom-green.css to the htdocs folder. ****\n"   <------------------------------------------------------------------------- custom-green.css
+printf "**** Move SubLim3 custom-green.css to the htdocs folder. ****\n"
 printf "*************************************************************\n\n"
 
 sleep 3
@@ -94,7 +94,7 @@ fi
 sleep 3
 
 printf "*********************************************************\n"
-printf "*** Rename index.php so the custom file can be added. ***\n"   <------------------------------------------------------------------------- index.php
+printf "*** Rename index.php so the custom file can be added. ***\n"
 printf "*********************************************************\n\n"
 
 sleep 3
@@ -112,7 +112,7 @@ else
 fi
 
 printf "************************************************************\n"
-printf "**** Move SubLim3 custom index.php to the htdocs folder. ****\n"   <------------------------------------------------------------------------- index.php
+printf "**** Move SubLim3 custom index.php to the htdocs folder. ****\n"
 printf "************************************************************\n\n"
 
 sleep 3
@@ -132,7 +132,7 @@ fi
 sleep 3
 
 printf "**************************************************************\n"
-printf "*** Rename lang-en-UK.php so the custom file can be added. ***\n"   <------------------------------------------------------------------------- lang-en-UK.php
+printf "*** Rename lang-en-UK.php so the custom file can be added. ***\n"
 printf "**************************************************************\n\n"
 
 sleep 3
@@ -150,7 +150,7 @@ else
 fi
 
 printf "************************************************************\n"
-printf "**** Move SubLim3 custom lang-en-UK.php to the htdocs folder. ****\n"   <------------------------------------------------------------------------- lang-en-UK.php
+printf "**** Move SubLim3 custom lang-en-UK.php to the htdocs folder. ****\n"
 printf "************************************************************\n\n"
 
 sleep 3
@@ -172,7 +172,7 @@ fi
 sleep 3
 
 printf "********************************************************\n"
-printf "*** Rename search.php so the custom file can be added. ***\n"   <------------------------------------------------------------------------- search.php
+printf "*** Rename search.php so the custom file can be added. ***\n"
 printf "********************************************************\n\n"
 
 sleep 3
@@ -190,7 +190,7 @@ else
 fi
 
 printf "**************************************************************\n"
-printf "**** Move SubLim3 custom search.php to the htdocs folder. ****\n"   <------------------------------------------------------------------------- search.php
+printf "**** Move SubLim3 custom search.php to the htdocs folder. ****\n"
 printf "**************************************************************\n\n"
 
 sleep 3
@@ -212,7 +212,7 @@ fi
 sleep 3
 
 printf "************************************************************\n"
-printf "*** Rename settings.php so the custom file can be added. ***\n"   <------------------------------------------------------------------------- settings.php
+printf "*** Rename settings.php so the custom file can be added. ***\n"
 printf "************************************************************\n\n"
 
 sleep 3
@@ -229,9 +229,9 @@ else
     printf ""
 fi
 
-printf "************************************************************\n"
-printf "**** Move SubLim3 custom settings.php to the htdocs folder. ****\n"   <------------------------------------------------------------------------- settings.php
-printf "************************************************************\n\n"
+printf "****************************************************************\n"
+printf "**** Move SubLim3 custom settings.php to the htdocs folder. ****\n"
+printf "****************************************************************\n\n"
 
 sleep 3
 
@@ -252,7 +252,7 @@ fi
 sleep 3
 
 printf "**************************************************************\n"
-printf "*** Rename systemInfo.php so the custom file can be added. ***\n"   <------------------------------------------------------------------------- systemInfo.php
+printf "*** Rename systemInfo.php so the custom file can be added. ***\n"
 printf "**************************************************************\n\n"
 
 sleep 3
@@ -269,9 +269,9 @@ else
     printf ""
 fi
 
-printf "************************************************************\n"
-printf "**** Move SubLim3 custom systemInfo.php to the htdocs folder. ****\n"   <------------------------------------------------------------------------- systemInfo.php
-printf "************************************************************\n\n"
+printf "******************************************************************\n"
+printf "**** Move SubLim3 custom systemInfo.php to the htdocs folder. ****\n"
+printf "******************************************************************\n\n"
 
 sleep 3
 
@@ -290,7 +290,7 @@ fi
 sleep 3
 
 printf "**************************************************************\n"
-printf "*** Rename version-number so the custom file can be added. ***\n"   <------------------------------------------------------------------------- version-number
+printf "*** Rename version-number so the custom file can be added. ***\n"
 printf "**************************************************************\n\n"
 
 sleep 3
@@ -307,9 +307,9 @@ else
     printf ""
 fi
 
-printf "******************************************************************\n"
-printf "**** Move SubLim3 custom version-number to the settings folder. ****\n"   <------------------------------------------------------------------------- version-number
-printf "******************************************************************\n\n"
+printf "********************************************************************\n"
+printf "**** Move SubLim3 custom version-number to the settings folder. ****\n"
+printf "********************************************************************\n\n"
 
 sleep 3
 
@@ -321,7 +321,7 @@ if [ -f ~/SubLim3-JukeBox/version-number ]; then
     printf ""
 else
     printf ""
-    printf "File version-number not found in ~/SubLim3-JukeBox/settings \n\n\n"
+    printf "File version-number not found in ~/SubLim3-JukeBox/version-number \n\n\n"
     printf ""
 fi
 
