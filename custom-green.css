@@ -93,22 +93,18 @@ a:focus {
 .btn-group .btn-success,
 .btn-group .btn-info,
 .btn-group .btn-default {
-  background-color: var(--primary-green) !important;
+  background-color: transparent !important;
   border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  color: var(--primary-green) !important;
 }
 
-#playerControls .btn:hover,
-.playerControls .btn:hover,
-.btn-group .btn:hover,
-.btn-group .btn:focus,
-.btn-group .btn.active,
-.btn-group .btn-success.active,
-.btn-group .btn-info.active,
-.btn-group .btn-default.active {
-  background-color: var(--primary-green-dark) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+/* Ensure icons inside buttons are also green */
+#playerControls .btn i,
+.playerControls .btn i,
+.btn-group .btn i {
+  color: var(--primary-green) !important;
+}
+
 }
 
 
