@@ -2,10 +2,13 @@
 
 AUDIO_REPO_URL="https://github.com/SubLim3JS/SubLim3-Audio.git"
 AUDIO_REPO_DIR="/home/pi/SubLim3-Audio"
-AUDIO_SOURCE_DIR="$AUDIO_REPO_DIR/audiofolders"
-PHONIEBOX_AUDIO_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
-BACKUP_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders-BACKUP"
+SOURCE_AUDIO_DIR="$AUDIO_REPO_DIR/audiofolders"
+TARGET_AUDIO_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
+GIT_BRANCH="main"
 
+ERRORS=0
+COPIED=0
+SKIPPED=0
 
 printf "
 .
@@ -22,61 +25,114 @@ printf "
 
 sleep 1
 
-# Clone or update repo
+# ------------------------------------------------
+# Step 1: Clone repo if missing
+# ------------------------------------------------
 if [ ! -d "$AUDIO_REPO_DIR/.git" ]; then
-    echo "Audio repo not found. Cloning..."
-    git clone "$AUDIO_REPO_URL" "$AUDIO_REPO_DIR" || {
+    echo "Audio repository not found locally."
+    echo "Cloning repository..."
+    echo ""
+
+    git clone -q "$AUDIO_REPO_URL" "$AUDIO_REPO_DIR"
+    if [ $? -ne 0 ]; then
         echo "ERROR: Failed to clone audio repository."
         exit 1
-    }
+    fi
+
+    echo "Audio repository cloned successfully."
+    echo ""
 else
-    echo "Audio repo found. Pulling latest changes..."
-    cd "$AUDIO_REPO_DIR" || {
-        echo "ERROR: Cannot access $AUDIO_REPO_DIR"
-        exit 1
-    }
-
-    git pull -q origin main || {
-        echo "ERROR: Failed to pull latest audio repository changes."
-        exit 1
-    }
+    echo "Audio repository already exists."
+    echo ""
 fi
 
-echo "Repository update complete."
+# ------------------------------------------------
+# Step 2: Pull latest repo changes
+# ------------------------------------------------
+cd "$AUDIO_REPO_DIR" || {
+    echo "ERROR: Cannot access $AUDIO_REPO_DIR"
+    exit 1
+}
+
+echo "Pulling latest audio updates from GitHub..."
+git pull -q origin "$GIT_BRANCH"
+if [ $? -ne 0 ]; then
+    echo "ERROR: git pull failed."
+    exit 1
+fi
+echo "Repository updated successfully."
 echo ""
 
-# Validate source folder
-if [ ! -d "$AUDIO_SOURCE_DIR" ]; then
+# ------------------------------------------------
+# Step 3: Validate source/destination
+# ------------------------------------------------
+if [ ! -d "$SOURCE_AUDIO_DIR" ]; then
     echo "ERROR: Source audio folder not found:"
-    echo "       $AUDIO_SOURCE_DIR"
+    echo "       $SOURCE_AUDIO_DIR"
     exit 1
 fi
 
-# Backup existing Phoniebox audio folder
-if [ -d "$PHONIEBOX_AUDIO_DIR" ]; then
-    echo "Backing up existing audiofolders..."
-    rm -rf "$BACKUP_DIR"
-    mv "$PHONIEBOX_AUDIO_DIR" "$BACKUP_DIR" || {
-        echo "ERROR: Failed to back up existing audiofolders."
-        exit 1
-    }
+mkdir -p "$TARGET_AUDIO_DIR"
+if [ $? -ne 0 ]; then
+    echo "ERROR: Could not create target audio folder:"
+    echo "       $TARGET_AUDIO_DIR"
+    exit 1
 fi
 
-# Recreate destination
-mkdir -p "$PHONIEBOX_AUDIO_DIR" || {
-    echo "ERROR: Failed to create destination folder."
-    exit 1
-}
+# ------------------------------------------------
+# Step 4: Copy only missing files/folders
+# ------------------------------------------------
+echo "Comparing repository audiofolders with Phoniebox audiofolders..."
+echo ""
 
-# Copy new audio files
-echo "Copying updated audiofolders into Phoniebox..."
-cp -a "$AUDIO_SOURCE_DIR"/. "$PHONIEBOX_AUDIO_DIR"/ || {
-    echo "ERROR: Failed to copy audio folders."
-    exit 1
-}
+while IFS= read -r -d '' source_item; do
+    relative_path="${source_item#$SOURCE_AUDIO_DIR/}"
+    target_item="$TARGET_AUDIO_DIR/$relative_path"
+
+    if [ -d "$source_item" ]; then
+        if [ ! -d "$target_item" ]; then
+            mkdir -p "$target_item"
+            if [ $? -eq 0 ]; then
+                echo "Created missing folder: $relative_path"
+                COPIED=$((COPIED+1))
+            else
+                echo "ERROR: Failed to create folder: $relative_path"
+                ERRORS=$((ERRORS+1))
+            fi
+        else
+            SKIPPED=$((SKIPPED+1))
+        fi
+
+    elif [ -f "$source_item" ]; then
+        if [ ! -f "$target_item" ]; then
+            mkdir -p "$(dirname "$target_item")"
+            cp -a "$source_item" "$target_item"
+            if [ $? -eq 0 ]; then
+                echo "Copied missing file: $relative_path"
+                COPIED=$((COPIED+1))
+            else
+                echo "ERROR: Failed to copy file: $relative_path"
+                ERRORS=$((ERRORS+1))
+            fi
+        else
+            SKIPPED=$((SKIPPED+1))
+        fi
+    fi
+done < <(find "$SOURCE_AUDIO_DIR" -mindepth 1 -print0)
 
 echo ""
 echo "========================================"
-echo " SubLim3 audio update completed"
+echo " Audio Sync Summary"
 echo "========================================"
-exit 0
+echo "Copied/created: $COPIED"
+echo "Already present: $SKIPPED"
+echo "Errors: $ERRORS"
+echo ""
+
+if [ "$ERRORS" -eq 0 ]; then
+    echo "SubLim3 audio sync completed successfully."
+    exit 0
+else
+    echo "SubLim3 audio sync completed with errors."
+    exit 1
+fi
