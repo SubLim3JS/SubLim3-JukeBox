@@ -20,7 +20,7 @@ SubLim3 JukeBox Files - This will create a folder with SubLim3's custom configs.
 
 ___________________________________________________________________________________________________________________
 
-## SubLim3 Update Code
+## SubLim3 initial Install Code
 Executes at the root folder.
 ```bash
 cd /home/pi
