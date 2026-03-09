@@ -25,6 +25,13 @@ printf "
 
 sleep 1
 
+printf "
+========================================
+ SubLim3 Audio Sync Utility
+========================================
+
+"
+
 # ------------------------------------------------
 # Step 1: Clone repo if missing
 # ------------------------------------------------
@@ -33,7 +40,9 @@ if [ ! -d "$AUDIO_REPO_DIR/.git" ]; then
     echo "Cloning repository..."
     echo ""
 
+    export GIT_TERMINAL_PROMPT=0
     git clone -q "$AUDIO_REPO_URL" "$AUDIO_REPO_DIR"
+
     if [ $? -ne 0 ]; then
         echo "ERROR: Failed to clone audio repository."
         exit 1
@@ -47,24 +56,33 @@ else
 fi
 
 # ------------------------------------------------
-# Step 2: Pull latest repo changes
+# Step 2: Ensure remote URL is correct
 # ------------------------------------------------
 cd "$AUDIO_REPO_DIR" || {
     echo "ERROR: Cannot access $AUDIO_REPO_DIR"
     exit 1
 }
 
+git remote set-url origin "$AUDIO_REPO_URL" >/dev/null 2>&1
+
+# ------------------------------------------------
+# Step 3: Pull latest repo changes without prompting
+# ------------------------------------------------
 echo "Pulling latest audio updates from GitHub..."
-git pull -q origin "$GIT_BRANCH"
+
+export GIT_TERMINAL_PROMPT=0
+git pull -q --ff-only origin "$GIT_BRANCH"
+
 if [ $? -ne 0 ]; then
-    echo "ERROR: git pull failed."
+    echo "ERROR: Could not pull audio repository."
     exit 1
 fi
+
 echo "Repository updated successfully."
 echo ""
 
 # ------------------------------------------------
-# Step 3: Validate source/destination
+# Step 4: Validate source/destination
 # ------------------------------------------------
 if [ ! -d "$SOURCE_AUDIO_DIR" ]; then
     echo "ERROR: Source audio folder not found:"
@@ -73,6 +91,7 @@ if [ ! -d "$SOURCE_AUDIO_DIR" ]; then
 fi
 
 mkdir -p "$TARGET_AUDIO_DIR"
+
 if [ $? -ne 0 ]; then
     echo "ERROR: Could not create target audio folder:"
     echo "       $TARGET_AUDIO_DIR"
@@ -80,7 +99,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # ------------------------------------------------
-# Step 4: Copy only missing files/folders
+# Step 5: Copy only missing files/folders
 # ------------------------------------------------
 echo "Comparing repository audiofolders with Phoniebox audiofolders..."
 echo ""
