@@ -59,6 +59,11 @@ copy_with_backup() {
     fi
 }
 
+# ------------------------------------------------
+# System / UI files only
+# Audio folders are intentionally excluded
+# ------------------------------------------------
+
 copy_with_backup "$SOURCE_DIR/func.php" \
 "$TARGET_DIR/htdocs/func.php" \
 "func.php"
@@ -70,10 +75,6 @@ copy_with_backup "$SOURCE_DIR/custom-green.css" \
 copy_with_backup "$SOURCE_DIR/circle.css" \
 "$TARGET_DIR/htdocs/_assets/css/circle.css" \
 "circle.css"
-
-copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
-"$TARGET_DIR/settings/gpio-buttons.py" \
-"gpio-buttons.py"
 
 copy_with_backup "$SOURCE_DIR/index.php" \
 "$TARGET_DIR/htdocs/index.php" \
@@ -91,10 +92,6 @@ copy_with_backup "$SOURCE_DIR/settings.php" \
 "$TARGET_DIR/htdocs/settings.php" \
 "settings.php"
 
-copy_with_backup "$SOURCE_DIR/SubLim3-Audio.sh" \
-"$TARGET_DIR/settings/SubLim3-Audio.sh" \
-"SubLim3-Audio.sh"
-
 copy_with_backup "$SOURCE_DIR/systemInfo.php" \
 "$TARGET_DIR/htdocs/systemInfo.php" \
 "systemInfo.php"
@@ -102,6 +99,10 @@ copy_with_backup "$SOURCE_DIR/systemInfo.php" \
 copy_with_backup "$SOURCE_DIR/update.php" \
 "$TARGET_DIR/htdocs/update.php" \
 "update.php"
+
+copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
+"$TARGET_DIR/settings/gpio-buttons.py" \
+"gpio-buttons.py"
 
 copy_with_backup "$SOURCE_DIR/version-number" \
 "$TARGET_DIR/settings/version-number" \
