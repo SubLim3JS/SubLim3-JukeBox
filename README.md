@@ -15,7 +15,8 @@ SubLim3 JukeBox Files - This will create a folder with SubLim3's custom configs.
 - Automatically **backs up existing Phoniebox files** before replacing them (`filename-BACKUP`)  
 - Updates core UI files including `func.php`, `index.php`, `search.php`, `settings.php`, and `systemInfo.php`  
 - Installs custom styling files `custom-green.css` and `circle.css` into the Phoniebox CSS directory  
-- Adds a **custom language file** to modify UI text such as *SubLim3-JukeBox Setup*  
+- Adds a **custom language file** to modify UI text such as *SubLim3-JukeBox Setup*
+- Adds a GPIO Buttons script for Volume and Track Control
 - Installs a **version tracking file** so the current SubLim3 build version is displayed on the Info page
 
 ___________________________________________________________________________________________________________________
