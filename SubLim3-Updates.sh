@@ -99,6 +99,10 @@ copy_with_backup "$SOURCE_DIR/version-number" \
 "$TARGET_DIR/settings/version-number" \
 "version-number"
 
+copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
+"$TARGET_DIR/settings/gpio-buttons.py" \
+"gpio-buttons.py"
+
 printf "***************************************************\n"
 
 if [ "$ERRORS" -eq 0 ]; then
