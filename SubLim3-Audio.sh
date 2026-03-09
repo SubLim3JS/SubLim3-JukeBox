@@ -5,8 +5,8 @@ REPO_URL="https://github.com/SubLim3JS/SubLim3-JukeBox-Audio.git"
 BRANCH="main"
 
 DEST_BASE="$HOME/RPi-Jukebox-RFID/shared/audiofolders"
-SCRIPT_DIR="$HOME/SubLim3-JukeBox"
-WORKDIR="$SCRIPT_DIR/.audio-temp"
+SCRIPT_DIR="$HOME"
+WORKDIR="$SCRIPT_DIR/.SubLim3-Audio-temp"
 REPO_DIR="$WORKDIR/repo"
 
 BATTLE_SRC="audiofolders/Battle Music"
@@ -43,7 +43,7 @@ require_commands() {
         if ! command -v "$cmd" >/dev/null 2>&1; then
             echo "ERROR: Missing required command: $cmd"
             echo "Install with:"
-            echo "sudo apt install git rsync"
+            echo "  sudo apt update && sudo apt install -y git rsync"
             exit 1
         fi
     done
@@ -71,7 +71,6 @@ folder_installed() {
     local rel_path="$1"
     local folder_name
     folder_name="$(basename "$rel_path")"
-
     [[ -d "$DEST_BASE/$folder_name" ]]
 }
 
@@ -162,13 +161,13 @@ install_all_missing() {
 main() {
     trap 'rm -rf "$WORKDIR"' EXIT
 
-    print_banner
-    print_header
     require_commands
     prepare_dest
     prepare_repo
 
     while true; do
+        print_banner
+        print_header
         show_menu
 
         read -rp "Select option: " choice
@@ -199,10 +198,7 @@ main() {
 
         echo
         read -rp "Press Enter to continue..."
-        print_banner
-        print_header
     done
 }
 
 main
-
