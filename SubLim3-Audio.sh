@@ -6,10 +6,21 @@ AUDIO_SOURCE_DIR="$AUDIO_REPO_DIR/audiofolders"
 PHONIEBOX_AUDIO_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
 BACKUP_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders-BACKUP"
 
-echo "========================================"
-echo " SubLim3 Audio Update Utility"
-echo "========================================"
-echo ""
+
+printf "
+.
+.
+.
+.    ___      _    _    _       ____     _      _       ___
+.   / __|_  _| |__| |  (_)_ __ |__ /  _ | |_  _| |_____| _ ) _____ __
+.   \\__ \\ || | '_ \\ |__| | '  \\ |_ \\ | || | || | / / -_) _ \\/ _ \\ \\ /
+.   |___/\\_,_|_.__/____|_|_|_|_|___/  \\__/ \\_,_|_\\_\\___|___/\\___/_\\_\\
+.
+.
+.
+"
+
+sleep 1
 
 # Clone or update repo
 if [ ! -d "$AUDIO_REPO_DIR/.git" ]; then
