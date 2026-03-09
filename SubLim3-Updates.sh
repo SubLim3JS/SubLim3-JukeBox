@@ -30,30 +30,34 @@ copy_with_backup() {
     printf "*** Updating %s ***\n" "$label"
     printf "********************************************************\n\n"
 
-    # ensure destination directory exists
     mkdir -p "$(dirname "$target_file")"
 
-    # backup existing file
     if [ -f "$target_file" ]; then
         mv -f "$target_file" "${target_file}${BACKUP_SUFFIX}"
-        printf " - Existing %s archived. - \n\n" "$label"
+        printf " - Existing %s archived as %s%s - \n\n" "$label" "$label" "$BACKUP_SUFFIX"
     else
         printf " - Target %s did not exist yet. - \n\n" "$label"
     fi
 
-    # copy new file
-    if [ -f "$source_file" ]; then
-        cp -f "$source_file" "$target_file"
+    if [ ! -f "$source_file" ]; then
+        printf " - ERROR: Source %s not found at %s - \n\n\n" "$label" "$source_file"
+        ERRORS=$((ERRORS+1))
+        return
+    fi
+
+    if [ ! -s "$source_file" ]; then
+        printf " - ERROR: Source %s exists but is empty at %s - \n\n\n" "$label" "$source_file"
+        ERRORS=$((ERRORS+1))
+        return
+    fi
+
+    if cp -f "$source_file" "$target_file"; then
         printf " - Custom %s copied successfully. - \n\n\n" "$label"
     else
-        printf " - ERROR: Source %s not found at %s - \n\n\n" "$label" "$source_file"
+        printf " - ERROR: Failed to copy %s - \n\n\n" "$label"
         ERRORS=$((ERRORS+1))
     fi
 }
-
-# ------------------------------------------------
-# Update files
-# ------------------------------------------------
 
 copy_with_backup "$SOURCE_DIR/func.php" \
 "$TARGET_DIR/htdocs/func.php" \
@@ -94,10 +98,6 @@ copy_with_backup "$SOURCE_DIR/update.php" \
 copy_with_backup "$SOURCE_DIR/version-number" \
 "$TARGET_DIR/settings/version-number" \
 "version-number"
-
-# ------------------------------------------------
-# Final status
-# ------------------------------------------------
 
 printf "***************************************************\n"
 
