@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-SOURCE_DIR="/home/pi/SubLim3-JukeBox"
-TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
-BACKUP_SUFFIX="-BACKUP"
-ERRORS=0
+REPO_DIR="$HOME/SubLim3-JukeBox"
 
-printf "
+print_banner() {
+    clear
+    printf "
 .
 .
 .
@@ -17,105 +17,106 @@ printf "
 .
 .
 "
+    sleep 1
+}
 
-sleep 1
+print_header() {
+    echo
+    echo "========================================"
+    echo " SubLim3 Update Utility"
+    echo "========================================"
+    echo
+}
 
-copy_with_backup() {
-
-    local source_file="$1"
-    local target_file="$2"
-    local label="$3"
-
-    printf "********************************************************\n"
-    printf "*** Updating %s ***\n" "$label"
-    printf "********************************************************\n\n"
-
-    mkdir -p "$(dirname "$target_file")"
-
-    if [ -f "$target_file" ]; then
-        mv -f "$target_file" "${target_file}${BACKUP_SUFFIX}"
-        printf " - Existing %s archived as %s%s - \n\n" "$label" "$label" "$BACKUP_SUFFIX"
-    else
-        printf " - Target %s did not exist yet. - \n\n" "$label"
-    fi
-
-    if [ ! -f "$source_file" ]; then
-        printf " - ERROR: Source %s not found at %s - \n\n\n" "$label" "$source_file"
-        ERRORS=$((ERRORS+1))
-        return
-    fi
-
-    if [ ! -s "$source_file" ]; then
-        printf " - ERROR: Source %s exists but is empty at %s - \n\n\n" "$label" "$source_file"
-        ERRORS=$((ERRORS+1))
-        return
-    fi
-
-    if cp -f "$source_file" "$target_file"; then
-        printf " - Custom %s copied successfully. - \n\n\n" "$label"
-    else
-        printf " - ERROR: Failed to copy %s - \n\n\n" "$label"
-        ERRORS=$((ERRORS+1))
+require_commands() {
+    if ! command -v git >/dev/null 2>&1; then
+        echo "ERROR: git is not installed."
+        echo "Install with:"
+        echo "  sudo apt update && sudo apt install -y git"
+        exit 1
     fi
 }
 
-# ------------------------------------------------
-# System / UI files only
-# Audio folders are intentionally excluded
-# ------------------------------------------------
+check_repo() {
+    if [[ ! -d "$REPO_DIR/.git" ]]; then
+        echo "ERROR: Repo not found at:"
+        echo "  $REPO_DIR"
+        exit 1
+    fi
+}
 
-copy_with_backup "$SOURCE_DIR/func.php" \
-"$TARGET_DIR/htdocs/func.php" \
-"func.php"
+show_menu() {
+    echo "1) Update SubLim3-JukeBox repo"
+    echo "2) Show git status"
+    echo "3) Show current branch"
+    echo "Q) Quit"
+    echo
+}
 
-copy_with_backup "$SOURCE_DIR/custom-green.css" \
-"$TARGET_DIR/htdocs/_assets/css/custom-green.css" \
-"custom-green.css"
+update_repo() {
+    echo
+    echo "Updating repo..."
+    cd "$REPO_DIR"
 
-copy_with_backup "$SOURCE_DIR/circle.css" \
-"$TARGET_DIR/htdocs/_assets/css/circle.css" \
-"circle.css"
+    if git rev-parse --verify MERGE_HEAD >/dev/null 2>&1; then
+        echo "Merge conflict state detected. Aborting previous merge first..."
+        git merge --abort || true
+    fi
 
-copy_with_backup "$SOURCE_DIR/index.php" \
-"$TARGET_DIR/htdocs/index.php" \
-"index.php"
+    git fetch --all --prune
+    git pull --ff-only
 
-copy_with_backup "$SOURCE_DIR/lang-en-UK.php" \
-"$TARGET_DIR/htdocs/lang/lang-en-UK.php" \
-"lang-en-UK.php"
+    echo
+    echo "Repo updated successfully."
+}
 
-copy_with_backup "$SOURCE_DIR/search.php" \
-"$TARGET_DIR/htdocs/search.php" \
-"search.php"
+show_status() {
+    echo
+    cd "$REPO_DIR"
+    git status
+}
 
-copy_with_backup "$SOURCE_DIR/settings.php" \
-"$TARGET_DIR/htdocs/settings.php" \
-"settings.php"
+show_branch() {
+    echo
+    cd "$REPO_DIR"
+    git branch --show-current
+}
 
-copy_with_backup "$SOURCE_DIR/systemInfo.php" \
-"$TARGET_DIR/htdocs/systemInfo.php" \
-"systemInfo.php"
+main() {
+    require_commands
+    check_repo
 
-copy_with_backup "$SOURCE_DIR/update.php" \
-"$TARGET_DIR/htdocs/update.php" \
-"update.php"
+    while true; do
+        print_banner
+        print_header
+        show_menu
 
-copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
-"$TARGET_DIR/settings/gpio-buttons.py" \
-"gpio-buttons.py"
+        read -rp "Select option: " choice
 
-copy_with_backup "$SOURCE_DIR/version-number" \
-"$TARGET_DIR/settings/version-number" \
-"version-number"
+        case "$choice" in
+            1)
+                update_repo
+                ;;
+            2)
+                show_status
+                ;;
+            3)
+                show_branch
+                ;;
+            Q|q)
+                echo
+                echo "Exiting."
+                exit 0
+                ;;
+            *)
+                echo
+                echo "Invalid selection."
+                ;;
+        esac
 
-printf "***************************************************\n"
+        echo
+        read -rp "Press Enter to continue..."
+    done
+}
 
-if [ "$ERRORS" -eq 0 ]; then
-    printf "***  - All operations completed successfully. - ***\n"
-    printf "***************************************************\n\n"
-    exit 0
-else
-    printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
-    printf "***************************************************\n\n"
-    exit 1
-fi
+main
