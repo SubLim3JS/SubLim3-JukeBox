@@ -1,5 +1,5 @@
 # SubLim3 JukeBox
-SubLim3 JukeBox Files - This will create a folder with SubLim3's custom configs. They will need to be moved to their respective folders within the 'RPi-Jukebox-RFID' folders.
+SubLim3 JukeBox Files - This will create a folder with SubLim3's custom configs. They will then be moved to their respective folders within the 'RPi-Jukebox-RFID' folders.
 
 ## Development Notes
 <p>This is based on <a href="https://github.com/MiczFlor/RPi-Jukebox-RFID">PhonieBox</a>.</p>
