@@ -9,7 +9,13 @@ SCRIPT_DIR="$HOME/SubLim3-JukeBox"
 WORKDIR="$SCRIPT_DIR/.audio-temp"
 REPO_DIR="$WORKDIR/repo"
 
-printf "
+BATTLE_SRC="audiofolders/Battle Music"
+TOWN_SRC="audiofolders/Town Music"
+TRAVELERS_SRC="audiofolders/Travelers Themes"
+
+print_banner() {
+    clear
+    printf "
 .
 .
 .
@@ -21,19 +27,8 @@ printf "
 .
 .
 "
-
-sleep 1
-
-#!/usr/bin/env bash
-set -euo pipefail
-
-REPO_URL="https://github.com/SubLim3JS/SubLim3-JukeBox-Audio.git"
-BRANCH="main"
-
-DEST_BASE="$HOME/RPi-Jukebox-RFID/shared/audiofolders"
-SCRIPT_DIR="$HOME/SubLim3-JukeBox"
-WORKDIR="$SCRIPT_DIR/.audio-temp"
-REPO_DIR="$WORKDIR/repo"
+    sleep 1
+}
 
 print_header() {
     echo
@@ -44,29 +39,22 @@ print_header() {
 }
 
 require_commands() {
-    local missing=0
-
     for cmd in git rsync; do
         if ! command -v "$cmd" >/dev/null 2>&1; then
-            echo "ERROR: Required command not found: $cmd"
-            missing=1
+            echo "ERROR: Missing required command: $cmd"
+            echo "Install with:"
+            echo "sudo apt install git rsync"
+            exit 1
         fi
     done
-
-    if [ "$missing" -ne 0 ]; then
-        echo
-        echo "Install missing tools, then run again."
-        echo "Example:"
-        echo "  sudo apt update && sudo apt install -y git rsync"
-        exit 1
-    fi
 }
 
 prepare_dest() {
     mkdir -p "$DEST_BASE"
 }
 
-fresh_clone_audio_repo() {
+prepare_repo() {
+    echo
     echo "Refreshing audio repository..."
 
     rm -rf "$WORKDIR"
@@ -76,54 +64,145 @@ fresh_clone_audio_repo() {
     cd "$REPO_DIR"
 
     git sparse-checkout init --cone
-    git sparse-checkout set "audiofolders"
-    git checkout "$BRANCH"
+    git checkout "$BRANCH" >/dev/null 2>&1
 }
 
-show_preview() {
-    echo
-    echo "Source repo:"
-    echo "  $REPO_URL"
-    echo "Branch:"
-    echo "  $BRANCH"
-    echo "Source folder:"
-    echo "  $REPO_DIR/audiofolders"
-    echo "Destination folder:"
-    echo "  $DEST_BASE"
-    echo
+folder_installed() {
+    local rel_path="$1"
+    local folder_name
+    folder_name="$(basename "$rel_path")"
+
+    [[ -d "$DEST_BASE/$folder_name" ]]
 }
 
-sync_missing_only() {
-    if [ ! -d "$REPO_DIR/audiofolders" ]; then
-        echo "ERROR: audiofolders was not found after clone."
-        exit 1
+show_menu() {
+    echo "Audio Packages"
+    echo
+
+    if folder_installed "$BATTLE_SRC"; then
+        echo "1) Battle Music      [INSTALLED]"
+    else
+        echo "1) Battle Music      [AVAILABLE]"
     fi
 
-    echo "Copying only missing files and folders..."
-    echo
+    if folder_installed "$TOWN_SRC"; then
+        echo "2) Town Music        [INSTALLED]"
+    else
+        echo "2) Town Music        [AVAILABLE]"
+    fi
 
-    rsync -av --ignore-existing \
-        "$REPO_DIR/audiofolders/" \
-        "$DEST_BASE/"
+    if folder_installed "$TRAVELERS_SRC"; then
+        echo "3) Travelers Themes  [INSTALLED]"
+    else
+        echo "3) Travelers Themes  [AVAILABLE]"
+    fi
 
     echo
-    echo "Sync complete."
-    echo "Existing files were preserved."
+    echo "A) Install ALL missing"
+    echo "Q) Quit"
+    echo
 }
 
-cleanup() {
-    rm -rf "$WORKDIR"
+sync_folder_missing_only() {
+    local rel_path="$1"
+    local folder_name
+    folder_name="$(basename "$rel_path")"
+
+    echo
+    echo "Syncing missing files for: $folder_name"
+
+    rsync -a --ignore-existing --info=progress2 \
+        "$REPO_DIR/$rel_path/" \
+        "$DEST_BASE/$folder_name/"
+
+    echo
+}
+
+install_battle_music() {
+    cd "$REPO_DIR"
+    git sparse-checkout set "$BATTLE_SRC"
+    git checkout "$BRANCH" >/dev/null 2>&1
+    sync_folder_missing_only "$BATTLE_SRC"
+}
+
+install_town_music() {
+    cd "$REPO_DIR"
+    git sparse-checkout set "$TOWN_SRC"
+    git checkout "$BRANCH" >/dev/null 2>&1
+    sync_folder_missing_only "$TOWN_SRC"
+}
+
+install_travelers_themes() {
+    cd "$REPO_DIR"
+    git sparse-checkout set "$TRAVELERS_SRC"
+    git checkout "$BRANCH" >/dev/null 2>&1
+    sync_folder_missing_only "$TRAVELERS_SRC"
+}
+
+install_all_missing() {
+    if ! folder_installed "$BATTLE_SRC"; then
+        install_battle_music
+    else
+        echo "Skipping Battle Music (already installed)"
+    fi
+
+    if ! folder_installed "$TOWN_SRC"; then
+        install_town_music
+    else
+        echo "Skipping Town Music (already installed)"
+    fi
+
+    if ! folder_installed "$TRAVELERS_SRC"; then
+        install_travelers_themes
+    else
+        echo "Skipping Travelers Themes (already installed)"
+    fi
 }
 
 main() {
-    trap cleanup EXIT
+    trap 'rm -rf "$WORKDIR"' EXIT
 
+    print_banner
     print_header
     require_commands
     prepare_dest
-    fresh_clone_audio_repo
-    show_preview
-    sync_missing_only
+    prepare_repo
+
+    while true; do
+        show_menu
+
+        read -rp "Select option: " choice
+
+        case "$choice" in
+            1)
+                install_battle_music
+                ;;
+            2)
+                install_town_music
+                ;;
+            3)
+                install_travelers_themes
+                ;;
+            A|a)
+                install_all_missing
+                ;;
+            Q|q)
+                echo
+                echo "Exiting."
+                exit 0
+                ;;
+            *)
+                echo
+                echo "Invalid selection."
+                ;;
+        esac
+
+        echo
+        read -rp "Press Enter to continue..."
+        print_banner
+        print_header
+    done
 }
 
 main
+
