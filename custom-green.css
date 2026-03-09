@@ -93,17 +93,9 @@ a:focus {
 .btn-group .btn-success,
 .btn-group .btn-info,
 .btn-group .btn-default {
-  background-color: transparent !important;
-  border-color: transparent !important;
-  color: var(--primary-green) !important;
-  box-shadow: none !important;
-}
-
-#playerControls .btn i,
-.playerControls .btn i,
-.btn-group .btn i,
-.btn-group .btn .glyphicon {
-  color: var(--primary-green) !important;
+  background-color: var(--primary-green) !important;
+  border-color: var(--primary-green) !important;
+  color: #ffffff !important;
 }
 
 #playerControls .btn:hover,
@@ -115,16 +107,7 @@ a:focus {
 .btn-group .btn-info.active,
 .btn-group .btn-default.active {
   background-color: var(--primary-green-dark) !important;
-  border-color: transparent !important;
-  color: #ffffff !important;
-}
-
-#playerControls .btn:hover i,
-.playerControls .btn:hover i,
-.btn-group .btn:hover i,
-.btn-group .btn:focus i,
-.btn-group .btn.active i,
-.btn-group .btn .glyphicon:hover {
+  border-color: var(--primary-green-dark) !important;
   color: #ffffff !important;
 }
 
