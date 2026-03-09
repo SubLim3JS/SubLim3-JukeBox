@@ -1,14 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-AUDIO_REPO_URL="https://github.com/SubLim3JS/SubLim3-Audio.git"
-AUDIO_REPO_DIR="/home/pi/SubLim3-Audio"
-SOURCE_AUDIO_DIR="$AUDIO_REPO_DIR/audiofolders"
-TARGET_AUDIO_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
-GIT_BRANCH="main"
+REPO_URL="https://github.com/SubLim3JS/SubLim3-JukeBox.git"
+BRANCH="main"
 
-ERRORS=0
-COPIED=0
-SKIPPED=0
+DEST_BASE="$HOME/RPi-Jukebox-RFID/shared/audiofolders"
+SCRIPT_DIR="$HOME/SubLim3-JukeBox"
+WORKDIR="$SCRIPT_DIR/.audio-temp"
 
 printf "
 .
@@ -25,133 +23,130 @@ printf "
 
 sleep 1
 
-printf "
-========================================
- SubLim3 Audio Sync Utility
-========================================
+mkdir -p "$DEST_BASE"
 
-"
-
-# ------------------------------------------------
-# Step 1: Clone repo if missing
-# ------------------------------------------------
-if [ ! -d "$AUDIO_REPO_DIR/.git" ]; then
-    echo "Audio repository not found locally."
-    echo "Cloning repository..."
-    echo ""
-
-    export GIT_TERMINAL_PROMPT=0
-    git clone -q "$AUDIO_REPO_URL" "$AUDIO_REPO_DIR"
-
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to clone audio repository."
-        exit 1
-    fi
-
-    echo "Audio repository cloned successfully."
-    echo ""
-else
-    echo "Audio repository already exists."
-    echo ""
-fi
-
-# ------------------------------------------------
-# Step 2: Ensure remote URL is correct
-# ------------------------------------------------
-cd "$AUDIO_REPO_DIR" || {
-    echo "ERROR: Cannot access $AUDIO_REPO_DIR"
-    exit 1
+print_header() {
+    echo
+    echo "========================================"
+    echo " SubLim3 Audio Sync Utility"
+    echo "========================================"
+    echo
 }
 
-git remote set-url origin "$AUDIO_REPO_URL" >/dev/null 2>&1
+check_status() {
+    local num="$1"
+    local name="$2"
 
-# ------------------------------------------------
-# Step 3: Pull latest repo changes without prompting
-# ------------------------------------------------
-echo "Pulling latest audio updates from GitHub..."
-
-export GIT_TERMINAL_PROMPT=0
-git pull -q --ff-only origin "$GIT_BRANCH"
-
-if [ $? -ne 0 ]; then
-    echo "ERROR: Could not pull audio repository."
-    exit 1
-fi
-
-echo "Repository updated successfully."
-echo ""
-
-# ------------------------------------------------
-# Step 4: Validate source/destination
-# ------------------------------------------------
-if [ ! -d "$SOURCE_AUDIO_DIR" ]; then
-    echo "ERROR: Source audio folder not found:"
-    echo "       $SOURCE_AUDIO_DIR"
-    exit 1
-fi
-
-mkdir -p "$TARGET_AUDIO_DIR"
-
-if [ $? -ne 0 ]; then
-    echo "ERROR: Could not create target audio folder:"
-    echo "       $TARGET_AUDIO_DIR"
-    exit 1
-fi
-
-# ------------------------------------------------
-# Step 5: Copy only missing files/folders
-# ------------------------------------------------
-echo "Comparing repository audiofolders with Phoniebox audiofolders..."
-echo ""
-
-while IFS= read -r -d '' source_item; do
-    relative_path="${source_item#$SOURCE_AUDIO_DIR/}"
-    target_item="$TARGET_AUDIO_DIR/$relative_path"
-
-    if [ -d "$source_item" ]; then
-        if [ ! -d "$target_item" ]; then
-            mkdir -p "$target_item"
-            if [ $? -eq 0 ]; then
-                echo "Created missing folder: $relative_path"
-                COPIED=$((COPIED+1))
-            else
-                echo "ERROR: Failed to create folder: $relative_path"
-                ERRORS=$((ERRORS+1))
-            fi
-        else
-            SKIPPED=$((SKIPPED+1))
-        fi
-
-    elif [ -f "$source_item" ]; then
-        if [ ! -f "$target_item" ]; then
-            mkdir -p "$(dirname "$target_item")"
-            cp -a "$source_item" "$target_item"
-            if [ $? -eq 0 ]; then
-                echo "Copied missing file: $relative_path"
-                COPIED=$((COPIED+1))
-            else
-                echo "ERROR: Failed to copy file: $relative_path"
-                ERRORS=$((ERRORS+1))
-            fi
-        else
-            SKIPPED=$((SKIPPED+1))
-        fi
+    if [ -d "$DEST_BASE/$name" ]; then
+        echo "$num) $name  [INSTALLED]"
+    else
+        echo "$num) $name  [AVAILABLE]"
     fi
-done < <(find "$SOURCE_AUDIO_DIR" -mindepth 1 -print0)
+}
 
-echo ""
-echo "========================================"
-echo " Audio Sync Summary"
-echo "========================================"
-echo "Copied/created: $COPIED"
-echo "Already present: $SKIPPED"
-echo "Errors: $ERRORS"
-echo ""
+show_menu() {
+    echo "Audio Packages"
+    echo
+    check_status 1 "Battle Music"
+    check_status 2 "Town Music"
+    check_status 3 "Travelers Themes"
+    check_status 4 "livestreams/z_Radio Stations"
+    echo
+    echo "A) Install ALL missing"
+    echo "Q) Quit"
+    echo
+}
 
-if [ "$ERRORS" -eq 0 ]; then
-    echo "SubLim3 audio sync completed successfully."
-    exit 0
-else
-    echo "SubLim3 audio sync completed with errors."
-    exit 1
-fi
+prepare_repo() {
+    if [ -d "$WORKDIR/.git" ]; then
+        return
+    fi
+
+    echo
+    echo "Preparing GitHub repository..."
+
+    rm -rf "$WORKDIR"
+
+    git clone --filter=blob:none --no-checkout "$REPO_URL" "$WORKDIR"
+    cd "$WORKDIR"
+
+    git sparse-checkout init --cone
+    git checkout "$BRANCH"
+}
+
+install_folder() {
+    local remote="$1"
+    local local_dest="$2"
+
+    if [ -d "$DEST_BASE/$local_dest" ]; then
+        echo
+        echo "Skipping $local_dest (already installed)"
+        return
+    fi
+
+    prepare_repo
+
+    echo
+    echo "Installing $local_dest..."
+
+    cd "$WORKDIR"
+
+    git sparse-checkout set "audiofolders/$remote"
+    git checkout "$BRANCH"
+
+    if [ ! -d "$WORKDIR/audiofolders/$remote" ]; then
+        echo "ERROR: Folder not found in repo:"
+        echo "audiofolders/$remote"
+        return
+    fi
+
+    mkdir -p "$(dirname "$DEST_BASE/$local_dest")"
+    cp -r "$WORKDIR/audiofolders/$remote" "$DEST_BASE/$local_dest"
+
+    echo
+    echo "$local_dest installed successfully."
+}
+
+install_all_missing() {
+    install_folder "Battle Music" "Battle Music"
+    install_folder "Town Music" "Town Music"
+    install_folder "Travelers Themes" "Travelers Themes"
+    install_folder "z_Radio Stations" "livestreams/z_Radio Stations"
+}
+
+while true; do
+    print_header
+    show_menu
+
+    read -rp "Select option: " choice
+
+    case "$choice" in
+        1)
+            install_folder "Battle Music" "Battle Music"
+            ;;
+        2)
+            install_folder "Town Music" "Town Music"
+            ;;
+        3)
+            install_folder "Travelers Themes" "Travelers Themes"
+            ;;
+        4)
+            install_folder "z_Radio Stations" "livestreams/z_Radio Stations"
+            ;;
+        A|a)
+            install_all_missing
+            ;;
+        Q|q)
+            echo
+            echo "Exiting."
+            exit 0
+            ;;
+        *)
+            echo
+            echo "Invalid selection."
+            ;;
+    esac
+
+    echo
+    read -rp "Press Enter to continue..."
+done
