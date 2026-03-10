@@ -23,7 +23,6 @@ RADIO_SRCS=(
 )
 
 print_banner() {
-    clear
     printf "
 .
 .
