@@ -35,7 +35,6 @@ print_banner() {
 .
 .
 "
-    sleep 1
 }
 
 print_header() {
@@ -162,7 +161,7 @@ sync_folder_missing_only() {
     echo "To:   $DEST_BASE/$folder_name"
     echo
 
-    rsync -a --ignore-existing --info=progress2 \
+    rsync -rltD --no-owner --no-group --ignore-existing --info=progress2 \
         "$REPO_DIR/$rel_path/" \
         "$DEST_BASE/$folder_name/"
 
@@ -189,7 +188,7 @@ sync_folder_force_update() {
     echo "To:   $DEST_BASE/$folder_name"
     echo
 
-    rsync -a --delete --info=progress2 \
+    rsync -rltD --no-owner --no-group --delete --info=progress2 \
         "$REPO_DIR/$rel_path/" \
         "$DEST_BASE/$folder_name/"
 
