@@ -13,6 +13,15 @@ BATTLE_SRC="audiofolders/Battle Music"
 TOWN_SRC="audiofolders/Town Music"
 TRAVELERS_SRC="audiofolders/Travelers Themes"
 
+RADIO_SRCS=(
+    "audiofolders/101-The-Beat"
+    "audiofolders/1059-The-Rock"
+    "audiofolders/107-The-River"
+    "audiofolders/98-The-Big"
+    "audiofolders/Big-Classic-Hits"
+    "audiofolders/R-and-B-Jams"
+)
+
 print_banner() {
     clear
     printf "
@@ -79,6 +88,16 @@ folder_installed() {
     [[ -d "$DEST_BASE/$folder_name" ]]
 }
 
+radio_installed() {
+    local rel_path
+    for rel_path in "${RADIO_SRCS[@]}"; do
+        if ! folder_installed "$rel_path"; then
+            return 1
+        fi
+    done
+    return 0
+}
+
 show_main_menu() {
     echo "Audio Packages"
     echo
@@ -99,6 +118,12 @@ show_main_menu() {
         echo "3) Travelers Themes  [INSTALLED]"
     else
         echo "3) Travelers Themes  [AVAILABLE]"
+    fi
+
+    if radio_installed; then
+        echo "4) Radio Stations    [INSTALLED]"
+    else
+        echo "4) Radio Stations    [AVAILABLE]"
     fi
 
     echo
@@ -181,6 +206,12 @@ checkout_folder() {
     git checkout "$BRANCH" >/dev/null 2>&1
 }
 
+checkout_multiple_folders() {
+    cd "$REPO_DIR"
+    git sparse-checkout set "$@"
+    git checkout "$BRANCH" >/dev/null 2>&1
+}
+
 process_folder_action() {
     local rel_path="$1"
     local action="$2"
@@ -199,6 +230,28 @@ process_folder_action() {
             return 1
             ;;
     esac
+}
+
+process_radio_action() {
+    local action="$1"
+    local rel_path
+
+    checkout_multiple_folders "${RADIO_SRCS[@]}"
+
+    for rel_path in "${RADIO_SRCS[@]}"; do
+        case "$action" in
+            A|a)
+                sync_folder_missing_only "$rel_path"
+                ;;
+            F|f)
+                sync_folder_force_update "$rel_path"
+                ;;
+            *)
+                echo "Invalid action."
+                return 1
+                ;;
+        esac
+    done
 }
 
 folder_submenu_loop() {
@@ -237,16 +290,51 @@ folder_submenu_loop() {
     done
 }
 
+radio_submenu_loop() {
+    while true; do
+        print_banner
+        print_header
+        show_submenu "Radio Stations"
+
+        read -rp "Select option: " subchoice
+
+        case "$subchoice" in
+            A|a)
+                process_radio_action "A"
+                echo
+                read -rp "Press Enter to continue..."
+                return
+                ;;
+            F|f)
+                process_radio_action "F"
+                echo
+                read -rp "Press Enter to continue..."
+                return
+                ;;
+            B|b)
+                return
+                ;;
+            *)
+                echo
+                echo "Invalid selection."
+                read -rp "Press Enter to continue..."
+                ;;
+        esac
+    done
+}
+
 add_missing_all() {
     process_folder_action "$BATTLE_SRC" "A"
     process_folder_action "$TOWN_SRC" "A"
     process_folder_action "$TRAVELERS_SRC" "A"
+    process_radio_action "A"
 }
 
 force_update_all() {
     process_folder_action "$BATTLE_SRC" "F"
     process_folder_action "$TOWN_SRC" "F"
     process_folder_action "$TRAVELERS_SRC" "F"
+    process_radio_action "F"
 }
 
 main() {
@@ -272,6 +360,9 @@ main() {
                 ;;
             3)
                 folder_submenu_loop "Travelers Themes" "$TRAVELERS_SRC"
+                ;;
+            4)
+                radio_submenu_loop
                 ;;
             M|m)
                 add_missing_all
