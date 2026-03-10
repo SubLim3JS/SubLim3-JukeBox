@@ -67,14 +67,19 @@ prepare_repo() {
     git checkout "$BRANCH" >/dev/null 2>&1
 }
 
+folder_name_from_path() {
+    local rel_path="$1"
+    basename "$rel_path"
+}
+
 folder_installed() {
     local rel_path="$1"
     local folder_name
-    folder_name="$(basename "$rel_path")"
+    folder_name="$(folder_name_from_path "$rel_path")"
     [[ -d "$DEST_BASE/$folder_name" ]]
 }
 
-show_menu() {
+show_main_menu() {
     echo "Audio Packages"
     echo
 
@@ -97,65 +102,151 @@ show_menu() {
     fi
 
     echo
-    echo "A) Install ALL missing"
+    echo "M) Add missing to ALL folders"
+    echo "F) Force update ALL folders"
     echo "Q) Quit"
+    echo
+}
+
+show_submenu() {
+    local label="$1"
+
+    echo
+    echo "$label"
+    echo "A) Add missing only"
+    echo "F) Force update / overwrite"
+    echo "B) Back"
     echo
 }
 
 sync_folder_missing_only() {
     local rel_path="$1"
     local folder_name
-    folder_name="$(basename "$rel_path")"
+    folder_name="$(folder_name_from_path "$rel_path")"
+
+    if [[ ! -d "$REPO_DIR/$rel_path" ]]; then
+        echo "ERROR: Source folder not found:"
+        echo "  $REPO_DIR/$rel_path"
+        return 1
+    fi
+
+    mkdir -p "$DEST_BASE/$folder_name"
 
     echo
-    echo "Syncing missing files for: $folder_name"
+    echo "Adding missing files for: $folder_name"
+    echo "From: $REPO_DIR/$rel_path"
+    echo "To:   $DEST_BASE/$folder_name"
+    echo
 
     rsync -a --ignore-existing --info=progress2 \
         "$REPO_DIR/$rel_path/" \
         "$DEST_BASE/$folder_name/"
 
     echo
+    echo "Done syncing: $folder_name"
 }
 
-install_battle_music() {
-    cd "$REPO_DIR"
-    git sparse-checkout set "$BATTLE_SRC"
-    git checkout "$BRANCH" >/dev/null 2>&1
-    sync_folder_missing_only "$BATTLE_SRC"
-}
+sync_folder_force_update() {
+    local rel_path="$1"
+    local folder_name
+    folder_name="$(folder_name_from_path "$rel_path")"
 
-install_town_music() {
-    cd "$REPO_DIR"
-    git sparse-checkout set "$TOWN_SRC"
-    git checkout "$BRANCH" >/dev/null 2>&1
-    sync_folder_missing_only "$TOWN_SRC"
-}
-
-install_travelers_themes() {
-    cd "$REPO_DIR"
-    git sparse-checkout set "$TRAVELERS_SRC"
-    git checkout "$BRANCH" >/dev/null 2>&1
-    sync_folder_missing_only "$TRAVELERS_SRC"
-}
-
-install_all_missing() {
-    if ! folder_installed "$BATTLE_SRC"; then
-        install_battle_music
-    else
-        echo "Skipping Battle Music (already installed)"
+    if [[ ! -d "$REPO_DIR/$rel_path" ]]; then
+        echo "ERROR: Source folder not found:"
+        echo "  $REPO_DIR/$rel_path"
+        return 1
     fi
 
-    if ! folder_installed "$TOWN_SRC"; then
-        install_town_music
-    else
-        echo "Skipping Town Music (already installed)"
-    fi
+    mkdir -p "$DEST_BASE/$folder_name"
 
-    if ! folder_installed "$TRAVELERS_SRC"; then
-        install_travelers_themes
-    else
-        echo "Skipping Travelers Themes (already installed)"
-    fi
+    echo
+    echo "Force updating files for: $folder_name"
+    echo "From: $REPO_DIR/$rel_path"
+    echo "To:   $DEST_BASE/$folder_name"
+    echo
+
+    rsync -a --delete --info=progress2 \
+        "$REPO_DIR/$rel_path/" \
+        "$DEST_BASE/$folder_name/"
+
+    echo
+    echo "Done force updating: $folder_name"
+}
+
+checkout_folder() {
+    local rel_path="$1"
+
+    cd "$REPO_DIR"
+    git sparse-checkout set "$rel_path"
+    git checkout "$BRANCH" >/dev/null 2>&1
+}
+
+process_folder_action() {
+    local rel_path="$1"
+    local action="$2"
+
+    checkout_folder "$rel_path"
+
+    case "$action" in
+        A|a)
+            sync_folder_missing_only "$rel_path"
+            ;;
+        F|f)
+            sync_folder_force_update "$rel_path"
+            ;;
+        *)
+            echo "Invalid action."
+            return 1
+            ;;
+    esac
+}
+
+folder_submenu_loop() {
+    local label="$1"
+    local rel_path="$2"
+
+    while true; do
+        print_banner
+        print_header
+        show_submenu "$label"
+
+        read -rp "Select option: " subchoice
+
+        case "$subchoice" in
+            A|a)
+                process_folder_action "$rel_path" "A"
+                echo
+                read -rp "Press Enter to continue..."
+                return
+                ;;
+            F|f)
+                process_folder_action "$rel_path" "F"
+                echo
+                read -rp "Press Enter to continue..."
+                return
+                ;;
+            B|b)
+                return
+                ;;
+            *)
+                echo
+                echo "Invalid selection."
+                read -rp "Press Enter to continue..."
+                ;;
+        esac
+    done
+}
+
+add_missing_all() {
+    process_folder_action "$BATTLE_SRC" "A"
+    process_folder_action "$TOWN_SRC" "A"
+    process_folder_action "$TRAVELERS_SRC" "A"
+}
+
+force_update_all() {
+    process_folder_action "$BATTLE_SRC" "F"
+    process_folder_action "$TOWN_SRC" "F"
+    process_folder_action "$TRAVELERS_SRC" "F"
 }
 
 main() {
@@ -168,22 +259,29 @@ main() {
     while true; do
         print_banner
         print_header
-        show_menu
+        show_main_menu
 
         read -rp "Select option: " choice
 
         case "$choice" in
             1)
-                install_battle_music
+                folder_submenu_loop "Battle Music" "$BATTLE_SRC"
                 ;;
             2)
-                install_town_music
+                folder_submenu_loop "Town Music" "$TOWN_SRC"
                 ;;
             3)
-                install_travelers_themes
+                folder_submenu_loop "Travelers Themes" "$TRAVELERS_SRC"
                 ;;
-            A|a)
-                install_all_missing
+            M|m)
+                add_missing_all
+                echo
+                read -rp "Press Enter to continue..."
+                ;;
+            F|f)
+                force_update_all
+                echo
+                read -rp "Press Enter to continue..."
                 ;;
             Q|q)
                 echo
@@ -193,11 +291,9 @@ main() {
             *)
                 echo
                 echo "Invalid selection."
+                read -rp "Press Enter to continue..."
                 ;;
         esac
-
-        echo
-        read -rp "Press Enter to continue..."
     done
 }
 
