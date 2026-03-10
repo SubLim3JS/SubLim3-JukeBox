@@ -1,12 +1,11 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-REPO_DIR="$HOME/SubLim3-JukeBox"
-TARGET_DIR="$HOME/RPi-Jukebox-RFID"
-BRANCH="main"
+SOURCE_DIR="/home/pi/SubLim3-JukeBox"
+TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
+BACKUP_SUFFIX="-BACKUP"
+ERRORS=0
 
-print_banner() {
-    printf "
+printf "
 .
 .
 .
@@ -18,143 +17,104 @@ print_banner() {
 .
 .
 "
-}
 
-print_header() {
-    echo
-    echo "========================================"
-    echo " SubLim3 Update Utility"
-    echo "========================================"
-    echo
-}
+sleep 1
 
-log_info() {
-    echo "[INFO] $1"
-}
+copy_with_backup() {
 
-log_ok() {
-    echo "[ OK ] $1"
-}
+    local source_file="$1"
+    local target_file="$2"
+    local label="$3"
 
-log_fail() {
-    echo "[FAIL] $1"
-}
+    printf "********************************************************\n"
+    printf "*** Updating %s ***\n" "$label"
+    printf "********************************************************\n\n"
 
-require_commands() {
-    local missing=0
+    mkdir -p "$(dirname "$target_file")"
 
-    for cmd in git rsync; do
-        if command -v "$cmd" >/dev/null 2>&1; then
-            log_ok "$cmd is installed"
-        else
-            log_fail "$cmd is not installed"
-            missing=1
-        fi
-    done
-
-    if [[ "$missing" -ne 0 ]]; then
-        echo
-        echo "Install missing packages with:"
-        echo "  sudo apt update && sudo apt install -y git rsync"
-        exit 1
-    fi
-}
-
-check_paths() {
-    if [[ -d "$REPO_DIR/.git" ]]; then
-        log_ok "Repo found at $REPO_DIR"
+    if [ -f "$target_file" ]; then
+        mv -f "$target_file" "${target_file}${BACKUP_SUFFIX}"
+        printf " - Existing %s archived as %s%s - \n\n" "$label" "$label" "$BACKUP_SUFFIX"
     else
-        log_fail "Repo not found at $REPO_DIR"
-        exit 1
+        printf " - Target %s did not exist yet. - \n\n" "$label"
     fi
 
-    if [[ -d "$TARGET_DIR" ]]; then
-        log_ok "Target found at $TARGET_DIR"
+    if [ ! -f "$source_file" ]; then
+        printf " - ERROR: Source %s not found at %s - \n\n\n" "$label" "$source_file"
+        ERRORS=$((ERRORS+1))
+        return
+    fi
+
+    if [ ! -s "$source_file" ]; then
+        printf " - ERROR: Source %s exists but is empty at %s - \n\n\n" "$label" "$source_file"
+        ERRORS=$((ERRORS+1))
+        return
+    fi
+
+    if cp -f "$source_file" "$target_file"; then
+        printf " - Custom %s copied successfully. - \n\n\n" "$label"
     else
-        log_fail "Target not found at $TARGET_DIR"
-        exit 1
+        printf " - ERROR: Failed to copy %s - \n\n\n" "$label"
+        ERRORS=$((ERRORS+1))
     fi
 }
 
-abort_merge_if_needed() {
-    cd "$REPO_DIR"
+# ------------------------------------------------
+# System/UI files only (audio excluded intentionally)
+# ------------------------------------------------
 
-    if git rev-parse --verify MERGE_HEAD >/dev/null 2>&1; then
-        log_info "Unfinished merge detected. Aborting it..."
-        git merge --abort >/dev/null 2>&1 || true
-        log_ok "Previous merge aborted"
-    else
-        log_ok "No unfinished merge detected"
-    fi
-}
+copy_with_backup "$SOURCE_DIR/func.php" \
+"$TARGET_DIR/htdocs/func.php" \
+"func.php"
 
-update_repo() {
-    cd "$REPO_DIR"
+copy_with_backup "$SOURCE_DIR/custom-green.css" \
+"$TARGET_DIR/htdocs/_assets/css/custom-green.css" \
+"custom-green.css"
 
-    log_info "Fetching latest changes from origin/$BRANCH..."
-    git fetch origin "$BRANCH" --prune
-    log_ok "Fetched latest changes"
+copy_with_backup "$SOURCE_DIR/circle.css" \
+"$TARGET_DIR/htdocs/_assets/css/circle.css" \
+"circle.css"
 
-    log_info "Resetting local repo to origin/$BRANCH..."
-    git reset --hard "origin/$BRANCH" >/dev/null
-    log_ok "Repo reset to origin/$BRANCH"
+copy_with_backup "$SOURCE_DIR/index.php" \
+"$TARGET_DIR/htdocs/index.php" \
+"index.php"
 
-    log_info "Removing untracked files from repo..."
-    git clean -fd >/dev/null
-    log_ok "Untracked repo files removed"
-}
+copy_with_backup "$SOURCE_DIR/lang-en-UK.php" \
+"$TARGET_DIR/htdocs/lang/lang-en-UK.php" \
+"lang-en-UK.php"
 
-deploy_files() {
-    log_info "Deploying updated files to $TARGET_DIR..."
+copy_with_backup "$SOURCE_DIR/search.php" \
+"$TARGET_DIR/htdocs/search.php" \
+"search.php"
 
-    rsync -rlD --delete \
-        --exclude ".git" \
-        --exclude ".gitignore" \
-        --exclude "README.md" \
-        --exclude "install-jukebox.sh" \
-        --exclude "SubLim3-Audio.sh" \
-        --exclude "SubLim3-Updates.sh" \
-        "$REPO_DIR/" "$TARGET_DIR/"
+copy_with_backup "$SOURCE_DIR/settings.php" \
+"$TARGET_DIR/htdocs/settings.php" \
+"settings.php"
 
-    log_ok "Files deployed to $TARGET_DIR"
-}
+copy_with_backup "$SOURCE_DIR/systemInfo.php" \
+"$TARGET_DIR/htdocs/systemInfo.php" \
+"systemInfo.php"
 
-show_revision() {
-    cd "$REPO_DIR"
+copy_with_backup "$SOURCE_DIR/update.php" \
+"$TARGET_DIR/htdocs/update.php" \
+"update.php"
 
-    local branch commit
-    branch="$(git branch --show-current 2>/dev/null || true)"
-    commit="$(git rev-parse --short HEAD 2>/dev/null || true)"
+copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
+"$TARGET_DIR/settings/gpio-buttons.py" \
+"gpio-buttons.py"
 
-    if [[ -n "$commit" ]]; then
-        log_ok "Current revision: ${branch:-$BRANCH} @ $commit"
-    else
-        log_fail "Could not determine current revision"
-        exit 1
-    fi
-}
+copy_with_backup "$SOURCE_DIR/version-number" \
+"$TARGET_DIR/settings/version-number" \
+"version-number"
 
-show_summary() {
-    echo
-    echo "========================================"
-    echo " Update Summary"
-    echo "========================================"
-    echo "[ OK ] Repo updated"
-    echo "[ OK ] Files deployed to Phoniebox"
-    echo
-    echo "Update completed successfully."
-}
+printf "***************************************************\n"
 
-main() {
-    print_banner
-    print_header
-    require_commands
-    check_paths
-    abort_merge_if_needed
-    update_repo
-    deploy_files
-    show_revision
-    show_summary
-}
-
-main
+if [ "$ERRORS" -eq 0 ]; then
+    printf "***  - All operations completed successfully. - ***\n"
+    printf "***************************************************\n\n"
+    exit 0
+else
+    printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
+    printf "***************************************************\n\n"
+    exit 1
+fi
