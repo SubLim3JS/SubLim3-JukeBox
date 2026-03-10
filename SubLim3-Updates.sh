@@ -1,8 +1,8 @@
-cat > ~/SubLim3-JukeBox/SubLim3-Updates.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
 REPO_DIR="$HOME/SubLim3-JukeBox"
+TARGET_DIR="$HOME/RPi-Jukebox-RFID"
 BRANCH="main"
 
 print_banner() {
@@ -40,22 +40,38 @@ log_fail() {
     echo "[FAIL] $1"
 }
 
-require_git() {
-    if command -v git >/dev/null 2>&1; then
-        log_ok "git is installed"
-    else
-        log_fail "git is not installed"
-        echo "Install with:"
-        echo "  sudo apt update && sudo apt install -y git"
+require_commands() {
+    local missing=0
+
+    for cmd in git rsync; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            log_ok "$cmd is installed"
+        else
+            log_fail "$cmd is not installed"
+            missing=1
+        fi
+    done
+
+    if [[ "$missing" -ne 0 ]]; then
+        echo
+        echo "Install missing packages with:"
+        echo "  sudo apt update && sudo apt install -y git rsync"
         exit 1
     fi
 }
 
-check_repo() {
+check_paths() {
     if [[ -d "$REPO_DIR/.git" ]]; then
-        log_ok "Git repo found at $REPO_DIR"
+        log_ok "Repo found at $REPO_DIR"
     else
-        log_fail "Git repo not found at $REPO_DIR"
+        log_fail "Repo not found at $REPO_DIR"
+        exit 1
+    fi
+
+    if [[ -d "$TARGET_DIR" ]]; then
+        log_ok "Target found at $TARGET_DIR"
+    else
+        log_fail "Target not found at $TARGET_DIR"
         exit 1
     fi
 }
@@ -65,36 +81,42 @@ abort_merge_if_needed() {
 
     if git rev-parse --verify MERGE_HEAD >/dev/null 2>&1; then
         log_info "Unfinished merge detected. Aborting it..."
-        if git merge --abort >/dev/null 2>&1; then
-            log_ok "Previous merge aborted"
-        else
-            log_fail "Could not abort previous merge"
-            exit 1
-        fi
+        git merge --abort >/dev/null 2>&1 || true
+        log_ok "Previous merge aborted"
     else
         log_ok "No unfinished merge detected"
     fi
 }
 
-fetch_latest() {
+update_repo() {
     cd "$REPO_DIR"
+
     log_info "Fetching latest changes from origin/$BRANCH..."
     git fetch origin "$BRANCH" --prune
     log_ok "Fetched latest changes"
+
+    log_info "Resetting local repo to origin/$BRANCH..."
+    git reset --hard "origin/$BRANCH" >/dev/null
+    log_ok "Repo reset to origin/$BRANCH"
+
+    log_info "Removing untracked files from repo..."
+    git clean -fd >/dev/null
+    log_ok "Untracked repo files removed"
 }
 
-reset_to_origin() {
-    cd "$REPO_DIR"
-    log_info "Force resetting local repo to origin/$BRANCH..."
-    git reset --hard "origin/$BRANCH"
-    log_ok "Local repo reset to origin/$BRANCH"
-}
+deploy_files() {
+    log_info "Deploying updated files to $TARGET_DIR..."
 
-clean_repo() {
-    cd "$REPO_DIR"
-    log_info "Removing untracked files and folders..."
-    git clean -fd
-    log_ok "Untracked files removed"
+    rsync -rlD --delete \
+        --exclude ".git" \
+        --exclude ".gitignore" \
+        --exclude "README.md" \
+        --exclude "install-jukebox.sh" \
+        --exclude "SubLim3-Audio.sh" \
+        --exclude "SubLim3-Updates.sh" \
+        "$REPO_DIR/" "$TARGET_DIR/"
+
+    log_ok "Files deployed to $TARGET_DIR"
 }
 
 show_revision() {
@@ -117,21 +139,22 @@ show_summary() {
     echo "========================================"
     echo " Update Summary"
     echo "========================================"
-    echo "[ OK ] Update completed successfully."
+    echo "[ OK ] Repo updated"
+    echo "[ OK ] Files deployed to Phoniebox"
+    echo
+    echo "Update completed successfully."
 }
 
 main() {
     print_banner
     print_header
-    require_git
-    check_repo
+    require_commands
+    check_paths
     abort_merge_if_needed
-    fetch_latest
-    reset_to_origin
-    clean_repo
+    update_repo
+    deploy_files
     show_revision
     show_summary
 }
 
 main
-EOF
