@@ -5,8 +5,7 @@ REPO_URL="https://github.com/SubLim3JS/SubLim3-JukeBox-Audio.git"
 BRANCH="main"
 
 DEST_BASE="$HOME/RPi-Jukebox-RFID/shared/audiofolders"
-SCRIPT_DIR="$HOME"
-WORKDIR="$SCRIPT_DIR/.SubLim3-Audio-temp"
+WORKDIR="$HOME/.SubLim3-Audio-temp"
 REPO_DIR="$WORKDIR/repo"
 
 BATTLE_SRC="audiofolders/Battle Music"
@@ -23,7 +22,7 @@ RADIO_SRCS=(
 )
 
 print_banner() {
-    printf "
+printf "
 .
 .
 .
@@ -38,352 +37,320 @@ print_banner() {
 }
 
 print_header() {
-    echo
-    echo "========================================"
-    echo " SubLim3 Audio Sync Utility"
-    echo "========================================"
-    echo
+echo
+echo "========================================"
+echo " SubLim3 Audio Sync Utility"
+echo "========================================"
+echo
 }
 
 require_commands() {
-    for cmd in git rsync; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            echo "ERROR: Missing required command: $cmd"
-            echo "Install with:"
-            echo "  sudo apt update && sudo apt install -y git rsync"
-            exit 1
-        fi
-    done
+for cmd in git rsync; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "ERROR: Missing required command: $cmd"
+        echo "Install with:"
+        echo "sudo apt update && sudo apt install -y git rsync"
+        exit 1
+    fi
+done
 }
 
 prepare_dest() {
-    mkdir -p "$DEST_BASE"
+mkdir -p "$DEST_BASE"
 }
 
 prepare_repo() {
-    echo
-    echo "Refreshing audio repository..."
 
-    rm -rf "$WORKDIR"
-    mkdir -p "$WORKDIR"
+echo
+echo "Refreshing audio repository..."
 
-    git clone --filter=blob:none --no-checkout "$REPO_URL" "$REPO_DIR"
-    cd "$REPO_DIR"
+rm -rf "$WORKDIR"
+mkdir -p "$WORKDIR"
 
-    git sparse-checkout init --cone
-    git checkout "$BRANCH" >/dev/null 2>&1
+git clone --filter=blob:none --no-checkout "$REPO_URL" "$REPO_DIR"
+
+cd "$REPO_DIR"
+
+git sparse-checkout init --cone
+git checkout "$BRANCH" >/dev/null 2>&1
 }
 
 folder_name_from_path() {
-    local rel_path="$1"
-    basename "$rel_path"
+basename "$1"
 }
 
 folder_installed() {
-    local rel_path="$1"
-    local folder_name
-    folder_name="$(folder_name_from_path "$rel_path")"
-    [[ -d "$DEST_BASE/$folder_name" ]]
+local folder
+folder=$(folder_name_from_path "$1")
+[[ -d "$DEST_BASE/$folder" ]]
 }
 
 radio_installed() {
-    local rel_path
-    for rel_path in "${RADIO_SRCS[@]}"; do
-        if ! folder_installed "$rel_path"; then
-            return 1
-        fi
-    done
-    return 0
+for r in "${RADIO_SRCS[@]}"; do
+    if ! folder_installed "$r"; then
+        return 1
+    fi
+done
+return 0
 }
 
 show_main_menu() {
-    echo "Audio Packages"
-    echo
 
-    if folder_installed "$BATTLE_SRC"; then
-        echo "1) Battle Music      [INSTALLED]"
-    else
-        echo "1) Battle Music      [AVAILABLE]"
-    fi
+echo "Audio Packages"
+echo
 
-    if folder_installed "$TOWN_SRC"; then
-        echo "2) Town Music        [INSTALLED]"
-    else
-        echo "2) Town Music        [AVAILABLE]"
-    fi
+if folder_installed "$BATTLE_SRC"; then
+echo "1) Battle Music      [INSTALLED]"
+else
+echo "1) Battle Music      [AVAILABLE]"
+fi
 
-    if folder_installed "$TRAVELERS_SRC"; then
-        echo "3) Travelers Themes  [INSTALLED]"
-    else
-        echo "3) Travelers Themes  [AVAILABLE]"
-    fi
+if folder_installed "$TOWN_SRC"; then
+echo "2) Town Music        [INSTALLED]"
+else
+echo "2) Town Music        [AVAILABLE]"
+fi
 
-    if radio_installed; then
-        echo "4) Radio Stations    [INSTALLED]"
-    else
-        echo "4) Radio Stations    [AVAILABLE]"
-    fi
+if folder_installed "$TRAVELERS_SRC"; then
+echo "3) Travelers Themes  [INSTALLED]"
+else
+echo "3) Travelers Themes  [AVAILABLE]"
+fi
 
-    echo
-    echo "M) Add missing to ALL folders"
-    echo "F) Force update ALL folders"
-    echo "Q) Quit"
-    echo
+if radio_installed; then
+echo "4) Radio Stations    [INSTALLED]"
+else
+echo "4) Radio Stations    [AVAILABLE]"
+fi
+
+echo
+echo "M) Add missing to ALL folders"
+echo "F) Force update ALL folders"
+echo "Q) Quit"
+echo
 }
 
 show_submenu() {
-    local label="$1"
 
-    echo
-    echo "$label"
-    echo "A) Add missing only"
-    echo "F) Force update / overwrite"
-    echo "B) Back"
-    echo
+echo
+echo "$1"
+echo "A) Add missing only"
+echo "F) Force update / overwrite"
+echo "B) Back"
+echo
 }
 
-sync_folder_missing_only() {
-    local rel_path="$1"
-    local folder_name
-    folder_name="$(folder_name_from_path "$rel_path")"
+sync_missing() {
 
-    if [[ ! -d "$REPO_DIR/$rel_path" ]]; then
-        echo "ERROR: Source folder not found:"
-        echo "  $REPO_DIR/$rel_path"
-        return 1
-    fi
+local rel="$1"
+local folder
+folder=$(folder_name_from_path "$rel")
 
-    mkdir -p "$DEST_BASE/$folder_name"
+mkdir -p "$DEST_BASE/$folder"
 
-    echo
-    echo "Adding missing files for: $folder_name"
-    echo "From: $REPO_DIR/$rel_path"
-    echo "To:   $DEST_BASE/$folder_name"
-    echo
+echo
+echo "Adding missing files for: $folder"
 
-    rsync -rltD --no-owner --no-group --ignore-existing --info=progress2 \
-        "$REPO_DIR/$rel_path/" \
-        "$DEST_BASE/$folder_name/"
-
-    echo
-    echo "Done syncing: $folder_name"
+rsync -rlD --no-owner --no-group --ignore-existing --info=progress2 \
+"$REPO_DIR/$rel/" \
+"$DEST_BASE/$folder/"
 }
 
-sync_folder_force_update() {
-    local rel_path="$1"
-    local folder_name
-    folder_name="$(folder_name_from_path "$rel_path")"
+sync_force() {
 
-    if [[ ! -d "$REPO_DIR/$rel_path" ]]; then
-        echo "ERROR: Source folder not found:"
-        echo "  $REPO_DIR/$rel_path"
-        return 1
-    fi
+local rel="$1"
+local folder
+folder=$(folder_name_from_path "$rel")
 
-    mkdir -p "$DEST_BASE/$folder_name"
+mkdir -p "$DEST_BASE/$folder"
 
-    echo
-    echo "Force updating files for: $folder_name"
-    echo "From: $REPO_DIR/$rel_path"
-    echo "To:   $DEST_BASE/$folder_name"
-    echo
+echo
+echo "Force updating files for: $folder"
 
-    rsync -rltD --no-owner --no-group --delete --info=progress2 \
-        "$REPO_DIR/$rel_path/" \
-        "$DEST_BASE/$folder_name/"
-
-    echo
-    echo "Done force updating: $folder_name"
+rsync -rlD --no-owner --no-group --delete --info=progress2 \
+"$REPO_DIR/$rel/" \
+"$DEST_BASE/$folder/"
 }
 
 checkout_folder() {
-    local rel_path="$1"
 
-    cd "$REPO_DIR"
-    git sparse-checkout set "$rel_path"
-    git checkout "$BRANCH" >/dev/null 2>&1
+cd "$REPO_DIR"
+
+git sparse-checkout set "$1"
+
+git checkout "$BRANCH" >/dev/null 2>&1
 }
 
-checkout_multiple_folders() {
-    cd "$REPO_DIR"
-    git sparse-checkout set "$@"
-    git checkout "$BRANCH" >/dev/null 2>&1
+checkout_multiple() {
+
+cd "$REPO_DIR"
+
+git sparse-checkout set "$@"
+
+git checkout "$BRANCH" >/dev/null 2>&1
 }
 
-process_folder_action() {
-    local rel_path="$1"
-    local action="$2"
+process_folder() {
 
-    checkout_folder "$rel_path"
+local rel="$1"
+local mode="$2"
 
-    case "$action" in
-        A|a)
-            sync_folder_missing_only "$rel_path"
-            ;;
-        F|f)
-            sync_folder_force_update "$rel_path"
-            ;;
-        *)
-            echo "Invalid action."
-            return 1
-            ;;
-    esac
+checkout_folder "$rel"
+
+if [[ "$mode" == "A" ]]; then
+sync_missing "$rel"
+else
+sync_force "$rel"
+fi
 }
 
-process_radio_action() {
-    local action="$1"
-    local rel_path
+process_radio() {
 
-    checkout_multiple_folders "${RADIO_SRCS[@]}"
+local mode="$1"
 
-    for rel_path in "${RADIO_SRCS[@]}"; do
-        case "$action" in
-            A|a)
-                sync_folder_missing_only "$rel_path"
-                ;;
-            F|f)
-                sync_folder_force_update "$rel_path"
-                ;;
-            *)
-                echo "Invalid action."
-                return 1
-                ;;
-        esac
-    done
+checkout_multiple "${RADIO_SRCS[@]}"
+
+for r in "${RADIO_SRCS[@]}"; do
+    if [[ "$mode" == "A" ]]; then
+        sync_missing "$r"
+    else
+        sync_force "$r"
+    fi
+done
 }
 
-folder_submenu_loop() {
-    local label="$1"
-    local rel_path="$2"
+folder_menu() {
 
-    while true; do
-        print_banner
-        print_header
-        show_submenu "$label"
+local name="$1"
+local rel="$2"
 
-        read -rp "Select option: " subchoice
+while true; do
 
-        case "$subchoice" in
-            A|a)
-                process_folder_action "$rel_path" "A"
-                echo
-                read -rp "Press Enter to continue..."
-                return
-                ;;
-            F|f)
-                process_folder_action "$rel_path" "F"
-                echo
-                read -rp "Press Enter to continue..."
-                return
-                ;;
-            B|b)
-                return
-                ;;
-            *)
-                echo
-                echo "Invalid selection."
-                read -rp "Press Enter to continue..."
-                ;;
-        esac
-    done
+print_banner
+print_header
+show_submenu "$name"
+
+read -rp "Select option: " c
+
+case "$c" in
+A|a)
+process_folder "$rel" "A"
+read -rp "Press Enter to continue..."
+return
+;;
+F|f)
+process_folder "$rel" "F"
+read -rp "Press Enter to continue..."
+return
+;;
+B|b)
+return
+;;
+*)
+echo "Invalid selection"
+sleep 1
+;;
+esac
+
+done
 }
 
-radio_submenu_loop() {
-    while true; do
-        print_banner
-        print_header
-        show_submenu "Radio Stations"
+radio_menu() {
 
-        read -rp "Select option: " subchoice
+while true; do
 
-        case "$subchoice" in
-            A|a)
-                process_radio_action "A"
-                echo
-                read -rp "Press Enter to continue..."
-                return
-                ;;
-            F|f)
-                process_radio_action "F"
-                echo
-                read -rp "Press Enter to continue..."
-                return
-                ;;
-            B|b)
-                return
-                ;;
-            *)
-                echo
-                echo "Invalid selection."
-                read -rp "Press Enter to continue..."
-                ;;
-        esac
-    done
+print_banner
+print_header
+show_submenu "Radio Stations"
+
+read -rp "Select option: " c
+
+case "$c" in
+A|a)
+process_radio "A"
+read -rp "Press Enter to continue..."
+return
+;;
+F|f)
+process_radio "F"
+read -rp "Press Enter to continue..."
+return
+;;
+B|b)
+return
+;;
+*)
+echo "Invalid selection"
+sleep 1
+;;
+esac
+
+done
 }
 
 add_missing_all() {
-    process_folder_action "$BATTLE_SRC" "A"
-    process_folder_action "$TOWN_SRC" "A"
-    process_folder_action "$TRAVELERS_SRC" "A"
-    process_radio_action "A"
+
+process_folder "$BATTLE_SRC" A
+process_folder "$TOWN_SRC" A
+process_folder "$TRAVELERS_SRC" A
+process_radio A
 }
 
 force_update_all() {
-    process_folder_action "$BATTLE_SRC" "F"
-    process_folder_action "$TOWN_SRC" "F"
-    process_folder_action "$TRAVELERS_SRC" "F"
-    process_radio_action "F"
+
+process_folder "$BATTLE_SRC" F
+process_folder "$TOWN_SRC" F
+process_folder "$TRAVELERS_SRC" F
+process_radio F
 }
 
 main() {
-    trap 'rm -rf "$WORKDIR"' EXIT
 
-    require_commands
-    prepare_dest
-    prepare_repo
+trap 'rm -rf "$WORKDIR"' EXIT
 
-    while true; do
-        print_banner
-        print_header
-        show_main_menu
+require_commands
+prepare_dest
+prepare_repo
 
-        read -rp "Select option: " choice
+while true; do
 
-        case "$choice" in
-            1)
-                folder_submenu_loop "Battle Music" "$BATTLE_SRC"
-                ;;
-            2)
-                folder_submenu_loop "Town Music" "$TOWN_SRC"
-                ;;
-            3)
-                folder_submenu_loop "Travelers Themes" "$TRAVELERS_SRC"
-                ;;
-            4)
-                radio_submenu_loop
-                ;;
-            M|m)
-                add_missing_all
-                echo
-                read -rp "Press Enter to continue..."
-                ;;
-            F|f)
-                force_update_all
-                echo
-                read -rp "Press Enter to continue..."
-                ;;
-            Q|q)
-                echo
-                echo "Exiting."
-                exit 0
-                ;;
-            *)
-                echo
-                echo "Invalid selection."
-                read -rp "Press Enter to continue..."
-                ;;
-        esac
-    done
+print_banner
+print_header
+show_main_menu
+
+read -rp "Select option: " choice
+
+case "$choice" in
+1)
+folder_menu "Battle Music" "$BATTLE_SRC"
+;;
+2)
+folder_menu "Town Music" "$TOWN_SRC"
+;;
+3)
+folder_menu "Travelers Themes" "$TRAVELERS_SRC"
+;;
+4)
+radio_menu
+;;
+M|m)
+add_missing_all
+read -rp "Press Enter to continue..."
+;;
+F|f)
+force_update_all
+read -rp "Press Enter to continue..."
+;;
+Q|q)
+exit 0
+;;
+*)
+echo "Invalid selection"
+sleep 1
+;;
+esac
+
+done
 }
 
 main
