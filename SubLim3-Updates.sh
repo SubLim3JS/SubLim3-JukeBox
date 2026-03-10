@@ -2,8 +2,13 @@
 set -euo pipefail
 
 REPO_DIR="$HOME/SubLim3-JukeBox"
+BRANCH="main"
 
 print_banner() {
+    if [[ -t 1 ]] && [[ -n "${TERM:-}" ]] && command -v tput >/dev/null 2>&1; then
+        tput clear 2>/dev/null || true
+    fi
+
     printf "
 .
 .
@@ -16,7 +21,6 @@ print_banner() {
 .
 .
 "
-    sleep 1
 }
 
 print_header() {
@@ -38,84 +42,47 @@ require_commands() {
 
 check_repo() {
     if [[ ! -d "$REPO_DIR/.git" ]]; then
-        echo "ERROR: Repo not found at:"
+        echo "ERROR: Git repo not found at:"
         echo "  $REPO_DIR"
         exit 1
     fi
 }
 
-show_menu() {
-    echo "1) Update SubLim3-JukeBox repo"
-    echo "2) Show git status"
-    echo "3) Show current branch"
-    echo "Q) Quit"
+force_update_repo() {
+    echo "Updating repo at:"
+    echo "  $REPO_DIR"
     echo
-}
 
-update_repo() {
-    echo
-    echo "Updating repo..."
     cd "$REPO_DIR"
 
     if git rev-parse --verify MERGE_HEAD >/dev/null 2>&1; then
-        echo "Merge conflict state detected. Aborting previous merge first..."
+        echo "Aborting unfinished merge..."
         git merge --abort || true
+        echo
     fi
 
-    git fetch --all --prune
-    git pull --ff-only
+    echo "Fetching latest changes..."
+    git fetch origin "$BRANCH" --prune
 
     echo
-    echo "Repo updated successfully."
-}
+    echo "Force resetting local repo to origin/$BRANCH..."
+    git reset --hard "origin/$BRANCH"
 
-show_status() {
     echo
-    cd "$REPO_DIR"
-    git status
-}
+    echo "Removing untracked files and folders..."
+    git clean -fd
 
-show_branch() {
     echo
-    cd "$REPO_DIR"
-    git branch --show-current
+    echo "Update complete."
+    echo "Repo is now synced to origin/$BRANCH."
 }
 
 main() {
+    print_banner
+    print_header
     require_commands
     check_repo
-
-    while true; do
-        print_banner
-        print_header
-        show_menu
-
-        read -rp "Select option: " choice
-
-        case "$choice" in
-            1)
-                update_repo
-                ;;
-            2)
-                show_status
-                ;;
-            3)
-                show_branch
-                ;;
-            Q|q)
-                echo
-                echo "Exiting."
-                exit 0
-                ;;
-            *)
-                echo
-                echo "Invalid selection."
-                ;;
-        esac
-
-        echo
-        read -rp "Press Enter to continue..."
-    done
+    force_update_repo
 }
 
 main
