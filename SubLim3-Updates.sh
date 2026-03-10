@@ -4,7 +4,6 @@ set -euo pipefail
 REPO_DIR="$HOME/SubLim3-JukeBox"
 
 print_banner() {
-    clear
     printf "
 .
 .
