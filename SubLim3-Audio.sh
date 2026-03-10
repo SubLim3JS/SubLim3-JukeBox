@@ -125,6 +125,18 @@ show_main_menu() {
         echo "4) Radio Stations    [AVAILABLE]"
     fi
 
+    if test1_installed; then
+        echo "4) TEST1    [INSTALLED]"
+    else
+        echo "4) TEST1    [AVAILABLE]"
+    fi
+
+    if test2_installed; then
+        echo "4) Test2    [INSTALLED]"
+    else
+        echo "4) Test2    [AVAILABLE]"
+    fi
+
     echo
     echo "M) Add missing to ALL folders"
     echo "F) Force update ALL folders"
