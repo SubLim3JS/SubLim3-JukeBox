@@ -1,3 +1,4 @@
+cat > ~/SubLim3-JukeBox/SubLim3-Updates.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -5,10 +6,6 @@ REPO_DIR="$HOME/SubLim3-JukeBox"
 BRANCH="main"
 
 print_banner() {
-    if [[ -t 1 ]] && [[ -n "${TERM:-}" ]] && command -v tput >/dev/null 2>&1; then
-        tput clear 2>/dev/null || true
-    fi
-
     printf "
 .
 .
@@ -137,3 +134,4 @@ main() {
 }
 
 main
+EOF
