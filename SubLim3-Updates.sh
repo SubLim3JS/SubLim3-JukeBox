@@ -107,6 +107,26 @@ copy_with_backup "$SOURCE_DIR/version-number" \
 "$TARGET_DIR/settings/version-number" \
 "version-number"
 
+# ------------------------------------------------
+# Icons
+# ------------------------------------------------
+
+copy_with_backup "$SOURCE_DIR/Lidarr-Icon.jpg" \
+"$TARGET_DIR/htdocs/_assets/icons/Lidarr-Icon.jpg" \
+"Lidarr-Icon.jpg"
+
+copy_with_backup "$SOURCE_DIR/favicon-16x16.png" \
+"$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" \
+"favicon-16x16.png"
+
+copy_with_backup "$SOURCE_DIR/favicon-32x32.png" \
+"$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" \
+"favicon-32x32.png"
+
+copy_with_backup "$SOURCE_DIR/favicon-96x96.png" \
+"$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" \
+"favicon-96x96.png"
+
 printf "***************************************************\n"
 
 if [ "$ERRORS" -eq 0 ]; then
