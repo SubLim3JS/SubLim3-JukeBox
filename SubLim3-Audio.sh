@@ -118,9 +118,9 @@ echo "3) Travelers Themes  [AVAILABLE]"
 fi
 
 if radio_installed; then
-echo "4) Radio Stations    [INSTALLED]"
+echo "9) Radio Stations    [INSTALLED]"
 else
-echo "4) Radio Stations    [AVAILABLE]"
+echo "9) Radio Stations    [AVAILABLE]"
 fi
 
 echo
@@ -330,7 +330,7 @@ folder_menu "Town Music" "$TOWN_SRC"
 3)
 folder_menu "Travelers Themes" "$TRAVELERS_SRC"
 ;;
-4)
+9)
 radio_menu
 ;;
 M|m)
