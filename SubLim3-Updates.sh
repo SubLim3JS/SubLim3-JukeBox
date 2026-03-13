@@ -83,6 +83,10 @@ copy_with_backup "$SOURCE_DIR/lang-en-UK.php" \
 "$TARGET_DIR/htdocs/lang/lang-en-UK.php" \
 "lang-en-UK.php"
 
+copy_with_backup "$SOURCE_DIR/readIP.php" \
+"$TARGET_DIR/htdocs/readIP.php" \
+"readIP.php"
+
 copy_with_backup "$SOURCE_DIR/search.php" \
 "$TARGET_DIR/htdocs/search.php" \
 "search.php"
@@ -98,10 +102,6 @@ copy_with_backup "$SOURCE_DIR/systemInfo.php" \
 copy_with_backup "$SOURCE_DIR/update.php" \
 "$TARGET_DIR/htdocs/update.php" \
 "update.php"
-
-copy_with_backup "$SOURCE_DIR/readIP.php" \
-"$TARGET_DIR/htdocs/readIP.php" \
-"readIP.php"
 
 copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
 "$TARGET_DIR/settings/gpio-buttons.py" \
@@ -139,6 +139,6 @@ if [ "$ERRORS" -eq 0 ]; then
     exit 0
 else
     printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
-    printf "***************************************************\n\n" "$ERRORS"
+    printf "***************************************************\n\n"
     exit 1
 fi
