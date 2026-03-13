@@ -99,6 +99,10 @@ copy_with_backup "$SOURCE_DIR/update.php" \
 "$TARGET_DIR/htdocs/update.php" \
 "update.php"
 
+copy_with_backup "$SOURCE_DIR/readIP.php" \
+"$TARGET_DIR/htdocs/readIP.php" \
+"readIP.php"
+
 copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
 "$TARGET_DIR/settings/gpio-buttons.py" \
 "gpio-buttons.py"
@@ -135,6 +139,6 @@ if [ "$ERRORS" -eq 0 ]; then
     exit 0
 else
     printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
-    printf "***************************************************\n\n"
+    printf "***************************************************\n\n" "$ERRORS"
     exit 1
 fi
