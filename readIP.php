@@ -1,9 +1,5 @@
 <?php
-
-require_once("func.php");
-
 function getWifiIp() {
-
     $ip = trim(shell_exec("hostname -I | awk '{print $1}'"));
 
     if (!empty($ip)) {
@@ -22,70 +18,64 @@ function getWifiIp() {
 $ipAddress = getWifiIp();
 
 shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/playout_controls.sh -c=readwifiipoverspeaker >/dev/null 2>&1 &");
-
-include("header.php");
 ?>
-
-<div class="container">
-
-    <h2>SubLim3 JukeBox IP Address</h2>
-
-    <p>The jukebox is speaking the IP address out loud.</p>
-
-    <div style="font-size:32px;font-weight:bold;margin-top:20px;">
-        <?php echo htmlspecialchars($ipAddress); ?>
-    </div>
-
-    <br><br>
-
-    <a class="btn btn-primary" href="index.php">Return to Home</a>
-
-</div>
-
-<?php
-include("footer.php");
-?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read IP Address</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .card {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 28px;
+        }
+        .ip {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin: 20px 0;
+            word-break: break-word;
+        }
+        .note {
+            font-size: 16px;
+            color: #555;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 20px;
+            background: #2e7d32;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+        }
+        .btn:hover {
+            background: #256628;
+        }
+    </style>
+</head>
 <body>
-<div class="container">
-
-<?php include("inc.navigation.php"); ?>
-
-<div class="panel-group">
-  <div class="panel panel-default">
-
-    <div class="panel-heading">
-      <h4 class="panel-title">
-        <i class='mdi mdi-update'></i> SubLim3-JukeBox Update
-      </h4>
+    <div class="card">
+        <h1>SubLim3 JukeBox IP Address</h1>
+        <div class="ip"><?php echo htmlspecialchars($ipAddress); ?></div>
+        <div class="note">The jukebox is now speaking this IP address out loud.</div>
+        <a class="btn" href="index.php">Back to Home</a>
     </div>
-
-    <div class="panel-body">
-
-<?php
-
-$repoDir = "/home/pi/SubLim3-JukeBox";
-$cmd = "sudo -u pi bash -c 'cd $repoDir && git pull -q origin main && bash SubLim3-Updates.sh' 2>&1";
-
-exec($cmd, $output, $returnCode);
-
-echo "<pre>";
-foreach ($output as $line) {
-    echo htmlspecialchars($line) . "\n";
-}
-echo "</pre>";
-
-if ($returnCode === 0) {
-    echo "<div class='alert alert-success'>Update completed successfully.</div>";
-} else {
-    echo "<div class='alert alert-danger'>Update failed or completed with errors.</div>";
-}
-
-?>
-
-    </div>
-  </div>
-</div>
-
-</div>
 </body>
 </html>
