@@ -1,47 +1,90 @@
 <?php
+require_once("inc.header.php");
 
-require_once("func.php");
-
+/*
+ * Get WiFi IP address
+ */
 function getWifiIp() {
 
-    $ip = trim(shell_exec("hostname -I | awk '{print $1}'"));
+    $ip = trim(shell_exec("ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
 
     if (!empty($ip)) {
         return $ip;
     }
 
-    $ip = trim(shell_exec("ip -4 addr show wlan0 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
+    $ip = trim(shell_exec("hostname -I 2>/dev/null | awk '{print $1}'"));
 
     if (!empty($ip)) {
         return $ip;
     }
 
-    return "Not connected";
+    return "No network connection detected";
 }
 
 $ipAddress = getWifiIp();
 
+/*
+ * Trigger Phoniebox to read the IP address aloud
+ */
 shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/playout_controls.sh -c=readwifiipoverspeaker >/dev/null 2>&1 &");
 
-include("header.php");
 ?>
 
 <div class="container">
 
-    <h2>SubLim3 JukeBox IP Address</h2>
+<div class="row">
+<div class="col-lg-12">
 
-    <p>The jukebox is speaking the IP address out loud.</p>
+<div class="panel panel-primary">
 
-    <div style="font-size:32px;font-weight:bold;margin-top:20px;">
-        <?php echo htmlspecialchars($ipAddress); ?>
-    </div>
+<div class="panel-heading">
+<h3 class="panel-title">
+<i class='fa fa-volume-up'></i> Read JukeBox IP Address
+</h3>
+</div>
 
-    <br><br>
+<div class="panel-body">
 
-    <a class="btn btn-primary" href="index.php">Return to Home</a>
+<pre style="font-size:16px">
+
+.
+.
+.
+.    ___      _    _    _       ____     _      _       ___
+.   / __|_  _| |__| |  (_)_ __ |__ /  _ | |_  _| |_____| _ ) _____ __
+.   \__ \ || | '_ \ |__| | '  \ |_ \ | || | || | / / -_) _ \/ _ \ \ /
+.   |___/\_,_|_.__/____|_|_|_|_|___/  \__/ \_,_|_\_\___|___/\___/_\_\
+.
+.
+.
+
+Speaking WiFi IP address through the speaker...
+
+--------------------------------------------------
+
+JukeBox IP Address:
+
+<?php echo $ipAddress; ?>
+
+
+You can connect to the JukeBox admin interface using:
+
+http://<?php echo $ipAddress; ?>
+
+
+--------------------------------------------------
+
+IP address has been spoken through the speaker.
+
+</pre>
+
+</div>
+</div>
+</div>
+</div>
 
 </div>
 
 <?php
-include("footer.php");
+include("inc.footer.php");
 ?>
