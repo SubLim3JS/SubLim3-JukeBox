@@ -12,6 +12,12 @@ BATTLE_SRC="audiofolders/Battle Music"
 TOWN_SRC="audiofolders/Town Music"
 TRAVELERS_SRC="audiofolders/Travelers Themes"
 
+SAMPLE_THEME_SRCS=(
+    "audiofolders/Harry Potter"
+    "audiofolders/Marvel"
+    "audiofolders/Star Wars"
+)
+
 RADIO_SRCS=(
     "audiofolders/101-The-Beat"
     "audiofolders/1059-The-Rock"
@@ -60,7 +66,6 @@ mkdir -p "$DEST_BASE"
 }
 
 prepare_repo() {
-
 echo
 echo "Refreshing audio repository..."
 
@@ -94,33 +99,47 @@ done
 return 0
 }
 
-show_main_menu() {
+sample_themes_installed() {
+for s in "${SAMPLE_THEME_SRCS[@]}"; do
+    if ! folder_installed "$s"; then
+        return 1
+    fi
+done
+return 0
+}
 
+show_main_menu() {
 echo "Audio Packages"
 echo
 
 if folder_installed "$BATTLE_SRC"; then
-echo "1) Battle Music      [INSTALLED]"
+echo "1) Battle Music        [INSTALLED]"
 else
-echo "1) Battle Music      [AVAILABLE]"
+echo "1) Battle Music        [AVAILABLE]"
 fi
 
 if folder_installed "$TOWN_SRC"; then
-echo "2) Town Music        [INSTALLED]"
+echo "2) Town Music          [INSTALLED]"
 else
-echo "2) Town Music        [AVAILABLE]"
+echo "2) Town Music          [AVAILABLE]"
 fi
 
 if folder_installed "$TRAVELERS_SRC"; then
-echo "3) Travelers Themes  [INSTALLED]"
+echo "3) Travelers Themes    [INSTALLED]"
 else
-echo "3) Travelers Themes  [AVAILABLE]"
+echo "3) Travelers Themes    [AVAILABLE]"
+fi
+
+if sample_themes_installed; then
+echo "8) Sample Theme Music  [INSTALLED]"
+else
+echo "8) Sample Theme Music  [AVAILABLE]"
 fi
 
 if radio_installed; then
-echo "9) Radio Stations    [INSTALLED]"
+echo "9) Radio Stations      [INSTALLED]"
 else
-echo "9) Radio Stations    [AVAILABLE]"
+echo "9) Radio Stations      [AVAILABLE]"
 fi
 
 echo
@@ -131,7 +150,6 @@ echo
 }
 
 show_submenu() {
-
 echo
 echo "$1"
 echo "A) Add missing only"
@@ -141,7 +159,6 @@ echo
 }
 
 sync_missing() {
-
 local rel="$1"
 local folder
 folder=$(folder_name_from_path "$rel")
@@ -157,7 +174,6 @@ rsync -rlD --no-owner --no-group --ignore-existing --info=progress2 \
 }
 
 sync_force() {
-
 local rel="$1"
 local folder
 folder=$(folder_name_from_path "$rel")
@@ -173,39 +189,31 @@ rsync -rlD --no-owner --no-group --delete --info=progress2 \
 }
 
 checkout_folder() {
-
 cd "$REPO_DIR"
-
 git sparse-checkout set "$1"
-
 git checkout "$BRANCH" >/dev/null 2>&1
 }
 
 checkout_multiple() {
-
 cd "$REPO_DIR"
-
 git sparse-checkout set "$@"
-
 git checkout "$BRANCH" >/dev/null 2>&1
 }
 
 process_folder() {
-
 local rel="$1"
 local mode="$2"
 
 checkout_folder "$rel"
 
 if [[ "$mode" == "A" ]]; then
-sync_missing "$rel"
+    sync_missing "$rel"
 else
-sync_force "$rel"
+    sync_force "$rel"
 fi
 }
 
 process_radio() {
-
 local mode="$1"
 
 checkout_multiple "${RADIO_SRCS[@]}"
@@ -219,13 +227,25 @@ for r in "${RADIO_SRCS[@]}"; do
 done
 }
 
-folder_menu() {
+process_sample_themes() {
+local mode="$1"
 
+checkout_multiple "${SAMPLE_THEME_SRCS[@]}"
+
+for s in "${SAMPLE_THEME_SRCS[@]}"; do
+    if [[ "$mode" == "A" ]]; then
+        sync_missing "$s"
+    else
+        sync_force "$s"
+    fi
+done
+}
+
+folder_menu() {
 local name="$1"
 local rel="$2"
 
 while true; do
-
 print_banner
 print_header
 show_submenu "$name"
@@ -251,14 +271,41 @@ echo "Invalid selection"
 sleep 1
 ;;
 esac
+done
+}
 
+sample_theme_menu() {
+while true; do
+print_banner
+print_header
+show_submenu "Sample Theme Music"
+
+read -rp "Select option: " c
+
+case "$c" in
+A|a)
+process_sample_themes "A"
+read -rp "Press Enter to continue..."
+return
+;;
+F|f)
+process_sample_themes "F"
+read -rp "Press Enter to continue..."
+return
+;;
+B|b)
+return
+;;
+*)
+echo "Invalid selection"
+sleep 1
+;;
+esac
 done
 }
 
 radio_menu() {
-
 while true; do
-
 print_banner
 print_header
 show_submenu "Radio Stations"
@@ -284,28 +331,26 @@ echo "Invalid selection"
 sleep 1
 ;;
 esac
-
 done
 }
 
 add_missing_all() {
-
 process_folder "$BATTLE_SRC" A
 process_folder "$TOWN_SRC" A
 process_folder "$TRAVELERS_SRC" A
+process_sample_themes A
 process_radio A
 }
 
 force_update_all() {
-
 process_folder "$BATTLE_SRC" F
 process_folder "$TOWN_SRC" F
 process_folder "$TRAVELERS_SRC" F
+process_sample_themes F
 process_radio F
 }
 
 main() {
-
 trap 'rm -rf "$WORKDIR"' EXIT
 
 require_commands
@@ -313,7 +358,6 @@ prepare_dest
 prepare_repo
 
 while true; do
-
 print_banner
 print_header
 show_main_menu
@@ -329,6 +373,9 @@ folder_menu "Town Music" "$TOWN_SRC"
 ;;
 3)
 folder_menu "Travelers Themes" "$TRAVELERS_SRC"
+;;
+8)
+sample_theme_menu
 ;;
 9)
 radio_menu
@@ -349,7 +396,6 @@ echo "Invalid selection"
 sleep 1
 ;;
 esac
-
 done
 }
 
