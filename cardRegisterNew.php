@@ -38,7 +38,7 @@ if (!$enabled) {
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>RFID Card | Phoniebox</title>
+        <title>RFID Card | SubLim3-JukeBox</title>
         <link rel="stylesheet" href="_assets/bootstrap-3/css/bootstrap.darkly.css">
         <link rel="stylesheet" href="_assets/css/custom-green.css">
         <style>
@@ -298,9 +298,9 @@ if (!$enabled) {
         <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
         <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
         <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
-        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
         <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
         <li><a href="cardRegisterNew.php" class="mainMenu"><i class='mdi mdi-cards-outline'></i> Card ID</a></li>
+        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
       </ul>
 
       <ul class="nav navbar-nav navbar-right">
