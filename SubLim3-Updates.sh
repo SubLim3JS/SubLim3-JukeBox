@@ -57,6 +57,12 @@ copy_with_backup() {
         printf " - ERROR: Failed to copy %s - \n\n\n" "$label"
         ERRORS=$((ERRORS+1))
     fi
+
+    if [ "$ERRORS" -eq 0 ]; then
+        bash /home/pi/RPi-Jukebox-RFID/scripts/subli-feedback.sh success >/dev/null 2>&1 &
+    else
+        bash /home/pi/RPi-Jukebox-RFID/scripts/subli-feedback.sh error >/dev/null 2>&1 &
+    fi
 }
 
 # ------------------------------------------------
