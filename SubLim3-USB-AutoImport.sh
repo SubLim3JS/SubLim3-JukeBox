@@ -173,7 +173,7 @@ if [[ -z "$LABEL" ]]; then
 fi
 LABEL="$(sanitize_name "$LABEL")"
 
-DEST_DIR="$DEST_ROOT/$LABEL"
+DEST_DIR="$DEST_ROOT"
 PARENT_DISK=$(get_parent_disk "$DEVICE")
 
 log "Mountpoint: $MOUNTPOINT"
