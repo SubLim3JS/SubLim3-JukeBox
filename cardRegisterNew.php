@@ -84,7 +84,7 @@ if (!$enabled) {
     </head>
     <body>
         <div class="card">
-            <h1>Card Registration Disabled</h1>
+            <h1>RFID Registration Disabled</h1>
             <div class="note">Contact your system admin to re-enable it.</div>
             <a class="btn" href="index.php">Back to Home</a>
         </div>
