@@ -75,6 +75,8 @@ if (file_exists($toggleFile)) {
     <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
     <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
 
+    <li><a href="#" class="mainMenu">DEBUG=<?php echo $cardRegisterEnabled ? 'true' : 'false'; ?></a></li>
+
     <?php if ($cardRegisterEnabled): ?>
     <li>
         <a href="cardRegisterNew.php" class="mainMenu">
