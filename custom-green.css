@@ -297,7 +297,6 @@ a:hover {
 
 /* HIDE ADMIN NAV LINKS */
 
-a[href="manageFilesFolders.php"],
-a[href="cardRegisterNew.php"] {
+a[href="manageFilesFolders.php"] {
   display: none !important;
 }
