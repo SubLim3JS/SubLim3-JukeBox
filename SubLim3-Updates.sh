@@ -152,10 +152,12 @@ copy_with_backup "$SOURCE_DIR/favicon-96x96.png" \
 printf "***************************************************\n"
 
 if [ "$ERRORS" -eq 0 ]; then
+    bash /home/pi/RPi-Jukebox-RFID/scripts/subli-feedback.sh success >/dev/null 2>&1 &
     printf "***  - All operations completed successfully. - ***\n"
     printf "***************************************************\n\n"
     exit 0
 else
+    bash /home/pi/RPi-Jukebox-RFID/scripts/subli-feedback.sh error >/dev/null 2>&1 &
     printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
     printf "***************************************************\n\n"
     exit 1
