@@ -103,6 +103,10 @@ copy_with_backup "$SOURCE_DIR/update.php" \
 "$TARGET_DIR/htdocs/update.php" \
 "update.php"
 
+copy_with_backup "$SOURCE_DIR/inc.navigation.php" \
+"$TARGET_DIR/htdocs/inc.navigation.php" \
+"inc.navigation.php"
+
 copy_with_backup "$SOURCE_DIR/cardRegisterNew.php" \
 "$TARGET_DIR/htdocs/cardRegisterNew.php" \
 "cardRegisterNew.php"
