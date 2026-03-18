@@ -62,7 +62,7 @@ if (file_exists($toggleFile) && is_readable($toggleFile)) {
       <ul class="nav navbar-nav">
         <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
 
-        <?php if ($cardRegisterEnabled) { ?>
+        <?php if (true) { ?>
         <li><a href="cardRegisterNew.php" class="mainMenu"><i class='mdi mdi-cards-outline'></i> Card ID</a></li>
         <?php } ?>
 
