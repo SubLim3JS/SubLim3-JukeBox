@@ -3,10 +3,9 @@
 # ============================================================
 # SubLim3 USB Auto Import for Phoniebox
 # ------------------------------------------------------------
-# When triggered with a USB partition device (example: /dev/sda1),
-# this script waits for the USB to mount, imports supported audio
-# files into the Phoniebox audiofolders, beeps on success, then
-# unmounts/ejects the USB.
+# Auto-detects a mounted USB partition, imports supported audio
+# files into the Phoniebox audiofolders root, plays a completion
+# sound, then unmounts/ejects the USB.
 #
 # Usage:
 #   sudo /home/pi/SubLim3-JukeBox/SubLim3-USB-AutoImport.sh /dev/sda1
@@ -17,9 +16,15 @@ set -u
 DEVICE="${1:-}"
 LOG_FILE="/home/pi/SubLim3-JukeBox/logs/usb-auto-import.log"
 LOCK_FILE="/tmp/sublim3-usb-auto-import.lock"
-DEST_ROOT="/home/pi/RPi-Jukebox-RFID/shared/audiofolders/USB-Imports"
+DEST_ROOT="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
+
 PI_USER="pi"
 PI_GROUP="www-data"
+AUDIO_USER="pi"
+
+# Existing sound files
+SUCCESS_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/success.wav"
+ERROR_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/error.wav"
 
 SUPPORTED_EXTENSIONS="mp3|wav|ogg|flac|m4a|aac|opus|webm"
 
@@ -30,24 +35,32 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
 }
 
-beep_tone() {
-    local freq="${1:-1000}"
-    local dur="${2:-0.15}"
-    timeout "$dur" speaker-test -q -t sine -f "$freq" >/dev/null 2>&1
+play_sound() {
+    local sound_file="$1"
+
+    if [[ ! -f "$sound_file" ]]; then
+        log "Sound file not found: $sound_file"
+        return 1
+    fi
+
+    sudo -u "$AUDIO_USER" /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 \
+    || sudo -u "$AUDIO_USER" /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 \
+    || /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 \
+    || /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 \
+    || {
+        log "Audio playback failed for: $sound_file"
+        return 1
+    }
+
+    return 0
 }
 
 success_beep() {
-    beep_tone 1200 0.12
-    sleep 0.06
-    beep_tone 1600 0.16
+    play_sound "$SUCCESS_SOUND"
 }
 
 error_beep() {
-    beep_tone 400 0.18
-    sleep 0.06
-    beep_tone 400 0.18
-    sleep 0.06
-    beep_tone 400 0.22
+    play_sound "$ERROR_SOUND"
 }
 
 sanitize_name() {
@@ -113,18 +126,17 @@ safe_unmount_and_eject() {
     sleep 1
 
     if mountpoint -q "$mountpoint"; then
-        umount "$mountpoint" >> "$LOG_FILE" 2>&1
+        log "Unmounting $mountpoint"
+        umount "$mountpoint" >> "$LOG_FILE" 2>&1 || log "Warning: failed to unmount $mountpoint"
         sleep 1
     fi
 
+    log "Powering off/ejecting $base_disk"
     udisksctl power-off -b "$base_disk" >> "$LOG_FILE" 2>&1 \
         || eject "$base_disk" >> "$LOG_FILE" 2>&1 \
-        || true
+        || log "Warning: failed to power off/eject $base_disk"
 }
 
-# -----------------------------
-# Start
-# -----------------------------
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
     log "Another USB import is already running. Exiting."
@@ -140,7 +152,6 @@ fi
 log "============================================================"
 log "USB auto-import triggered for device: $DEVICE"
 
-# Wait for automount
 MOUNTPOINT=""
 for _ in {1..30}; do
     MOUNTPOINT=$(get_mountpoint "$DEVICE")
@@ -177,9 +188,9 @@ log "Existing audio files in destination: $BEFORE_COUNT"
 
 import_audio "$MOUNTPOINT" "$DEST_DIR"
 
-chown -R "$PI_USER:$PI_GROUP" "$DEST_DIR"
-find "$DEST_DIR" -type d -exec chmod 775 {} \;
-find "$DEST_DIR" -type f -exec chmod 664 {} \;
+chown -R "$PI_USER:$PI_GROUP" "$DEST_DIR" >> "$LOG_FILE" 2>&1 || log "Warning: chown failed on $DEST_DIR"
+find "$DEST_DIR" -type d -exec chmod 775 {} \; >> "$LOG_FILE" 2>&1
+find "$DEST_DIR" -type f -exec chmod 664 {} \; >> "$LOG_FILE" 2>&1
 
 AFTER_COUNT=$(count_audio_files "$DEST_DIR")
 IMPORTED_COUNT=$((AFTER_COUNT - BEFORE_COUNT))
@@ -189,10 +200,10 @@ log "Newly imported files this run: $IMPORTED_COUNT"
 
 if [[ "$IMPORTED_COUNT" -gt 0 ]]; then
     log "Import completed successfully."
-    success_beep
+    success_beep || log "Success sound failed to play."
 else
     log "No supported audio files found to import."
-    error_beep
+    error_beep || log "Error sound failed to play."
 fi
 
 safe_unmount_and_eject "$DEVICE" "$MOUNTPOINT" "$PARENT_DISK"
