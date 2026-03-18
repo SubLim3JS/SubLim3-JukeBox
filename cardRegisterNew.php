@@ -85,7 +85,7 @@ if (!$enabled) {
     <body>
         <div class="card">
             <h1>Card Registration Disabled</h1>
-            <div class="note">This page is currently disabled.</div>
+            <div class="note">Contact your system admin to re-enable it.</div>
             <a class="btn" href="index.php">Back to Home</a>
         </div>
     </body>
