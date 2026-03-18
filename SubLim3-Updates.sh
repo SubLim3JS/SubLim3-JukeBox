@@ -2,7 +2,6 @@
 
 SOURCE_DIR="/home/pi/SubLim3-JukeBox"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
-AUDIO_TARGET_DIR="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
 BACKUP_SUFFIX="-BACKUP"
 ERRORS=0
 
@@ -60,76 +59,6 @@ copy_with_backup() {
     fi
 }
 
-sync_usb_audio_if_present() {
-
-    local usb_found=0
-    local copied_any=0
-
-    printf "********************************************************\n"
-    printf "*** Checking USB drive for audio files ***\n"
-    printf "********************************************************\n\n"
-
-    mkdir -p "$AUDIO_TARGET_DIR"
-
-    for mount_root in /media/pi /mnt; do
-        [ -d "$mount_root" ] || continue
-
-        for usb_path in "$mount_root"/*; do
-            [ -e "$usb_path" ] || continue
-            [ -d "$usb_path" ] || continue
-
-            usb_found=1
-            printf " - USB drive detected at: %s - \n\n" "$usb_path"
-
-            #
-            # Option 1:
-            # If the USB has an audiofolders directory, copy from there
-            #
-            if [ -d "$usb_path/audiofolders" ]; then
-                printf " - Found audiofolders directory on USB. - \n\n"
-
-                if rsync -rlD --ignore-existing --info=name0 \
-                    "$usb_path/audiofolders/" \
-                    "$AUDIO_TARGET_DIR/"; then
-                    printf " - Missing audio files/folders copied from USB. Existing files ignored. - \n\n"
-                    copied_any=1
-                else
-                    printf " - ERROR: Failed syncing from %s/audiofolders - \n\n" "$usb_path"
-                    ERRORS=$((ERRORS+1))
-                fi
-            fi
-
-            #
-            # Option 2:
-            # If the USB itself contains folders/files directly, copy them too
-            #
-            if [ ! -d "$usb_path/audiofolders" ]; then
-                if find "$usb_path" -mindepth 1 -maxdepth 1 | grep -q .; then
-                    printf " - No audiofolders directory found. Trying USB root contents. - \n\n"
-
-                    if rsync -rlD --ignore-existing --info=name0 \
-                        "$usb_path/" \
-                        "$AUDIO_TARGET_DIR/"; then
-                        printf " - Missing audio files/folders copied from USB root. Existing files ignored. - \n\n"
-                        copied_any=1
-                    else
-                        printf " - ERROR: Failed syncing from USB root at %s - \n\n" "$usb_path"
-                        ERRORS=$((ERRORS+1))
-                    fi
-                fi
-            fi
-        done
-    done
-
-    if [ "$usb_found" -eq 0 ]; then
-        printf " - No USB drive detected. Skipping USB audio import. - \n\n\n"
-    elif [ "$copied_any" -eq 0 ]; then
-        printf " - USB drive found, but no new audio files were needed. - \n\n\n"
-    else
-        printf " - USB audio import completed. - \n\n\n"
-    fi
-}
-
 # ------------------------------------------------
 # System/UI files only (audio excluded intentionally)
 # ------------------------------------------------
@@ -158,10 +87,6 @@ copy_with_backup "$SOURCE_DIR/readIP.php" \
 "$TARGET_DIR/htdocs/readIP.php" \
 "readIP.php"
 
-copy_with_backup "$SOURCE_DIR/reg-toggle" \
-"$TARGET_DIR/settings/reg-toggle" \
-"reg-toggle"
-
 copy_with_backup "$SOURCE_DIR/search.php" \
 "$TARGET_DIR/htdocs/search.php" \
 "search.php"
@@ -177,6 +102,14 @@ copy_with_backup "$SOURCE_DIR/systemInfo.php" \
 copy_with_backup "$SOURCE_DIR/update.php" \
 "$TARGET_DIR/htdocs/update.php" \
 "update.php"
+
+copy_with_backup "$SOURCE_DIR/cardRegisterNew.php" \
+"$TARGET_DIR/htdocs/cardRegisterNew.php" \
+"cardRegisterNew.php"
+
+copy_with_backup "$SOURCE_DIR/reg-toggle" \
+"$TARGET_DIR/settings/reg-toggle" \
+"reg-toggle"
 
 copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
 "$TARGET_DIR/settings/gpio-buttons.py" \
@@ -205,12 +138,6 @@ copy_with_backup "$SOURCE_DIR/favicon-32x32.png" \
 copy_with_backup "$SOURCE_DIR/favicon-96x96.png" \
 "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" \
 "favicon-96x96.png"
-
-# ------------------------------------------------
-# Optional USB audio import
-# ------------------------------------------------
-
-sync_usb_audio_if_present
 
 printf "***************************************************\n"
 
