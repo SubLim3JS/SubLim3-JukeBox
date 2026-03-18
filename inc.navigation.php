@@ -68,22 +68,21 @@ if (file_exists($toggleFile)) {
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 
       <!-- Main Menu -->
-      <ul class="nav navbar-nav">
-        <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
-        <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
-        <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
-        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
-        <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
+<ul class="nav navbar-nav">
+    <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
+    <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
+    <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
+    <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
+    <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
 
-        <?php if ($cardRegisterEnabled): ?>
-        <li>
-            <a href="cardRegisterNew.php" class="mainMenu">
-                <i class='mdi mdi-cards-outline'></i> Card ID
-            </a>
-        </li>
-        <?php endif; ?>
-
-      </ul>
+    <?php if ($cardRegisterEnabled): ?>
+    <li>
+        <a href="cardRegisterNew.php" class="mainMenu">
+            <i class='mdi mdi-cards-outline'></i> Card ID
+        </a>
+    </li>
+    <?php endif; ?>
+</ul>
 
       <!-- Right Menu -->
       <ul class="nav navbar-nav navbar-right">
