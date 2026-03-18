@@ -1,29 +1,3 @@
-<?php
-$toggleFile = '/home/pi/RPi-Jukebox-RFID/settings/reg-toggle';
-$cardRegisterEnabled = false;
-
-if (file_exists($toggleFile) && is_readable($toggleFile)) {
-    $contents = file_get_contents($toggleFile);
-
-    if ($contents !== false && strpos($contents, 'enabled=1') !== false) {
-        $expires = '';
-
-        if (preg_match('/^expires=(.*)$/m', $contents, $matches)) {
-            $expires = trim($matches[1]);
-        }
-
-        if ($expires === '') {
-            $cardRegisterEnabled = true;
-        } else {
-            $expiresTs = strtotime($expires);
-            if ($expiresTs !== false && time() <= $expiresTs) {
-                $cardRegisterEnabled = true;
-            }
-        }
-    }
-}
-?>
-
 <style>
 #phonieboxinfomessage {
     display: none;
@@ -61,11 +35,7 @@ if (file_exists($toggleFile) && is_readable($toggleFile)) {
 
       <ul class="nav navbar-nav">
         <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
-
-        <?php if (true) { ?>
         <li><a href="cardRegisterNew.php" class="mainMenu"><i class='mdi mdi-cards-outline'></i> Card ID</a></li>
-        <?php } ?>
-
         <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
         <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
         <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
