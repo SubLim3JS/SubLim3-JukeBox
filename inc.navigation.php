@@ -81,6 +81,7 @@ if (file_exists($toggleFile)) {
 
         <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
         <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
+        <li><a href="#" class="mainMenu">TEST-NAV-123</a></li>
         <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
         <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
       </ul>
