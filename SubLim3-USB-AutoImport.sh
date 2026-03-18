@@ -25,8 +25,8 @@ PI_USER="pi"
 PI_GROUP="www-data"
 AUDIO_USER="pi"
 
-SUCCESS_SOUND="/home/pi/SubLim3-JukeBox/sounds/success.wav"
-ERROR_SOUND="/home/pi/SubLim3-JukeBox/sounds/error.wav"
+SUCCESS_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/success.wav"
+ERROR_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/error.wav"
 
 mkdir -p "$(dirname "$LOG_FILE")"
 mkdir -p "$DEST_ROOT"
