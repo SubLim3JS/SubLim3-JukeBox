@@ -299,3 +299,39 @@ a:hover {
 a[href="manageFilesFolders.php"] {
   display: none !important;
 }
+
+/* =========================
+   SubLim3 Green Theme - Update Page
+   ========================= */
+
+body {
+    background-color: #e8f5e9 !important; /* light green background */
+}
+
+/* Panel styling */
+.panel {
+    border-color: #2e7d32 !important;
+}
+
+.panel-primary > .panel-heading {
+    background-color: #2e7d32 !important;
+    border-color: #2e7d32 !important;
+}
+
+/* Console output area (the <pre> block) */
+.panel-body pre {
+    background-color: #1b5e20 !important; /* dark green */
+    color: #e8f5e9 !important;           /* light text */
+    border: none !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #2e7d32 !important;
+    border-color: #2e7d32 !important;
+}
+
+.btn-primary:hover {
+    background-color: #1b5e20 !important;
+    border-color: #1b5e20 !important;
+}
