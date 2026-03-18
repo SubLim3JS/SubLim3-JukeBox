@@ -19,7 +19,7 @@ $statusNote = $isSuccess
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: #f5f5f5;
+            background: #e8f5e9;
             color: #222;
             text-align: center;
             padding: 40px 20px;
