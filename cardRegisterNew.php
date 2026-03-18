@@ -36,7 +36,7 @@ if (!$enabled) {
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>RFID Card | Phoniebox</title>
+        <title>RFID Card | SubLim3 JukeBox</title>
         <link rel="stylesheet" href="_assets/bootstrap-3/css/bootstrap.darkly.css">
         <link rel="stylesheet" href="_assets/css/custom-green.css">
         <style>
@@ -98,7 +98,7 @@ if (!$enabled) {
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>RFID Card | Phoniebox</title>
+        <title>RFID Card | SubLim3 JukeBox</title>
 
         <link rel="stylesheet" href="_assets/bootstrap-3/css/bootstrap.darkly.css">
         <link rel="stylesheet" href="_assets/css/circle.css">
@@ -437,7 +437,7 @@ if (!$enabled) {
 <option value="ENABLEWIFI">Enable Wifi (ENABLEWIFI RFID: NONE)</option>
 <option value="DISABLEWIFI">Disable Wifi (DISABLEWIFI RFID: NONE)</option>
 <option value="TOGGLEWIFI">Toggle Wifi on/off (TOGGLEWIFI RFID: NONE)</option>
-<option value="CMDREADWIFIIP">Read out the Wifi IP over the Phoniebox speakers (CMDREADWIFIIP RFID: NONE)</option><option value="false">-- Recording audio commands</option>
+<option value="CMDREADWIFIIP">Read out the Wifi IP over the Sublim3 JukeBox speakers (CMDREADWIFIIP RFID: NONE)</option><option value="false">-- Recording audio commands</option>
 <option value="RECORDSTART10">Start recording for 10 sec. duration (RECORDSTART10 RFID: NONE)</option>
 <option value="RECORDSTART60">Start recording for 60 sec. duration (RECORDSTART60 RFID: NONE)</option>
 <option value="RECORDSTART600">Start recording for 600 sec. duration (RECORDSTART600 RFID: NONE)</option>
