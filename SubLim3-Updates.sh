@@ -158,6 +158,10 @@ copy_with_backup "$SOURCE_DIR/readIP.php" \
 "$TARGET_DIR/htdocs/readIP.php" \
 "readIP.php"
 
+copy_with_backup "$SOURCE_DIR/reg-toggle" \
+"$TARGET_DIR/settings/reg-toggle" \
+"reg-toggle"
+
 copy_with_backup "$SOURCE_DIR/search.php" \
 "$TARGET_DIR/htdocs/search.php" \
 "search.php"
