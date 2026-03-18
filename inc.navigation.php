@@ -1,6 +1,6 @@
 <?php
 // ----------------------------------------------------
-// Card Register Toggle (same logic as cardRegisterNew.php)
+// Card Register Toggle
 // ----------------------------------------------------
 $toggleFile = '/home/pi/RPi-Jukebox-RFID/settings/reg-toggle';
 $cardRegisterEnabled = false;
@@ -68,24 +68,22 @@ if (file_exists($toggleFile)) {
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 
       <!-- Main Menu -->
-<ul class="nav navbar-nav">
-    <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
+      <ul class="nav navbar-nav">
+        <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
 
-    <?php if ($cardRegisterEnabled): ?>
-    <li style="background:#00bc8c;">
-        <a href="cardRegisterNew.php" class="mainMenu" style="color:#fff !important; font-weight:bold;">
-            <i class='mdi mdi-cards-outline'></i> Card ID
-        </a>
-    </li>
-    <?php endif; ?>
+        <?php if ($cardRegisterEnabled): ?>
+        <li>
+            <a href="cardRegisterNew.php" class="mainMenu">
+                <i class='mdi mdi-cards-outline'></i> Card ID
+            </a>
+        </li>
+        <?php endif; ?>
 
-    <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
-    <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
-    <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
-    <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
-
-    <li><a href="#" class="mainMenu">DEBUG=<?php echo $cardRegisterEnabled ? 'true' : 'false'; ?></a></li>
-</ul>
+        <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
+        <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
+        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
+        <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
+      </ul>
 
       <!-- Right Menu -->
       <ul class="nav navbar-nav navbar-right">
