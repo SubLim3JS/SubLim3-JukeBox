@@ -3,8 +3,11 @@
 # ============================================================
 # SubLim3 USB Auto Import for Phoniebox
 # ------------------------------------------------------------
-# Auto-detects a mounted USB partition, imports supported audio
-# files into the Phoniebox audiofolders root, plays a completion
+# Imports supported audio files from a USB drive directly into:
+#   /home/pi/RPi-Jukebox-RFID/shared/audiofolders
+#
+# It preserves the USB's internal folder structure, does NOT
+# create an outer wrapper folder like sda1/, plays a success
 # sound, then unmounts/ejects the USB.
 #
 # Usage:
@@ -22,11 +25,8 @@ PI_USER="pi"
 PI_GROUP="www-data"
 AUDIO_USER="pi"
 
-# Existing sound files
-SUCCESS_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/success.wav"
-ERROR_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/error.wav"
-
-SUPPORTED_EXTENSIONS="mp3|wav|ogg|flac|m4a|aac|opus|webm"
+SUCCESS_SOUND="/home/pi/SubLim3-JukeBox/sounds/success.wav"
+ERROR_SOUND="/home/pi/SubLim3-JukeBox/sounds/error.wav"
 
 mkdir -p "$(dirname "$LOG_FILE")"
 mkdir -p "$DEST_ROOT"
@@ -85,36 +85,49 @@ get_parent_disk() {
     fi
 }
 
+count_audio_files() {
+    find "$1" -type f \( \
+        -iname "*.mp3" -o \
+        -iname "*.wav" -o \
+        -iname "*.ogg" -o \
+        -iname "*.flac" -o \
+        -iname "*.m4a" -o \
+        -iname "*.aac" -o \
+        -iname "*.opus" -o \
+        -iname "*.webm" \
+    \) | wc -l
+}
+
 import_audio() {
     local src="$1"
     local dest="$2"
+    local imported=0
 
-    mkdir -p "$dest"
+    while IFS= read -r -d '' file; do
+        rel_path="${file#$src/}"
+        target_file="$dest/$rel_path"
+        target_dir="$(dirname "$target_file")"
 
-    rsync -av --prune-empty-dirs \
-        --include='*/' \
-        --include="*.mp3" \
-        --include="*.MP3" \
-        --include="*.wav" \
-        --include="*.WAV" \
-        --include="*.ogg" \
-        --include="*.OGG" \
-        --include="*.flac" \
-        --include="*.FLAC" \
-        --include="*.m4a" \
-        --include="*.M4A" \
-        --include="*.aac" \
-        --include="*.AAC" \
-        --include="*.opus" \
-        --include="*.OPUS" \
-        --include="*.webm" \
-        --include="*.WEBM" \
-        --exclude='*' \
-        "$src"/ "$dest"/ >> "$LOG_FILE" 2>&1
-}
+        mkdir -p "$target_dir"
 
-count_audio_files() {
-    find "$1" -type f | grep -Ei "\.($SUPPORTED_EXTENSIONS)$" | wc -l
+        if cp -p "$file" "$target_file" >> "$LOG_FILE" 2>&1; then
+            imported=$((imported + 1))
+            log "Imported: $rel_path"
+        else
+            log "Failed to import: $rel_path"
+        fi
+    done < <(find "$src" -type f \( \
+        -iname "*.mp3" -o \
+        -iname "*.wav" -o \
+        -iname "*.ogg" -o \
+        -iname "*.flac" -o \
+        -iname "*.m4a" -o \
+        -iname "*.aac" -o \
+        -iname "*.opus" -o \
+        -iname "*.webm" \
+    \) -print0)
+
+    echo "$imported"
 }
 
 safe_unmount_and_eject() {
@@ -181,20 +194,16 @@ log "Label: $LABEL"
 log "Destination: $DEST_DIR"
 log "Parent disk: $PARENT_DISK"
 
-mkdir -p "$DEST_DIR"
-
 BEFORE_COUNT=$(count_audio_files "$DEST_DIR")
 log "Existing audio files in destination: $BEFORE_COUNT"
 
-import_audio "$MOUNTPOINT" "$DEST_DIR"
+IMPORTED_COUNT=$(import_audio "$MOUNTPOINT" "$DEST_DIR")
 
 chown -R "$PI_USER:$PI_GROUP" "$DEST_DIR" >> "$LOG_FILE" 2>&1 || log "Warning: chown failed on $DEST_DIR"
 find "$DEST_DIR" -type d -exec chmod 775 {} \; >> "$LOG_FILE" 2>&1
 find "$DEST_DIR" -type f -exec chmod 664 {} \; >> "$LOG_FILE" 2>&1
 
 AFTER_COUNT=$(count_audio_files "$DEST_DIR")
-IMPORTED_COUNT=$((AFTER_COUNT - BEFORE_COUNT))
-
 log "Audio files now in destination: $AFTER_COUNT"
 log "Newly imported files this run: $IMPORTED_COUNT"
 
