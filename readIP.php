@@ -18,6 +18,7 @@ function getWifiIp() {
 $ipAddress = getWifiIp();
 
 shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/playout_controls.sh -c=readwifiipoverspeaker >/dev/null 2>&1 &");
+shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh wifi >/dev/null 2>&1 &");
 ?>
 <!DOCTYPE html>
 <html lang="en">
