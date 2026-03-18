@@ -2,7 +2,7 @@
 // ----------------------------------------------------
 // Card Register Toggle (same logic as cardRegisterNew.php)
 // ----------------------------------------------------
-$toggleFile = '/home/pi/RPi-Jukebox-RFID/settings/card-register-toggle';
+$toggleFile = '/home/pi/RPi-Jukebox-RFID/settings/reg-toggle';
 $cardRegisterEnabled = false;
 
 if (file_exists($toggleFile)) {
