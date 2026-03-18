@@ -35,11 +35,11 @@
 
       <ul class="nav navbar-nav">
         <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
-        <li><a href="cardRegisterNew.php" class="mainMenu"><i class='mdi mdi-cards-outline'></i> Card ID</a></li>
         <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
         <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
-        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
         <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
+        <li><a href="cardRegisterNew.php" class="mainMenu"><i class='mdi mdi-cards-outline'></i> Card ID</a></li>
+        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
       </ul>
 
       <ul class="nav navbar-nav navbar-right">
