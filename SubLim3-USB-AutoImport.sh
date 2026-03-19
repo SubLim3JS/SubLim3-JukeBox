@@ -22,7 +22,7 @@ mkdir -p "$(dirname "$LOG_FILE")"
 mkdir -p "$DEST_ROOT"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
 play_sound() {
