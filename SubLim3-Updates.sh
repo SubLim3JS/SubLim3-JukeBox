@@ -23,7 +23,6 @@ printf "
 sleep 1
 
 copy_with_backup() {
-
     local source_file="$1"
     local target_file="$2"
     local label="$3"
@@ -159,6 +158,17 @@ set_volume() {
     printf " - WARNING: No compatible mixer control found (Master/PCM/Digital). Skipping volume change. - \n\n\n"
 }
 
+fix_permissions() {
+    printf "********************************************************\n"
+    printf "*** Fixing script permissions ***\n"
+    printf "********************************************************\n\n"
+
+    chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null
+    chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
+
+    printf " - Script permissions updated. - \n\n\n"
+}
+
 # ------------------------------------------------
 # System/UI files only (audio excluded intentionally)
 # ------------------------------------------------
@@ -258,6 +268,7 @@ copy_with_backup "$SOURCE_DIR/favicon-96x96.png" \
 install_sox_if_needed
 generate_sounds
 set_volume
+fix_permissions
 
 printf "***************************************************\n"
 
