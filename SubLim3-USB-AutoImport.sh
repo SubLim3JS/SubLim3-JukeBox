@@ -2,16 +2,6 @@
 
 # ============================================================
 # SubLim3 USB Auto Import for Phoniebox
-# ------------------------------------------------------------
-# Imports supported audio files from a USB drive directly into:
-#   /home/pi/RPi-Jukebox-RFID/shared/audiofolders
-#
-# It preserves the USB's internal folder structure, does NOT
-# create an outer wrapper folder like sda1/, plays a success
-# sound, then unmounts/ejects the USB.
-#
-# Usage:
-#   sudo /home/pi/SubLim3-JukeBox/SubLim3-USB-AutoImport.sh /dev/sda1
 # ============================================================
 
 set -u
@@ -102,6 +92,9 @@ import_audio() {
     local src="$1"
     local dest="$2"
     local imported=0
+    local rel_path
+    local target_file
+    local target_dir
 
     while IFS= read -r -d '' file; do
         rel_path="${file#$src/}"
@@ -156,8 +149,27 @@ if ! flock -n 9; then
     exit 0
 fi
 
-if [[ -z "$DEVICE" || ! -b "$DEVICE" ]]; then
-    log "No valid block device supplied."
+if [[ -z "$DEVICE" ]]; then
+    log "No block device argument supplied."
+    error_beep
+    exit 1
+fi
+
+# Accept either sda1 or /dev/sda1
+if [[ "$DEVICE" != /dev/* ]]; then
+    DEVICE="/dev/$DEVICE"
+fi
+
+# Wait for block device to exist
+for _ in {1..10}; do
+    if [[ -b "$DEVICE" ]]; then
+        break
+    fi
+    sleep 1
+done
+
+if [[ ! -b "$DEVICE" ]]; then
+    log "Block device not available: $DEVICE"
     error_beep
     exit 1
 fi
