@@ -4,6 +4,8 @@ SOURCE_DIR="/home/pi/SubLim3-JukeBox"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 BACKUP_SUFFIX="-BACKUP"
 ERRORS=0
+SOUNDS_DIR="$TARGET_DIR/shared/sounds"
+FEEDBACK_SCRIPT="$TARGET_DIR/scripts/sublim3-feedback.sh"
 
 printf "
 .
@@ -57,11 +59,93 @@ copy_with_backup() {
         printf " - ERROR: Failed to copy %s - \n\n\n" "$label"
         ERRORS=$((ERRORS+1))
     fi
+}
 
-    if [ "$ERRORS" -eq 0 ]; then
-        bash /home/pi/RPi-Jukebox-RFID/scripts/subli-feedback.sh success >/dev/null 2>&1 &
+install_sox_if_needed() {
+    printf "********************************************************\n"
+    printf "*** Checking SoX installation ***\n"
+    printf "********************************************************\n\n"
+
+    if command -v sox >/dev/null 2>&1; then
+        printf " - SoX already installed. - \n\n\n"
     else
-        bash /home/pi/RPi-Jukebox-RFID/scripts/subli-feedback.sh error >/dev/null 2>&1 &
+        printf " - SoX not found. Installing... - \n\n"
+        if sudo apt update && sudo apt install -y sox; then
+            printf " - SoX installed successfully. - \n\n\n"
+        else
+            printf " - ERROR: Failed to install SoX. - \n\n\n"
+            ERRORS=$((ERRORS+1))
+        fi
+    fi
+}
+
+generate_sound_file() {
+    local output_file="$1"
+    local label="$2"
+    shift 2
+
+    printf "********************************************************\n"
+    printf "*** Generating %s ***\n" "$label"
+    printf "********************************************************\n\n"
+
+    mkdir -p "$SOUNDS_DIR"
+
+    if sox -n -r 44100 -c 1 "$output_file" "$@"; then
+        printf " - %s created successfully. - \n\n\n" "$label"
+    else
+        printf " - ERROR: Failed to generate %s - \n\n\n" "$label"
+        ERRORS=$((ERRORS+1))
+    fi
+}
+
+generate_sounds() {
+    printf "********************************************************\n"
+    printf "*** Creating custom system sounds ***\n"
+    printf "********************************************************\n\n"
+
+    mkdir -p "$SOUNDS_DIR"
+
+    if ! command -v sox >/dev/null 2>&1; then
+        printf " - ERROR: SoX is not installed, cannot generate sounds. - \n\n\n"
+        ERRORS=$((ERRORS+1))
+        return
+    fi
+
+    generate_sound_file "$SOUNDS_DIR/card-scan.wav" "card-scan.wav" \
+        synth 0.15 sine 880 synth 0.15 sine 1760 \
+        fade 0.01 0.15 0.1 reverb 20
+
+    generate_sound_file "$SOUNDS_DIR/success.wav" "success.wav" \
+        synth 0.2 sine 523 synth 0.2 sine 659 synth 0.2 sine 784 \
+        fade 0.01 0.6 0.2 reverb 30
+
+    generate_sound_file "$SOUNDS_DIR/error.wav" "error.wav" \
+        synth 0.4 sine 110 synth 0.4 sine 90 \
+        fade 0.01 0.4 0.2 reverb 40
+
+    generate_sound_file "$SOUNDS_DIR/wifi.wav" "wifi.wav" \
+        synth 0.1 sine 1200 synth 0.2 sine 900 synth 0.2 sine 1400 \
+        fade 0.01 0.5 0.2 reverb 35
+
+    generate_sound_file "$SOUNDS_DIR/update.wav" "update.wav" \
+        synth 0.15 sine 400 synth 0.15 sine 600 synth 0.15 sine 800 \
+        fade 0.01 0.5 0.2 reverb 45
+
+    generate_sound_file "$SOUNDS_DIR/import.wav" "import.wav" \
+        synth 0.25 sine 440 synth 0.25 sine 660 \
+        fade 0.01 0.4 0.2 reverb 35
+}
+
+set_volume() {
+    printf "********************************************************\n"
+    printf "*** Setting system volume ***\n"
+    printf "********************************************************\n\n"
+
+    if amixer set Master 70% >/dev/null 2>&1; then
+        printf " - Master volume set to 70%%. - \n\n\n"
+    else
+        printf " - ERROR: Failed to set Master volume. - \n\n\n"
+        ERRORS=$((ERRORS+1))
     fi
 }
 
@@ -157,15 +241,23 @@ copy_with_backup "$SOURCE_DIR/favicon-96x96.png" \
 "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" \
 "favicon-96x96.png"
 
+# ------------------------------------------------
+# Install dependencies and create sounds
+# ------------------------------------------------
+
+install_sox_if_needed
+generate_sounds
+set_volume
+
 printf "***************************************************\n"
 
- if [ "$ERRORS" -eq 0 ]; then
-    bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh success >/dev/null 2>&1 &
+if [ "$ERRORS" -eq 0 ]; then
+    bash "$FEEDBACK_SCRIPT" success >/dev/null 2>&1 &
     printf "***  - All operations completed successfully. - ***\n"
     printf "***************************************************\n\n"
     exit 0
 else
-    bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh error >/dev/null 2>&1 &
+    bash "$FEEDBACK_SCRIPT" error >/dev/null 2>&1 &
     printf "***  - Completed with %d error(s). -            ***\n" "$ERRORS"
     printf "***************************************************\n\n"
     exit 1
