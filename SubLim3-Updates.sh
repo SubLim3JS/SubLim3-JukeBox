@@ -101,6 +101,10 @@ copy_with_backup "$SOURCE_DIR/settings.php" \
 "$TARGET_DIR/htdocs/settings.php" \
 "settings.php"
 
+copy_with_backup "$SOURCE_DIR/sublim3-feedback.sh" \
+"$TARGET_DIR/scripts/sublim3-feedback.sh" \
+"sublim3-feedback.sh"
+
 copy_with_backup "$SOURCE_DIR/systemInfo.php" \
 "$TARGET_DIR/htdocs/systemInfo.php" \
 "systemInfo.php"
