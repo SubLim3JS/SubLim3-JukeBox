@@ -135,29 +135,6 @@ generate_sounds() {
         fade 0.01 0.4 0.05 reverb 35
 }
 
-set_volume() {
-    printf "********************************************************\n"
-    printf "*** Setting system volume ***\n"
-    printf "********************************************************\n\n"
-
-    if amixer set Master 75% >/dev/null 2>&1; then
-        printf " - Master volume set to 75%%. - \n\n\n"
-        return
-    fi
-
-    if amixer set PCM 75% >/dev/null 2>&1; then
-        printf " - PCM volume set to 75%%. - \n\n\n"
-        return
-    fi
-
-    if amixer set Digital 75% >/dev/null 2>&1; then
-        printf " - Digital volume set to 75%%. - \n\n\n"
-        return
-    fi
-
-    printf " - WARNING: No compatible mixer control found (Master/PCM/Digital). Skipping volume change. - \n\n\n"
-}
-
 fix_permissions() {
     printf "********************************************************\n"
     printf "*** Fixing script permissions ***\n"
