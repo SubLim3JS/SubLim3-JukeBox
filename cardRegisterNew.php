@@ -15,7 +15,7 @@ if (file_exists($toggleFile)) {
         }
     }
 
-    $isEnabled = isset($config['enabled']) && $config['enabled'] === '1';
+    $isEnabled = isset($config['enabled']) && trim($config['enabled']) === '1';
     $expires = isset($config['expires']) ? trim($config['expires']) : '';
 
     if ($isEnabled) {
@@ -93,223 +93,54 @@ if (!$enabled) {
     <?php
     exit;
 }
+
+include("inc.header.php");
+
+/**************************************************
+* VARIABLES
+* No changes required if you stuck to the
+* INSTALL.md instructions.
+* If you want to change the paths, edit config.php
+* If you want to change the paths, edit config.php
+***************************************************/
+
+/* NO CHANGES BENEATH THIS LINE ***********/
+
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://';
+$conf['url_abs']    = $protocol.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']; // URL to PHP_SELF
+
+/*******************************************
+* START HTML
+*******************************************/
+
+html_bootstrap3_createHeader("en","RFID Card | Phoniebox",$conf['base_url']);
+
 ?>
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>RFID Card | Phoniebox</title>
-
-        <link rel="stylesheet" href="_assets/bootstrap-3/css/bootstrap.darkly.css">
-        <link rel="stylesheet" href="_assets/css/circle.css">
-        <link rel="stylesheet" href="_assets/css/collapsible.css">
-        <link rel="stylesheet" href="_assets/css/custom-green.css">
-
-        <script src="_assets/js/jquery.1.12.4.min.js"></script>
-        <script src="_assets/bootstrap-3/js/bootstrap.min.js"></script>
-        <script src="_assets/bootstrap-3/js/collapse.js"></script>
-        <script src="_assets/bootstrap-3/js/transition.js"></script>
-
-        <link href='_assets/MaterialDesign-Webfont-master/css/materialdesignicons.min.css' media='all' rel='stylesheet' type='text/css' />
-
-        <!--[if lt IE 9]>
-            <script src="_assets/bootstrap-3/js/html5shiv3.7.2.min.js"></script>
-            <script src="_assets/bootstrap-3/js/respond1.4.2.min.js"></script>
-        <![endif]-->
-
-        <link rel='stylesheet' href='_assets/jQuery-File-Upload-9.22.0/css/jquery.fileupload.css'>
-        <link rel='stylesheet' href='_assets/jQuery-File-Upload-9.22.0/css/jquery.fileupload-ui.css'>
-        <noscript><link rel='stylesheet' href='_assets/jQuery-File-Upload-9.22.0/css/jquery.fileupload-noscript.css'></noscript>
-        <noscript><link rel='stylesheet' href='_assets/jQuery-File-Upload-9.22.0/css/jquery.fileupload-ui-noscript.css'></noscript>
-
-        <link rel="apple-touch-icon" sizes="57x57" href="_assets/icons/apple-icon-57x57.png">
-        <link rel="apple-touch-icon" sizes="60x60" href="_assets/icons/apple-icon-60x60.png">
-        <link rel="apple-touch-icon" sizes="72x72" href="_assets/icons/apple-icon-72x72.png">
-        <link rel="apple-touch-icon" sizes="76x76" href="_assets/icons/apple-icon-76x76.png">
-        <link rel="apple-touch-icon" sizes="114x114" href="_assets/icons/apple-icon-114x114.png">
-        <link rel="apple-touch-icon" sizes="120x120" href="_assets/icons/apple-icon-120x120.png">
-        <link rel="apple-touch-icon" sizes="144x144" href="_assets/icons/apple-icon-144x144.png">
-        <link rel="apple-touch-icon" sizes="152x152" href="_assets/icons/apple-icon-152x152.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="_assets/icons/apple-icon-180x180.png">
-        <link rel="icon" type="image/png" sizes="192x192" href="_assets/icons/android-icon-192x192.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="_assets/icons/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="96x96" href="_assets/icons/favicon-96x96.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="_assets/icons/favicon-16x16.png">
-        <link rel="manifest" href="_assets/icons/manifest.json">
-        <meta name="msapplication-TileColor" content="#ffffff">
-        <meta name="msapplication-TileImage" content="_assets/icons/ms-icon-144x144.png">
-        <meta name="theme-color" content="#ffffff">
-
-        <style type='text/css'>
-        .playerControls {
-            margin-bottom: 1em;
-        }
-        .controlPlayer {
-            margin-right: 1em;
-        }
-        .btnFolder, .folderContent {
-            max-width: 100%;
-            overflow: hidden;
-        }
-        .btn-player-xl {
-            padding:4px 0px;
-            font-size:38px;
-            line-height:1;
-            border-radius:6px;
-        }
-        .btn-player-l {
-            padding:0px 0px;
-            font-size:30px;
-            line-height:1;
-            border-radius:6px;
-        }
-        .btn-player-m {
-            padding:15px 16px;
-            font-size:18px;
-            line-height:1;
-            border-radius:6px;
-        }
-        .btn-player-s {
-            padding:15px 5px;
-            font-size:11px;
-            line-height:1;
-            border-radius:6px;
-        }
-        .playerWrapper,
-        .playerWrapperSub {
-            display: block!important;
-            clear: both;
-            height: auto;
-            margin: 0 auto;
-            text-align: center;
-            margin-top: 1em;
-        }
-        .playerWrapper a {
-            color: #00bc8c!important;
-        }
-        .playerWrapper a:hover {
-            color: #008966!important;
-        }
-        .playerWrapperCover img {
-            max-height: 200px;
-        }
-        .playerWrapperSub a {
-            color: #aaa!important;
-        }
-        .playerWrapperSub a:hover {
-            color: #eee!important;
-        }
-        .table td.text {
-            max-width: 100px;
-        }
-        .table td.text span {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: inline-block;
-            max-width: 100%;
-        }
-        .mdi-72px.mdi-set, .mdi-72px.mdi:before {
-          font-size: 72px;
-        }
-        .mdi-60px.mdi-set, .mdi-60px.mdi:before {
-          font-size: 60px;
-        }
-        .hoverGrey:hover {
-            color: #999!important;
-        }
-        .btn-panel-big {
-            font-size: 3em!important;
-            margin-right: 0.1em;
-        }
-        .img-playlist-item {
-            max-width: 100px;
-            float: left;
-            margin-right: 1em;
-            border:1px solid white;
-        }
-        .img-playlist-item-placeholder {
-            display: block;
-            background-color: transparent;
-            width: 100px;
-            height: 50px;
-            float: left;
-            margin-right: 1em
-        }
-        .panel-heading a.btn-panel-big:active {
-            color: #fff!important;
-        }
-        .panel-heading a.btn-panel-big {
-            cursor: pointer;
-        }
-        .countdown-banner {
-            margin: 15px 0 20px 0;
-            padding: 12px 16px;
-            background: #1f7a5c;
-            color: #fff;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .countdown-banner.warning {
-            background: #b9770e;
-        }
-        .countdown-banner.danger {
-            background: #a93226;
-        }
-        </style>
-
-    </head>
 <body>
   <div class="container">
 
+<?php
+include("inc.navigation.php");
+?>
+
 <style>
-#phonieboxinfomessage {
-    display: none;
-    position: fixed;
-    width: 50%;
-    height: 100px;
-    left: 25%;
-    top: 40%;
-    z-index: 7000;
+.countdown-banner {
+    margin: 15px 0 20px 0;
+    padding: 12px 16px;
+    background: #1f7a5c;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+}
+.countdown-banner.warning {
+    background: #b9770e;
+}
+.countdown-banner.danger {
+    background: #a93226;
 }
 </style>
-
-<div id="phonieboxinfomessage" class="alert-messages"></div>
-
-<nav class="navbar navbar-default" style="position: -webkit-sticky; position: sticky; top: 0; z-index: 1000;">
-  <div class="container-fluid">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" style="padding: 19.5px 15px 0px; height: 0px;" href="index.php">SubLim3 JukeBox</a><br>
-      <div class="navbar-brand" style="padding: 0px 15px 0px; margin-top: 19.5px; height: 0px; font-size: 13px; color: white;">Classic</div>
-    </div>
-
-    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav">
-        <li><a href='index.php' class='mainMenu'><i class='mdi mdi-play-circle'></i> Player</a></li>
-        <li><a href='search.php' class='mainMenu'><i class='mdi mdi-magnify'></i> Search</a></li>
-        <li><a href='settings.php' class='mainMenu'><i class='mdi mdi-settings'></i> Settings</a></li>
-        <li><a href='manageFilesFolders.php' class='mainMenu'><i class='mdi mdi-folder-upload'></i> Folders &amp; Files</a></li>
-        <li><a href="cardRegisterNew.php" class="mainMenu"><i class='mdi mdi-cards-outline'></i> Card ID</a></li>
-        <li><a href='systemInfo.php' class='mainMenu'><i class='mdi mdi-information-outline'></i> Info</a></li>
-      </ul>
-
-      <ul class="nav navbar-nav navbar-right">
-        <li><a href='index.php?shutdown=true' class='mainMenu'><i class='mdi mdi-power'></i> Shutdown</a></li>
-        <li><a href='index.php?reboot=true' class='mainMenu'><i class='mdi mdi-refresh'></i> Reboot</a></li>
-      </ul>
-    </div>
-  </div>
-</nav>
 
 <?php if ($expiresTs !== false): ?>
 <div id="countdownBanner" class="countdown-banner">
@@ -362,306 +193,328 @@ if (!$enabled) {
 </script>
 <?php endif; ?>
 
+<?php
+// path to script folder from github repo on RPi
+$conf['shared_abs'] = realpath(getcwd().'/../shared/');
+
+/*******************************************
+* ACTIONS
+*******************************************/
+
+// check stuff to be done
+include("inc.processCheckCardEditRegister.php");
+
+/*
+* FILE UPLOAD
+*/
+if(!empty($_FILES['importFileUpload'])) {
+    $conf['upload_abs'] = realpath(getcwd().'/../temp/');
+    $uploadFileType = strtolower(pathinfo(basename( $_FILES['importFileUpload']['name']),PATHINFO_EXTENSION));
+
+    if($debug == "true") {
+        print "file upload";
+        print "<pre>";
+        print $conf['upload_abs'];
+        print "\n";
+        print $uploadFileType;
+        print "\n";
+        print "</pre>";
+    }
+    // check if csv
+    if($uploadFileType == "csv") {
+        if(move_uploaded_file($_FILES['importFileUpload']['tmp_name'], $conf['upload_abs'] . "./rfidImport.csv")) {
+            $messageSuccess .= "<p>" . $lang['cardImportFileSuccessUpload'] .  basename( $_FILES['importFileUpload']['name']). "</p>";
+            /*
+            * read RFID into array
+            */
+            $rfidPostedAudio = array();
+            $rfidPostedCommands = array();
+            $fn = fopen($conf['upload_abs'] . "./rfidImport.csv","r");
+            while(! feof($fn))  {
+                $pair = explode("\",\"", fgets($fn));
+                // ignore header and empty lines
+                if(
+                    (count($pair) != 2)     // empty line
+                    || ($pair[0] == "\"id") // CSV header
+                ) {
+                } else {
+                    // system commands?
+                    if(startsWith(trim($pair[1]), "%")) {
+                        // yes, system command
+                        $rfidPostedCommands[ltrim($pair[0], '"')] = rtrim(trim($pair[1]), '"');
+                    } else {
+                        // no, audio link
+                        $rfidPostedAudio[ltrim($pair[0], '"')] = rtrim(trim($pair[1]), '"');
+                    }
+                }
+            }
+            fclose($fn);
+            if($debug == "true") {
+                print "<pre>rfidPostedCommands: \n";
+                print_r($rfidPostedCommands);
+                print "\nrfidPostedAudio: \n";
+                print_r($rfidPostedAudio);
+                print "\nshortcuts: \n";
+                print_r($shortcuts);
+                print "</pre>";
+            }
+
+            /*
+            * do we delete any files?
+            */
+            if($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "commands") {
+                // delete commands => create array of available commands with not array of used commands
+                $fillRfidArrAvailWithUsed = fillRfidArrAvailWithUsed($rfidAvailArr);
+                if($debug == "true") {
+                    print "<pre>delete commands - fillRfidArrAvailWithUsed:\n"; print_r($fillRfidArrAvailWithUsed); print "</pre>";
+                }
+                $messageSuccess .= $lang['cardImportFileDeleteMessageCommands'];
+            } else {
+                // keep commands
+                if($debug == "true") {
+                    print "<pre>keep commands - fillRfidArrAvailWithUsed:\n"; print_r($fillRfidArrAvailWithUsed); print "</pre>";
+                }
+            }
+            if($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "audio") {
+                // delete audio
+                if($debug == "true") {
+                    print "<pre>delete audio - shortcuts:\n"; print_r($shortcuts); print "</pre>";
+                }
+                foreach($shortcuts as $shortcut => $value) {
+                    if($shortcut != "placeholder") {
+                        $exec = "rm ../shared/shortcuts/".$shortcut;
+                        $result = exec($exec);
+                    }
+                }
+                $messageSuccess .= $lang['cardImportFileDeleteMessageAudio'];
+            }
+
+            // which files to replace?
+            if($_POST['importFileOverwrite'] != "audio") {
+                // create commands
+                // fill available commands with posted commands
+                foreach($rfidPostedCommands as $key => $value) {
+                    if($debug == "true") {
+                        print "<p>fillRfidArrAvailWithUsed[".trim($value, '%')."] = ".$key."</p>";
+                    }
+                    $fillRfidArrAvailWithUsed[trim($value, '%')] = $key;
+                }
+
+                /******************************************
+                * Create new conf file based on posted values
+                */
+                // copy sample file to conf file
+                exec("cp ../settings/rfid_trigger_play.conf.sample ../settings/rfid_trigger_play.conf; chmod 777 ../settings/rfid_trigger_play.conf");
+                // replace posted values in new conf file
+                foreach($fillRfidArrAvailWithUsed as $key => $val) {
+                    // only change those with values in the form (not empty)
+                    if($val != "") {
+                        exec("sed -i 's/%".$key."%/".$val."/' '../settings/rfid_trigger_play.conf'");
+                    }
+                }
+                $messageSuccess .= $lang['cardImportFileOverwriteMessageCommands'];
+            }
+            if($_POST['importFileOverwrite'] != "commands") {
+                // create audio files
+                foreach ($rfidPostedAudio as $shortcutId => $shortcutFolder) {
+                    $exec = "echo \"".$shortcutFolder."\" > ../shared/shortcuts/".$shortcutId;
+                    exec($exec);
+                }
+                exec("chmod 777 ../shared/shortcuts/*");
+                $messageSuccess .= $lang['cardImportFileOverwriteMessageAudio'];
+            }
+        } else{
+            $messageError .= $lang['cardImportFileErrorUpload'];
+        }
+    } else {
+        $messageError .= $lang['cardImportFileErrorFiletype'];
+    }
+} else {
+    if($debug == "true") {
+        print "no file upload";
+    }
+}
+
+?>
+
 <div class="row">
   <div class="col-lg-12">
-  <strong>Jump to:</strong>
+  <strong><?php print $lang['globalJumpTo']; ?>:</strong>
         <a href="#RFIDinteractive" class="btn xbtn-info ">
-        <i class='mdi mdi-cards-outline'></i> Add new card        </a> |
+        <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+        </a> |
         <a href="#RFIDexport" class="btn xbtn-info ">
-        <i class='mdi mdi-download'></i> Export all RFID links (audio playout and commands)        </a> |
+        <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
+        </a> |
         <a href="#RFIDimport" class="btn xbtn-info ">
-        <i class='mdi mdi-plus-circle'></i> Import RFID links from .csv file        </a>
+        <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
+        </a>
   </div>
 </div>
-<br/>
-
+        <br/>
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="RFIDinteractive"></a>
-         <i class='mdi mdi-cards-outline'></i> Add new card      </h4>
+         <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+      </h4>
+    </div><!-- /.panel-heading -->
+
+      <div class="panel-body">
+    <div class="row ">
+      <div class="col-lg-12">
+<?php
+/*
+* Do we need to voice a warning here?
+*/
+if ($messageAction == "" && $messageError == "") {
+    $messageAction = $lang['cardRegisterMessageDefault'].$lang['cardRegisterManualLinks'];
+}
+if(isset($messageSuccess) && $messageSuccess != "") {
+    print '<div class="alert alert-success">'.$messageSuccess.'<p>'.$lang['cardRegisterMessageSwipeNew'].'</p></div>';
+    unset($post);
+} else {
+    if(isset($warning)) {
+        print '<div class="alert alert-warning">WARNING: '.$warning.'</div>';
+    }
+    if(isset($messageError) && $messageError != "") {
+        print '<div class="alert alert-danger">ERROR: '.$messageError.'</div>';
+    }
+    if(isset($messageAction) && $messageAction != "") {
+        print '<div class="alert alert-info">'.$messageAction.'</div>';
+    }
+}
+
+?>
+
+<?php
+if($debug == "true") {
+    print "<pre>";
+    print_r($_POST);
+    print_r($post);
+    print_r($conf);
+    print "</pre>";
+}
+?>
+
+       </div>
     </div>
 
-    <div class="panel-body">
-      <div class="row ">
-        <div class="col-lg-12">
-          <div class="alert alert-info">The 'Latest Card ID' value in the form is updated on the fly as you swipe a RFID card.<br/>(Requires Javascript in the browser to be enabled.)<p>You can also connect cards to folders manually. The manual explains how to <a href='https://github.com/MiczFlor/RPi-Jukebox-RFID/wiki/MANUAL#connect' target='–blank'>connect to the JukeBox</a> and <a href='https://github.com/MiczFlor/RPi-Jukebox-RFID/wiki/MANUAL#registering-cards-manually-through-samba-without-the-web-app' target='_blank'>register cards</a>.</p></div>
-        </div>
-      </div>
+    <div class="row">
+      <div class="col-lg-12">
+<?php
+/*
+* pass on some variables to the form.
+* Doing this so I can reuse the form in other places to edit or register cards.
+*/
+$fdata = array(
+    "streamURL_ajax" => "true",
+    "streamURL_label" => $lang['globalLastUsedCard'],
+    "streamURL_help" => $lang['cardRegisterSwipeUpdates'],
+);
+$fpost = $post;
+include("inc.formCardEdit.php");
+        ?>
+              </div><!-- / .col-lg-12 -->
+            </div><!-- /.row -->
+        </div><!-- /.panel-body -->
 
-      <div class="row">
-        <div class="col-lg-12">
-          <form name='volume' method='post' action='/cardRegisterNew.php'>
+    </div><!-- /.panel -->
+</div><!-- /.panel-group -->
 
-          <fieldset>
-          <legend>Card RFID ID</legend>
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="streamURL">Last used Chip ID</label>
-            <div class="col-md-6">
-              <span id="refresh_id"></span>
-              <span class="help-block">This will automatically update as you swipe a RFID card.</span>
-            </div>
-          </div>
-          </fieldset>
-
-          <fieldset>
-          <legend>Link RFID to:</legend>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="audiofolder">Link card to existing audio folder</label>
-            <div class="col-md-6">
-              <select id="audiofolder" name="audiofolder" class="form-control">
-                <option value="false" selected=selected>None (pulldown to select a folder)</option>
-                <option value='101-The-Beat'>101-The-Beat</option>
-                <option value='1059-The-Rock'>1059-The-Rock</option>
-                <option value='107-The-River'>107-The-River</option>
-                <option value='98-The-Big'>98-The-Big</option>
-                <option value='Battle Music'>Battle Music</option>
-                <option value='Big-Classic-Hits'>Big-Classic-Hits</option>
-                <option value='Harry Potter'>Harry Potter</option>
-                <option value='Marvel'>Marvel</option>
-                <option value='R-and-B-Jams'>R-and-B-Jams</option>
-                <option value='Star Wars'>Star Wars</option>
-                <option value='Town Music'>Town Music</option>
-                <option value='Travelers Themes'>Travelers Themes</option>
-              </select>
-              <span class="help-block">Containing local files or add YouTube content (specify below).</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="audiofolderNew">... or link a new folder</label>
-            <div class="col-md-6">
-              <input value="" id="audiofolderNew" name="audiofolderNew" placeholder="e.g. 'Artist Name/Album'" class="form-control input-md" type="text">
-              <span class="help-block">Always use a new folder for streams (see below) and optionally for YouTube.</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="TriggerCommand">... or link to a system command</label>
-             <div class="col-md-6">
-              <select id="TriggerCommand" name="TriggerCommand" class="form-control">
-                <option value="false" selected=selected>Select command to link</option>
-                <option value="false">-- Audio player</option>
-                <option value="CMDVOLUP">Volume up by one step (CMDVOLUP RFID: NONE)</option>
-                <option value="CMDVOLDOWN">Volume down by one step (CMDVOLDOWN RFID: NONE)</option>
-                <option value="CMDSWITCHAUDIOIFACE">Switch between primary/secondary audio iFace (CMDSWITCHAUDIOIFACE RFID: NONE)</option>
-                <option value="CMDSTOP">Stop player (CMDSTOP RFID: NONE)</option>
-                <option value="CMDMUTE">Mute player (CMDMUTE RFID: NONE)</option>
-                <option value="CMDNEXT">Skip next track (CMDNEXT RFID: 2060335108)</option>
-                <option value="CMDPREV">Skip previous track (CMDPREV RFID: NONE)</option>
-                <option value="CMDRANDCARD">Activate random card (CMDRANDCARD RFID: NONE)</option>
-                <option value="CMDRANDFOLD">Play random folder (CMDRANDFOLD RFID: NONE)</option>
-                <option value="CMDRANDTRACK">Jump to random track (CMDRANDTRACK RFID: NONE)</option>
-                <option value="CMDREWIND">Restart the playlist (CMDREWIND RFID: NONE)</option>
-                <option value="CMDSEEKFORW">Seek ahead 15 sec. (CMDSEEKFORW RFID: NONE)</option>
-                <option value="CMDSEEKBACK">Seek back 15 sec. (CMDSEEKBACK RFID: NONE)</option>
-                <option value="CMDPAUSE">Pause player (CMDPAUSE RFID: 168245508)</option>
-                <option value="CMDPLAY">Resume audio playout (CMDPLAY RFID: NONE)</option>
-                <option value="CMDBLUETOOTHTOGGLE">Toggle between speakers and bluetooth headphones (CMDBLUETOOTHTOGGLE RFID: NONE)</option>
-                <option value="false">-- System</option>
-                <option value="CMDSHUTDOWN">Shutdown (CMDSHUTDOWN RFID: NONE)</option>
-                <option value="CMDREBOOT">Reboot (CMDREBOOT RFID: NONE)</option>
-                <option value="false">-- Playlist</option>
-                <option value="CMDSHUFFLE">Shuffle mode toggle for current playlist (random on/off) (CMDSHUFFLE RFID: NONE)</option>
-                <option value="CMDPLAYCUSTOMPLS">Play custom playlist (CMDPLAYCUSTOMPLS RFID: NONE)</option>
-                <option value="false">-- Set volume (in percent)</option>
-                <option value="CMDVOL30">Volume 30% (CMDVOL30 RFID: NONE)</option>
-                <option value="CMDVOL50">Volume 50% (CMDVOL50 RFID: NONE)</option>
-                <option value="CMDVOL75">Volume 75% (CMDVOL75 RFID: NONE)</option>
-                <option value="CMDVOL80">Volume 80% (CMDVOL80 RFID: NONE)</option>
-                <option value="CMDVOL85">Volume 85% (CMDVOL85 RFID: NONE)</option>
-                <option value="CMDVOL90">Volume 90% (CMDVOL90 RFID: NONE)</option>
-                <option value="CMDVOL95">Volume 95% (CMDVOL95 RFID: NONE)</option>
-                <option value="CMDVOL100">Volume 100% (CMDVOL100 RFID: NONE)</option>
-                <option value="false">-- Set maximum volume (in percent)</option>
-                <option value="CMDMAXVOL30">Max. Volume 30% (CMDMAXVOL30 RFID: NONE)</option>
-                <option value="CMDMAXVOL50">Max. Volume 50% (CMDMAXVOL50 RFID: NONE)</option>
-                <option value="CMDMAXVOL75">Max. Volume 75% (CMDMAXVOL75 RFID: NONE)</option>
-                <option value="CMDMAXVOL80">Max. Volume 80% (CMDMAXVOL80 RFID: NONE)</option>
-                <option value="CMDMAXVOL85">Max. Volume 85% (CMDMAXVOL85 RFID: NONE)</option>
-                <option value="CMDMAXVOL90">Max. Volume 90% (CMDMAXVOL90 RFID: NONE)</option>
-                <option value="CMDMAXVOL95">Max. Volume 95% (CMDMAXVOL95 RFID: NONE)</option>
-                <option value="CMDMAXVOL100">Max. Volume 100% (CMDMAXVOL100 RFID: NONE)</option>
-                <option value="false">-- Timer: stop player after x minutes</option>
-                <option value="STOPAFTER5">Stop player after 5 min. (STOPAFTER5 RFID: NONE)</option>
-                <option value="STOPAFTER15">Stop player after 15 min. (STOPAFTER15 RFID: NONE)</option>
-                <option value="STOPAFTER30">Stop player after 30 min. (STOPAFTER30 RFID: NONE)</option>
-                <option value="STOPAFTER60">Stop player after 60 min. (STOPAFTER60 RFID: NONE)</option>
-                <option value="STOPAFTER120">Stop player after 120 min. (STOPAFTER120 RFID: NONE)</option>
-                <option value="STOPAFTER180">Stop player after 180 min. (STOPAFTER180 RFID: NONE)</option>
-                <option value="STOPAFTER240">Stop player after 240 min. (STOPAFTER240 RFID: NONE)</option>
-                <option value="false">-- Timer: shutdown after x minutes</option>
-                <option value="SHUTDOWNAFTER5">Shutdown after 5 min. (SHUTDOWNAFTER5 RFID: NONE)</option>
-                <option value="SHUTDOWNAFTER15">Shutdown after 15 min. (SHUTDOWNAFTER15 RFID: NONE)</option>
-                <option value="SHUTDOWNAFTER30">Shutdown after 30 min. (SHUTDOWNAFTER30 RFID: NONE)</option>
-                <option value="SHUTDOWNAFTER60">Shutdown after 60 min. (SHUTDOWNAFTER60 RFID: NONE)</option>
-                <option value="SHUTDOWNAFTER120">Shutdown after 120 min. (SHUTDOWNAFTER120 RFID: NONE)</option>
-                <option value="SHUTDOWNAFTER180">Shutdown after 180 min. (SHUTDOWNAFTER180 RFID: NONE)</option>
-                <option value="SHUTDOWNAFTER240">Shutdown after 240 min. (SHUTDOWNAFTER240 RFID: NONE)</option>
-                <option value="false">-- Shutdown Timer Volume Reduction : reduce volume until shutdown in x minutes</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION10">Reduce volume and Shutdown after 10 min. (SHUTDOWNVOLUMEREDUCTION10 RFID: NONE)</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION15">Reduce volume and Shutdown after 15 min. (SHUTDOWNVOLUMEREDUCTION15 RFID: NONE)</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION30">Reduce volume and Shutdown after 30 min. (SHUTDOWNVOLUMEREDUCTION30 RFID: NONE)</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION60">Reduce volume and Shutdown after 60 min. (SHUTDOWNVOLUMEREDUCTION60 RFID: NONE)</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION120">Reduce volume and Shutdown after 120 min. (SHUTDOWNVOLUMEREDUCTION120 RFID: NONE)</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION180">Reduce volume and Shutdown after 180 min. (SHUTDOWNVOLUMEREDUCTION180 RFID: NONE)</option>
-                <option value="SHUTDOWNVOLUMEREDUCTION240">Reduce volume and Shutdown after 240 min. (SHUTDOWNVOLUMEREDUCTION240 RFID: NONE)</option>
-                <option value="false">-- Wifi: switch on/off and other</option>
-                <option value="ENABLEWIFI">Enable Wifi (ENABLEWIFI RFID: NONE)</option>
-                <option value="DISABLEWIFI">Disable Wifi (DISABLEWIFI RFID: NONE)</option>
-                <option value="TOGGLEWIFI">Toggle Wifi on/off (TOGGLEWIFI RFID: NONE)</option>
-                <option value="CMDREADWIFIIP">Read out the Wifi IP over the Phoniebox speakers (CMDREADWIFIIP RFID: NONE)</option>
-                <option value="false">-- Recording audio commands</option>
-                <option value="RECORDSTART10">Start recording for 10 sec. duration (RECORDSTART10 RFID: NONE)</option>
-                <option value="RECORDSTART60">Start recording for 60 sec. duration (RECORDSTART60 RFID: NONE)</option>
-                <option value="RECORDSTART600">Start recording for 600 sec. duration (RECORDSTART600 RFID: NONE)</option>
-                <option value="RECORDSTOP">Stop recording (RECORDSTOP RFID: NONE)</option>
-                <option value="RECORDPLAYBACKLATEST">Replay latest recording (RECORDPLAYBACKLATEST RFID: NONE)</option>
-                <option value="false">-- Synchronisation</option>
-                <option value="SYNCSHAREDFULL">Synchronise all shared files (SYNCSHAREDFULL RFID: NONE)</option>
-                <option value="SYNCSHAREDONRFIDSCANTOGGLE">Toggle activation of 'sync on RFID scan' (SYNCSHAREDONRFIDSCANTOGGLE RFID: NONE)</option>
-              </select>
-              <span class="help-block">Select system commands (like 'pause', 'volume up', 'shutdown') from the list of available commands. If a RFID card is already linked to a function, the ID is shown in the pulldown menu.</span>
-            </div>
-          </div>
-          </fieldset>
-
-          <fieldset>
-          <legend>Link Stream</legend>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="streamURL">Stream URL (always requires new folder above)</label>
-            <div class="col-md-6">
-              <input value="" id="streamURL" name="streamURL" placeholder="http(...).mp3 / .m3u / .ogg / .rss / .xml / ..." class="form-control input-md" type="text">
-              <span class="help-block">Add the URL for spotify, podcast, web radio, stream or other online media</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="streamType"></label>
-            <div class="col-md-6">
-              <select id="streamType" name="streamType" class="form-control">
-                <option value="false" selected=selected>Select type</option>
-                <option value='podcast'>Podcast</option>
-                <option value='livestream'>Web radio / live stream</option>
-                <option value='other'>Other</option>
-              </select>
-              <span class="help-block">Select the type you are adding</span>
-            </div>
-          </div>
-          </fieldset>
-
-          <fieldset>
-          <legend>Download YouTube</legend>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="YTstreamURL">YouTube URL (single clip or playlist)</label>
-            <div class="col-md-6">
-              <input value="" id="YTstreamURL" name="YTstreamURL" placeholder="e.g. https://www.youtube.com/watch?v=7GI0VdPehQI" class="form-control input-md" type="text">
-              <span class="help-block">Full YouTube-URL of clip or playlist. Will be downloaded in the folder specified above or the new one if specified.</span>
-            </div>
-          </div>
-          </fieldset>
-
-          <div class="form-group">
-            <label class="col-md-4 control-label" for="submit"></label>
-            <div class="col-md-8">
-              <button id="submit" name="submit" class="btn btn-success" value="submit">Submit</button>
-              <a href="index.php" id="cancel" name="cancel" class="btn btn-danger">Cancel</a>
-              <br clear='all'><br>
-            </div>
-          </div>
-
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="RFIDexport"></a>
-         <i class='mdi mdi-download'></i> Export all RFID links (audio playout and commands)
+         <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
       </h4>
-    </div>
+    </div><!-- /.panel-heading -->
 
-    <div class="panel-body">
-      <div class="row">
-        <div class="col-lg-12">
-          <a href="rfidExportCsv.php" class="btn btn-primary btn">
-            <i class='mdi mdi-download'></i> Create .csv file of available RFID links
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-lg-12">
+                <a href="rfidExportCsv.php" class="btn btn-primary btn">
+                <i class='mdi mdi-download'></i> <?php print $lang['cardExportButtonLink']; ?>
+                </a>
+          </div><!-- / .col-lg-12 -->
+        </div><!-- /.row -->
+      </div><!-- /.panel-body -->
+
+    </div><!-- /.panel -->
+</div><!-- /.panel-group -->
 
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="RFIDimport"></a>
-         <i class='mdi mdi-plus-circle'></i> Import RFID links from .csv file
+         <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
       </h4>
-    </div>
+    </div><!-- /.panel-heading -->
 
-    <div class="panel-body">
-      <div class="row">
-        <div class="col-lg-12">
-          <form name='upload' enctype='multipart/form-data' method='post' action='/cardRegisterNew.php'>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-lg-12">
+            <form name='upload' enctype='multipart/form-data' method='post' action='<?php print $_SERVER['PHP_SELF']; ?>'>
             <fieldset>
-              <div class="form-group">
-                <label class="col-md-4 control-label" for="importFileUpload">Select .csv file to create RFID links</label>
-                <div class="col-md-6">
-                  <input type="file" name="importFileUpload" id="importFileUpload" class="form-control input-md">
-                  <span class="help-block"></span>
-                </div>
+            <!-- Form Name -->
+            <!--legend><?php print $lang['']; ?></legend-->
+            <!-- File Upload -->
+            <div class="form-group">
+              <label class="col-md-4 control-label" for="importFileUpload"><?php print $lang['cardImportFileLabel']; ?></label>
+              <div class="col-md-6">
+                <input type="file" name="importFileUpload" id="importFileUpload"class="form-control input-md" >
+              <span class="help-block"> </span>
               </div>
+            </div>
             </fieldset>
 
+            <!-- Select Basic -->
             <div class="form-group">
-              <label class="col-md-4 control-label" for="importFileOverwrite">Select import action</label>
+              <label class="col-md-4 control-label" for="importFileOverwrite"><?php print $lang['cardImportFormOverwriteLabel']; ?></label>
               <div class="col-md-6">
                 <select id="audiofolder" name="importFileOverwrite" class="form-control">
-                  <option value="all">Overwrite both: audio AND commands</option>
-                  <option value="commands">Overwrite ONLY system commands</option>
-                  <option value="audio">Overwrite ONLY audio triggers</option>
+                  <option value="all"><?php print $lang['cardImportFormOverwriteAll']; ?></option>
+                  <option value="commands"><?php print $lang['cardImportFormOverwriteCommands']; ?></option>
+                  <option value="audio"><?php print $lang['cardImportFormOverwriteAudio']; ?></option>
                 </select>
-                <span class="help-block">Specify what to do with the uploaded RFID links.</span>
+              <span class="help-block"><?php print $lang['cardImportFormOverwriteHelp']; ?></span>
               </div>
             </div>
 
+            <!-- Select Basic -->
             <div class="form-group">
-              <label class="col-md-4 control-label" for="importFileDelete">Delete or keep other RFID links?</label>
+              <label class="col-md-4 control-label" for="importFileDelete"><?php print $lang['cardImportFormDeleteLabel']; ?></label>
               <div class="col-md-6">
                 <select id="audiofolder" name="importFileDelete" class="form-control">
-                  <option value="none">Keep all existing: audio AND commands</option>
-                  <option value="all">Delete both: audio AND commands</option>
-                  <option value="commands">Delete ONLY system commands</option>
-                  <option value="audio">Delete ONLY audio triggers</option>
+                  <option value="none"><?php print $lang['cardImportFormDeleteNone']; ?></option>
+                  <option value="all"><?php print $lang['cardImportFormDeleteAll']; ?></option>
+                  <option value="commands"><?php print $lang['cardImportFormDeleteCommands']; ?></option>
+                  <option value="audio"><?php print $lang['cardImportFormDeleteAudio']; ?></option>
                 </select>
-                <span class="help-block">Which of the existing RFID links should be kept, which deleted?.</span>
+              <span class="help-block"><?php print $lang['cardImportFormDeleteHelp']; ?></span>
               </div>
             </div>
 
+
+            <!-- Button (Double) -->
             <div class="form-group">
               <label class="col-md-4 control-label" for="submit"></label>
               <div class="col-md-8">
-                <button id="submit" name="upload" class="btn btn-success" value="submit">Upload</button>
+                <button id="submit" name="upload" class="btn btn-success" value="submit"><?php print $lang['globalUpload']; ?></button>
                 <br clear='all'><br>
               </div>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
-</div>
+            </form>
+          </div><!-- / .col-lg-12 -->
+        </div><!-- /.row -->
+      </div><!-- /.panel-body -->
+
+    </div><!-- /.panel -->
+</div><!-- /.panel-group -->
+
+  </div><!-- /.container -->
 
 <script>
 $(document).ready(function() {
@@ -670,6 +523,7 @@ $(document).ready(function() {
         $('#refresh_id').load('ajax.refresh_id.php?' + 1*new Date());
     }, 1000);
 });
+
 </script>
 
 </body>
