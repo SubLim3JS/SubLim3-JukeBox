@@ -140,18 +140,18 @@ set_volume() {
     printf "*** Setting system volume ***\n"
     printf "********************************************************\n\n"
 
-    if amixer set Master 70% >/dev/null 2>&1; then
-        printf " - Master volume set to 70%%. - \n\n\n"
+    if amixer set Master 75% >/dev/null 2>&1; then
+        printf " - Master volume set to 75%%. - \n\n\n"
         return
     fi
 
-    if amixer set PCM 70% >/dev/null 2>&1; then
-        printf " - PCM volume set to 70%%. - \n\n\n"
+    if amixer set PCM 75% >/dev/null 2>&1; then
+        printf " - PCM volume set to 75%%. - \n\n\n"
         return
     fi
 
-    if amixer set Digital 70% >/dev/null 2>&1; then
-        printf " - Digital volume set to 70%%. - \n\n\n"
+    if amixer set Digital 75% >/dev/null 2>&1; then
+        printf " - Digital volume set to 75%%. - \n\n\n"
         return
     fi
 
