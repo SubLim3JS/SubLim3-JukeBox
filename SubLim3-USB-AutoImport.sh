@@ -2,9 +2,19 @@
 
 # ============================================================
 # SubLim3 USB Auto Import for Phoniebox
+# ------------------------------------------------------------
+# Imports supported audio files from a USB drive directly into:
+#   /home/pi/RPi-Jukebox-RFID/shared/audiofolders
+#
+# It preserves the USB's internal folder structure, does NOT
+# create an outer wrapper folder like sda1/, plays a success
+# or error sound, then unmounts/ejects the USB.
+#
+# Usage:
+#   sudo /home/pi/SubLim3-JukeBox/SubLim3-USB-AutoImport.sh /dev/sda1
 # ============================================================
 
-set -u
+set -uo pipefail
 
 DEVICE="${1:-}"
 LOG_FILE="/home/pi/SubLim3-JukeBox/logs/usb-auto-import.log"
@@ -33,16 +43,15 @@ play_sound() {
         return 1
     fi
 
-    sudo -u "$AUDIO_USER" /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 \
-    || sudo -u "$AUDIO_USER" /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 \
-    || /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 \
-    || /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 \
-    || {
-        log "Audio playback failed for: $sound_file"
-        return 1
-    }
+    log "Attempting to play sound: $sound_file"
 
-    return 0
+    sudo -u "$AUDIO_USER" /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+    sudo -u "$AUDIO_USER" /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+    /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+    /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+
+    log "Audio playback failed for: $sound_file"
+    return 1
 }
 
 success_beep() {
@@ -95,6 +104,7 @@ import_audio() {
     local rel_path
     local target_file
     local target_dir
+    local file
 
     while IFS= read -r -d '' file; do
         rel_path="${file#$src/}"
@@ -120,7 +130,7 @@ import_audio() {
         -iname "*.webm" \
     \) -print0)
 
-    echo "$imported"
+    printf '%s\n' "$imported"
 }
 
 safe_unmount_and_eject() {
@@ -209,7 +219,7 @@ log "Parent disk: $PARENT_DISK"
 BEFORE_COUNT=$(count_audio_files "$DEST_DIR")
 log "Existing audio files in destination: $BEFORE_COUNT"
 
-IMPORTED_COUNT=$(import_audio "$MOUNTPOINT" "$DEST_DIR")
+IMPORTED_COUNT="$(import_audio "$MOUNTPOINT" "$DEST_DIR")"
 
 chown -R "$PI_USER:$PI_GROUP" "$DEST_DIR" >> "$LOG_FILE" 2>&1 || log "Warning: chown failed on $DEST_DIR"
 find "$DEST_DIR" -type d -exec chmod 775 {} \; >> "$LOG_FILE" 2>&1
@@ -219,7 +229,7 @@ AFTER_COUNT=$(count_audio_files "$DEST_DIR")
 log "Audio files now in destination: $AFTER_COUNT"
 log "Newly imported files this run: $IMPORTED_COUNT"
 
-if [[ "$IMPORTED_COUNT" -gt 0 ]]; then
+if [[ "$IMPORTED_COUNT" =~ ^[0-9]+$ ]] && [[ "$IMPORTED_COUNT" -gt 0 ]]; then
     log "Import completed successfully."
     success_beep || log "Success sound failed to play."
 else
