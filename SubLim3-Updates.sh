@@ -121,6 +121,10 @@ copy_with_backup "$SOURCE_DIR/reg-toggle" \
 "$TARGET_DIR/settings/reg-toggle" \
 "reg-toggle"
 
+copy_with_backup "$SOURCE_DIR/rfid_trigger_play.sh" \
+"$TARGET_DIR/scripts/rfid_trigger_play.sh" \
+"rfid_trigger_play.sh"
+
 copy_with_backup "$SOURCE_DIR/gpio-buttons.py" \
 "$TARGET_DIR/settings/gpio-buttons.py" \
 "gpio-buttons.py"
