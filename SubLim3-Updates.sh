@@ -113,27 +113,27 @@ generate_sounds() {
 
     generate_sound_file "$SOUNDS_DIR/card-scan.wav" "card-scan.wav" \
         synth 0.15 sine 880 synth 0.15 sine 1760 \
-        fade 0.01 0.15 0.1 reverb 20
+        fade 0.01 0.15 0.05 reverb 20
 
     generate_sound_file "$SOUNDS_DIR/success.wav" "success.wav" \
         synth 0.2 sine 523 synth 0.2 sine 659 synth 0.2 sine 784 \
-        fade 0.01 0.6 0.2 reverb 30
+        fade 0.01 0.6 0.05 reverb 30
 
     generate_sound_file "$SOUNDS_DIR/error.wav" "error.wav" \
         synth 0.4 sine 110 synth 0.4 sine 90 \
-        fade 0.01 0.4 0.2 reverb 40
+        fade 0.01 0.4 0.05 reverb 40
 
     generate_sound_file "$SOUNDS_DIR/wifi.wav" "wifi.wav" \
         synth 0.1 sine 1200 synth 0.2 sine 900 synth 0.2 sine 1400 \
-        fade 0.01 0.5 0.2 reverb 35
+        fade 0.01 0.5 0.05 reverb 35
 
     generate_sound_file "$SOUNDS_DIR/update.wav" "update.wav" \
         synth 0.15 sine 400 synth 0.15 sine 600 synth 0.15 sine 800 \
-        fade 0.01 0.5 0.2 reverb 45
+        fade 0.01 0.45 0.05 reverb 45
 
     generate_sound_file "$SOUNDS_DIR/import.wav" "import.wav" \
         synth 0.25 sine 440 synth 0.25 sine 660 \
-        fade 0.01 0.4 0.2 reverb 35
+        fade 0.01 0.4 0.05 reverb 35
 }
 
 set_volume() {
@@ -143,10 +143,20 @@ set_volume() {
 
     if amixer set Master 70% >/dev/null 2>&1; then
         printf " - Master volume set to 70%%. - \n\n\n"
-    else
-        printf " - ERROR: Failed to set Master volume. - \n\n\n"
-        ERRORS=$((ERRORS+1))
+        return
     fi
+
+    if amixer set PCM 70% >/dev/null 2>&1; then
+        printf " - PCM volume set to 70%%. - \n\n\n"
+        return
+    fi
+
+    if amixer set Digital 70% >/dev/null 2>&1; then
+        printf " - Digital volume set to 70%%. - \n\n\n"
+        return
+    fi
+
+    printf " - WARNING: No compatible mixer control found (Master/PCM/Digital). Skipping volume change. - \n\n\n"
 }
 
 # ------------------------------------------------
