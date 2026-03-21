@@ -1,4 +1,42 @@
 <?php
+$accessFile = '/home/pi/SubLim3-JukeBox/scripts/cardRegisterAccess';
+$cardRegisterEnabled = false;
+$cardRegisterExpires = '';
+$cardRegisterExpiresTs = false;
+
+if (file_exists($accessFile) && is_readable($accessFile)) {
+    $lines = file($accessFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $accessConfig = array();
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+
+        if ($line === '' || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $accessConfig[trim($key)] = trim($value);
+        }
+    }
+
+    $enabledValue = isset($accessConfig['enabled']) ? trim($accessConfig['enabled']) : '0';
+    $cardRegisterExpires = isset($accessConfig['expires']) ? trim($accessConfig['expires']) : '';
+
+    if ($cardRegisterExpires !== '') {
+        $cardRegisterExpiresTs = strtotime($cardRegisterExpires);
+    }
+
+    if ($enabledValue === '1') {
+        if ($cardRegisterExpires === '') {
+            $cardRegisterEnabled = true;
+        } elseif ($cardRegisterExpiresTs !== false && time() <= $cardRegisterExpiresTs) {
+            $cardRegisterEnabled = true;
+        }
+    }
+}
+
 include("inc.header.php");
 
 /**************************************************
@@ -26,6 +64,35 @@ html_bootstrap3_createHeader("en","RFID Card | SubLim3 JukeBox",$conf['base_url'
 
 <?php
 include("inc.navigation.php");
+
+if (!$cardRegisterEnabled) {
+    ?>
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <i class='mdi mdi-timer-off'></i> RFID Registration Disabled
+            </h4>
+          </div>
+          <div class="panel-body">
+            <div class="alert alert-danger">
+              Card registration is currently disabled.
+              <?php if ($cardRegisterExpiresTs !== false) { ?>
+                <br><strong>Expired:</strong> <?php print htmlspecialchars($cardRegisterExpires); ?>
+              <?php } ?>
+            </div>
+            <a href="index.php" class="btn btn-primary">Back to Home</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /.container -->
+</body>
+</html>
+<?php
+    exit;
+}
 
 // path to script folder from github repo on RPi
 $conf['shared_abs'] = realpath(getcwd().'/../shared/');
@@ -172,6 +239,11 @@ if(!empty($_FILES['importFileUpload'])) {
 
 <div class="row">
   <div class="col-lg-12">
+  <?php if ($cardRegisterExpiresTs !== false) { ?>
+    <div class="alert alert-warning">
+      RFID registration access expires on <strong><?php print htmlspecialchars($cardRegisterExpires); ?></strong>.
+    </div>
+  <?php } ?>
   <strong><?php print $lang['globalJumpTo']; ?>:</strong>
         <a href="#RFIDinteractive" class="btn xbtn-info ">
         <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
