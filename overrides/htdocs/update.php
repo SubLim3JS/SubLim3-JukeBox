@@ -1,17 +1,17 @@
 <?php
 $repoDir = "/home/pi/SubLim3-JukeBox";
 
-// 🔊 Play "update started"
+// Play "update started"
 shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh update >/dev/null 2>&1 &");
 
-$cmd = "sudo -u pi bash -c 'cd $repoDir && git pull -q origin main && bash SubLim3-Updates.sh' 2>&1";
+$cmd = "sudo -u pi bash -c 'cd $repoDir && git pull -q origin main && bash scripts/SubLim3-Jukebox-Update.sh' 2>&1";
 
 exec($cmd, $output, $returnCode);
 
-// ✅ Determine result FIRST
+// Determine result FIRST
 $isSuccess = ($returnCode === 0);
 
-// 🔊 Play correct result sound
+// Play correct result sound
 if ($isSuccess) {
     shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh success >/dev/null 2>&1 &");
 } else {
