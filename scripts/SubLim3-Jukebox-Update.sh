@@ -7,9 +7,11 @@ TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 
 OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
 OVERRIDES_SETTINGS="$SOURCE_DIR/overrides/settings"
+OVERRIDES_ICONS="$SOURCE_DIR/overrides/icons"
 
 TARGET_HTDOCS="$TARGET_DIR/htdocs"
 TARGET_SETTINGS="$TARGET_DIR/settings"
+TARGET_ICONS="$TARGET_HTDOCS/_assets/icons"
 
 SCRIPT_DIR="$SOURCE_DIR/scripts"
 SCRIPT_NAME="SubLim3-Jukebox-Update.sh"
@@ -88,6 +90,13 @@ echo
 
 # htdocs overrides
 copy_file "$OVERRIDES_HTDOCS/_assets/css/custom-sublim3.css" "$TARGET_HTDOCS/_assets/css/custom-sublim3.css"
+
+# icon overrides
+copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
+copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
+copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
+
+# language and php overrides
 copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
 copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
 copy_file "$OVERRIDES_HTDOCS/settings.php" "$TARGET_HTDOCS/settings.php"
