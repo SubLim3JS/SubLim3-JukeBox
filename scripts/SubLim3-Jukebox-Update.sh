@@ -1,116 +1,116 @@
 #!/bin/bash
-set -euo pipefail
+
+set -e
 
 REPO_DIR="/home/pi/SubLim3-JukeBox"
 OVERRIDES_DIR="$REPO_DIR/overrides/htdocs"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID/htdocs"
-FUNC_FILE="$TARGET_DIR/func.php"
-BACKUP_ROOT="/home/pi/SubLim3-JukeBox-Backups"
-TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+BACKUP_ROOT="$REPO_DIR/backups"
+TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
 
-print_step() {
+print_section() {
     echo
     echo "========================================"
     echo " $1"
     echo "========================================"
 }
 
-ensure_path() {
-    local p="$1"
-    if [ ! -e "$p" ]; then
-        echo "ERROR: Required path not found: $p"
+require_path() {
+    if [ ! -e "$1" ]; then
+        echo "ERROR: Required path not found: $1"
         exit 1
     fi
 }
 
-backup_file_if_exists() {
-    local rel="$1"
-    local src="$TARGET_DIR/$rel"
-    local dst="$BACKUP_DIR/$rel"
+restart_web_server() {
+    print_section "Restarting web server"
 
-    if [ -f "$src" ]; then
-        mkdir -p "$(dirname "$dst")"
-        cp -a "$src" "$dst"
-        echo "Backed up: $rel"
+    if systemctl list-unit-files | grep -q '^apache2.service'; then
+        sudo systemctl restart apache2
+        echo "Restarted apache2"
+    elif systemctl list-unit-files | grep -q '^lighttpd.service'; then
+        sudo systemctl restart lighttpd
+        echo "Restarted lighttpd"
+    elif systemctl list-unit-files | grep -q '^nginx.service'; then
+        sudo systemctl restart nginx
+        echo "Restarted nginx"
+    else
+        echo "WARNING: No supported web server service found."
     fi
 }
 
-print_step "SubLim3 JukeBox 01 Update"
-
+print_section "SubLim3 JukeBox 01 Update"
 echo "Repo directory:      $REPO_DIR"
 echo "Overrides directory: $OVERRIDES_DIR"
 echo "Target directory:    $TARGET_DIR"
 
-ensure_path "$REPO_DIR"
-ensure_path "$OVERRIDES_DIR"
-ensure_path "$TARGET_DIR"
+require_path "$REPO_DIR"
+require_path "$OVERRIDES_DIR"
+require_path "$TARGET_DIR"
+
 mkdir -p "$BACKUP_DIR"
 
-print_step "Backing up target files that will be overridden"
+print_section "Backing up target files that will be overridden"
 
-if command -v rsync >/dev/null 2>&1; then
-    while IFS= read -r rel; do
-        [ -z "$rel" ] && continue
-        backup_file_if_exists "$rel"
-    done < <(cd "$OVERRIDES_DIR" && find . -type f | sed 's#^\./##' | sort)
-else
-    echo "WARNING: rsync not found. Falling back to cp for deployment later."
-    while IFS= read -r rel; do
-        [ -z "$rel" ] && continue
-        backup_file_if_exists "$rel"
-    done < <(cd "$OVERRIDES_DIR" && find . -type f | sed 's#^\./##' | sort)
-fi
+cd "$OVERRIDES_DIR"
+find . -type f | while read -r relpath; do
+    CLEAN_RELPATH="${relpath#./}"
+    SRC_FILE="$OVERRIDES_DIR/$CLEAN_RELPATH"
+    DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
 
+    if [ -f "$DST_FILE" ]; then
+        mkdir -p "$BACKUP_DIR/$(dirname "$CLEAN_RELPATH")"
+        cp -a "$DST_FILE" "$BACKUP_DIR/$CLEAN_RELPATH"
+        echo "Backed up: $CLEAN_RELPATH"
+    fi
+done
+
+FUNC_FILE="$TARGET_DIR/func.php"
 if [ -f "$FUNC_FILE" ]; then
-    backup_file_if_exists "func.php"
+    mkdir -p "$BACKUP_DIR"
+    cp -a "$FUNC_FILE" "$BACKUP_DIR/func.php"
+    echo "Backed up: func.php"
 fi
 
-print_step "Deploying overrides"
+print_section "Deploying overrides"
 
-if command -v rsync >/dev/null 2>&1; then
-    rsync -av --delete-delay "$OVERRIDES_DIR/" "$TARGET_DIR/"
+cd "$OVERRIDES_DIR"
+find . -type f | while read -r relpath; do
+    CLEAN_RELPATH="${relpath#./}"
+    SRC_FILE="$OVERRIDES_DIR/$CLEAN_RELPATH"
+    DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
+
+    mkdir -p "$(dirname "$DST_FILE")"
+    cp -a "$SRC_FILE" "$DST_FILE"
+    echo "Installed: $CLEAN_RELPATH"
+done
+
+print_section "Ensuring custom-sublim3.css is loaded in func.php"
+
+require_path "$FUNC_FILE"
+
+if grep -Fq 'custom-sublim3.css' "$FUNC_FILE"; then
+    echo "custom-sublim3.css is already referenced in func.php"
 else
-    cp -a "$OVERRIDES_DIR/." "$TARGET_DIR/"
-fi
-
-print_step "Ensuring custom-sublim3.css is loaded in func.php"
-
-ensure_path "$FUNC_FILE"
-
-if grep -q 'custom-sublim3.css' "$FUNC_FILE"; then
-    echo "func.php already includes custom-sublim3.css"
-else
-    python3 - "$FUNC_FILE" <<'PY'
-import sys
-from pathlib import Path
-
-func_path = Path(sys.argv[1])
-text = func_path.read_text()
-needle = '<link rel=\\"stylesheet\\" href=\\"".$url_absolute."_assets/css/collapsible.css\\">'
-insert = needle + '\n        <link rel=\\"stylesheet\\" href=\\"".$url_absolute."_assets/css/custom-sublim3.css\\">'
-if needle in text:
-    text = text.replace(needle, insert, 1)
-else:
-    raise SystemExit('Could not find collapsible.css include in func.php')
-func_path.write_text(text)
-PY
+    sed -i '/collapsible\.css/a\        <link rel=\\"stylesheet\\" href=\\"".$url_absolute."_assets/css/custom-sublim3.css\\">' "$FUNC_FILE"
     echo "Added custom-sublim3.css include to func.php"
 fi
 
-print_step "Setting ownership and permissions"
+print_section "Protecting local machine-specific files"
+
+if [ ! -f "$TARGET_DIR/config.php" ] && [ -f "$TARGET_DIR/config.php.sample" ]; then
+    cp "$TARGET_DIR/config.php.sample" "$TARGET_DIR/config.php"
+    echo "Recreated missing config.php from config.php.sample"
+fi
+
+print_section "Setting ownership and permissions"
 
 sudo chown -R pi:www-data /home/pi/RPi-Jukebox-RFID
-find /home/pi/RPi-Jukebox-RFID/htdocs -type d -exec chmod 755 {} \;
-find /home/pi/RPi-Jukebox-RFID/htdocs -type f -exec chmod 644 {} \;
+sudo chmod -R 775 "$TARGET_DIR"
 
-print_step "Restarting Apache"
-sudo systemctl restart apache2
+restart_web_server
 
-print_step "Remaining visible 'Phoniebox' matches in htdocs"
-grep -Rni "Phoniebox" "$TARGET_DIR" || true
-
-echo
-echo "Update complete."
-echo "Backup stored at: $BACKUP_DIR"
-echo "Hard refresh your browser with Ctrl+F5."
+print_section "Update complete"
+echo "Backup saved to: $BACKUP_DIR"
+echo "Hard refresh your browser with Ctrl+F5"
