@@ -1,12 +1,12 @@
 <?php
 $accessFile = '/home/pi/SubLim3-JukeBox/scripts/cardRegisterAccess';
-$cardRegisterEnabled = false;
-$cardRegisterExpires = '';
-$cardRegisterExpiresTs = false;
+$enabled = false;
+$expires = '';
+$expiresTs = false;
 
 if (file_exists($accessFile) && is_readable($accessFile)) {
     $lines = file($accessFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $accessConfig = array();
+    $config = array();
 
     foreach ($lines as $line) {
         $line = trim($line);
@@ -17,24 +17,87 @@ if (file_exists($accessFile) && is_readable($accessFile)) {
 
         if (strpos($line, '=') !== false) {
             list($key, $value) = explode('=', $line, 2);
-            $accessConfig[trim($key)] = trim($value);
+            $config[trim($key)] = trim($value);
         }
     }
 
-    $enabledValue = isset($accessConfig['enabled']) ? trim($accessConfig['enabled']) : '0';
-    $cardRegisterExpires = isset($accessConfig['expires']) ? trim($accessConfig['expires']) : '';
+    $isEnabled = isset($config['enabled']) && trim($config['enabled']) === '1';
+    $expires = isset($config['expires']) ? trim($config['expires']) : '';
 
-    if ($cardRegisterExpires !== '') {
-        $cardRegisterExpiresTs = strtotime($cardRegisterExpires);
-    }
-
-    if ($enabledValue === '1') {
-        if ($cardRegisterExpires === '') {
-            $cardRegisterEnabled = true;
-        } elseif ($cardRegisterExpiresTs !== false && time() <= $cardRegisterExpiresTs) {
-            $cardRegisterEnabled = true;
+    if ($isEnabled) {
+        if ($expires === '') {
+            $enabled = true;
+        } else {
+            $expiresTs = strtotime($expires);
+            if ($expiresTs !== false && time() <= $expiresTs) {
+                $enabled = true;
+            }
         }
     }
+}
+
+if (!$enabled) {
+    http_response_code(403);
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>RFID Card | SubLim3 JukeBox</title>
+        <link rel="stylesheet" href="_assets/bootstrap-3/css/bootstrap.darkly.css">
+        <link rel="stylesheet" href="_assets/css/custom-sublim3.css">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f5f5f5;
+                color: #222;
+                text-align: center;
+                padding: 40px 20px;
+            }
+            .card {
+                max-width: 500px;
+                margin: 40px auto;
+                background: #fff;
+                border-radius: 12px;
+                padding: 30px 20px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+            }
+            h1 {
+                margin-top: 0;
+                font-size: 28px;
+            }
+            .note {
+                font-size: 16px;
+                color: #555;
+                margin-top: 20px;
+            }
+            .btn {
+                display: inline-block;
+                margin-top: 25px;
+                padding: 12px 20px;
+                background: #2e7d32;
+                color: white;
+                text-decoration: none;
+                border-radius: 8px;
+            }
+            .btn:hover {
+                background: #256628;
+                color: white;
+                text-decoration: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>RFID Registration Disabled</h1>
+            <div class="note">Contact your system admin to re-enable it.</div>
+            <a class="btn" href="index.php">Back to Home</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
 }
 
 include("inc.header.php");
@@ -64,36 +127,79 @@ html_bootstrap3_createHeader("en","RFID Card | SubLim3 JukeBox",$conf['base_url'
 
 <?php
 include("inc.navigation.php");
+?>
 
-if (!$cardRegisterEnabled) {
-    ?>
-    <div class="row">
-      <div class="col-lg-12">
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            <h4 class="panel-title">
-              <i class='mdi mdi-timer-off'></i> RFID Registration Disabled
-            </h4>
-          </div>
-          <div class="panel-body">
-            <div class="alert alert-danger">
-              Card registration is currently disabled.
-              <?php if ($cardRegisterExpiresTs !== false) { ?>
-                <br><strong>Expired:</strong> <?php print htmlspecialchars($cardRegisterExpires); ?>
-              <?php } ?>
-            </div>
-            <a href="index.php" class="btn btn-primary">Back to Home</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div><!-- /.container -->
-</body>
-</html>
-<?php
-    exit;
+<style>
+.countdown-banner {
+    margin: 15px 0 20px 0;
+    padding: 12px 16px;
+    background: #1f7a5c;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
 }
+.countdown-banner.warning {
+    background: #b9770e;
+}
+.countdown-banner.danger {
+    background: #a93226;
+}
+</style>
 
+<?php if ($expiresTs !== false): ?>
+<div id="countdownBanner" class="countdown-banner">
+    Card Registration expires in: <span id="countdownTimer"></span>
+</div>
+<script>
+(function() {
+    var expiresAt = <?php echo $expiresTs; ?> * 1000;
+    var banner = document.getElementById('countdownBanner');
+    var timer = document.getElementById('countdownTimer');
+
+    function updateCountdown() {
+        var now = new Date().getTime();
+        var distance = expiresAt - now;
+
+        if (distance <= 0) {
+            timer.textContent = "Expired";
+            banner.className = "countdown-banner danger";
+            setTimeout(function() {
+                window.location.reload();
+            }, 1500);
+            return;
+        }
+
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        var parts = [];
+        if (days > 0) parts.push(days + "d");
+        if (hours > 0 || days > 0) parts.push(hours + "h");
+        parts.push(minutes + "m");
+        parts.push(seconds + "s");
+
+        timer.textContent = parts.join(" ");
+
+        if (distance <= 5 * 60 * 1000) {
+            banner.className = "countdown-banner danger";
+        } else if (distance <= 15 * 60 * 1000) {
+            banner.className = "countdown-banner warning";
+        } else {
+            banner.className = "countdown-banner";
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
+</script>
+<?php endif; ?>
+
+<?php
 // path to script folder from github repo on RPi
 $conf['shared_abs'] = realpath(getcwd().'/../shared/');
 
@@ -239,11 +345,6 @@ if(!empty($_FILES['importFileUpload'])) {
 
 <div class="row">
   <div class="col-lg-12">
-  <?php if ($cardRegisterExpiresTs !== false) { ?>
-    <div class="alert alert-warning">
-      RFID registration access expires on <strong><?php print htmlspecialchars($cardRegisterExpires); ?></strong>.
-    </div>
-  <?php } ?>
   <strong><?php print $lang['globalJumpTo']; ?>:</strong>
         <a href="#RFIDinteractive" class="btn xbtn-info ">
         <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
