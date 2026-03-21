@@ -6,7 +6,7 @@ SOURCE_DIR="/home/pi/SubLim3-JukeBox"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 
 OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
-OVERRIDES_ROOT="$SOURCE_DIR/overrides"
+OVERRIDES_SETTINGS="$SOURCE_DIR/overrides/settings"
 
 TARGET_HTDOCS="$TARGET_DIR/htdocs"
 TARGET_SETTINGS="$TARGET_DIR/settings"
@@ -86,7 +86,7 @@ echo
 echo "Deploying override files..."
 echo
 
-# --- HTDOCS FILES ---
+# htdocs overrides
 copy_file "$OVERRIDES_HTDOCS/_assets/css/custom-sublim3.css" "$TARGET_HTDOCS/_assets/css/custom-sublim3.css"
 copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
 copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
@@ -101,8 +101,8 @@ copy_file "$OVERRIDES_HTDOCS/userScripts.php" "$TARGET_HTDOCS/userScripts.php"
 copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.php"
 copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 
-# --- VERSION FILE ---
-copy_file "$OVERRIDES_ROOT/settings/version-number" "$TARGET_SETTINGS/version-number"
+# settings overrides
+copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
 echo
 if [ "$ERRORS" -eq 0 ]; then
