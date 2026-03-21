@@ -88,15 +88,18 @@ echo
 echo "Deploying override files..."
 echo
 
-# htdocs overrides
+# --- CSS ---
 copy_file "$OVERRIDES_HTDOCS/_assets/css/custom-sublim3.css" "$TARGET_HTDOCS/_assets/css/custom-sublim3.css"
 
-# icon overrides
+# --- ICONS ---
 copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
 copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
 copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
 
-# language and php overrides
+# --- NAVIGATION (NEW) ---
+copy_file "$OVERRIDES_HTDOCS/inc.navigation.php" "$TARGET_HTDOCS/inc.navigation.php"
+
+# --- LANGUAGE & PHP FILES ---
 copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
 copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
 copy_file "$OVERRIDES_HTDOCS/settings.php" "$TARGET_HTDOCS/settings.php"
@@ -110,10 +113,10 @@ copy_file "$OVERRIDES_HTDOCS/userScripts.php" "$TARGET_HTDOCS/userScripts.php"
 copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.php"
 copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 
-# settings overrides
+# --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
-# scripts copied into settings
+# --- GPIO SCRIPT ---
 copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
 
 echo
