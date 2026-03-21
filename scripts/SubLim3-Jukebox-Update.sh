@@ -113,6 +113,9 @@ copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 # settings overrides
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
+# scripts copied into settings
+copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
+
 echo
 if [ "$ERRORS" -eq 0 ]; then
   echo "Update complete with no copy errors."
