@@ -23,23 +23,6 @@ require_path() {
     fi
 }
 
-restart_web_server() {
-    print_section "Restarting web server"
-
-    if systemctl list-unit-files | grep -q '^apache2.service'; then
-        sudo systemctl restart apache2
-        echo "Restarted apache2"
-    elif systemctl list-unit-files | grep -q '^lighttpd.service'; then
-        sudo systemctl restart lighttpd
-        echo "Restarted lighttpd"
-    elif systemctl list-unit-files | grep -q '^nginx.service'; then
-        sudo systemctl restart nginx
-        echo "Restarted nginx"
-    else
-        echo "WARNING: No supported web server service found."
-    fi
-}
-
 print_section "SubLim3 JukeBox 01 Update"
 echo "Repo directory:      $REPO_DIR"
 echo "Overrides directory: $OVERRIDES_DIR"
@@ -107,7 +90,9 @@ print_section "Setting ownership and permissions"
 sudo chown -R pi:www-data /home/pi/RPi-Jukebox-RFID
 sudo chmod -R 775 "$TARGET_DIR"
 
-restart_web_server
+print_section "Restarting lighttpd"
+sudo systemctl restart lighttpd
+echo "Restarted lighttpd"
 
 print_section "Update complete"
 echo "Backup saved to: $BACKUP_DIR"
