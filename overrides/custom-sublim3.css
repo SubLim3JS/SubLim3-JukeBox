@@ -121,7 +121,9 @@ a:focus {
   border-color: transparent !important;
 }
 
-.navbar-default .navbar-nav > li > a {
+.navbar-default .navbar-brand,
+.navbar-default .navbar-nav > li > a,
+.navbar-default .navbar-text {
   color: #ffffff !important;
 }
 
@@ -129,7 +131,9 @@ a:focus {
 .navbar-default .navbar-nav > li > a:focus,
 .navbar-default .navbar-nav > .active > a,
 .navbar-default .navbar-nav > .active > a:hover,
-.navbar-default .navbar-nav > .active > a:focus {
+.navbar-default .navbar-nav > .active > a:focus,
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
   background-color: var(--primary-green-dark) !important;
   color: #ffffff !important;
 }
