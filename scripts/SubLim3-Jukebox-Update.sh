@@ -6,13 +6,15 @@ SOURCE_DIR="/home/pi/SubLim3-JukeBox"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
 TARGET_HTDOCS="$TARGET_DIR/htdocs"
+SCRIPT_DIR="$SOURCE_DIR/scripts"
+SCRIPT_NAME="SubLim3-Jukebox-Update.sh"
 
 ERRORS=0
 
 print_header() {
-  printf "\n========================================\n"
-  printf " SubLim3 JukeBox 02 Update\n"
-  printf "========================================\n\n"
+  printf "\n====================================\n"
+  printf "====== SubLim3 JukeBox Update ======\n"
+  printf "====================================\n\n"
 }
 
 copy_file() {
@@ -35,8 +37,46 @@ copy_file() {
   fi
 }
 
+update_repo() {
+  echo "Updating SubLim3-JukeBox repository..."
+  echo
+
+  if [ ! -d "$SOURCE_DIR/.git" ]; then
+    echo "[ERROR] $SOURCE_DIR is not a git repository."
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+
+  if git -C "$SOURCE_DIR" pull --ff-only origin main; then
+    echo
+    echo "[OK] Repository updated successfully."
+    return 0
+  else
+    echo
+    echo "[ERROR] git pull failed."
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+}
+
+refresh_this_script() {
+  local latest_script="$SCRIPT_DIR/$SCRIPT_NAME"
+
+  if [ -f "$latest_script" ]; then
+    chmod +x "$latest_script" 2>/dev/null || true
+    echo "[OK] Latest update script is present: $latest_script"
+  else
+    echo "[WARN] Latest update script not found at: $latest_script"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
 print_header
 
+update_repo
+echo
+refresh_this_script
+echo
 echo "Deploying override files..."
 echo
 
