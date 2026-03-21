@@ -102,7 +102,7 @@ copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.ph
 copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 
 # --- VERSION FILE ---
-copy_file "$OVERRIDES_ROOT/version-number" "$TARGET_SETTINGS/version-number"
+copy_file "$OVERRIDES_ROOT/settings/version-number" "$TARGET_SETTINGS/version-number"
 
 echo
 if [ "$ERRORS" -eq 0 ]; then
