@@ -56,7 +56,6 @@ print_section "Backing up target files that will be overridden"
 cd "$OVERRIDES_DIR"
 find . -type f | while read -r relpath; do
     CLEAN_RELPATH="${relpath#./}"
-    SRC_FILE="$OVERRIDES_DIR/$CLEAN_RELPATH"
     DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
 
     if [ -f "$DST_FILE" ]; then
@@ -68,7 +67,6 @@ done
 
 FUNC_FILE="$TARGET_DIR/func.php"
 if [ -f "$FUNC_FILE" ]; then
-    mkdir -p "$BACKUP_DIR"
     cp -a "$FUNC_FILE" "$BACKUP_DIR/func.php"
     echo "Backed up: func.php"
 fi
