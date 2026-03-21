@@ -254,7 +254,7 @@ include("inc.addSystemInfo.php");
           <?php print $lang['infoDebugLogClear']; ?>
         </a>
         <a href="update.php" class="btn btn-success" style="margin-left:10px;">
-          <i class='mdi mdi-cloud-download'></i> ...
+          <i class='mdi mdi-cloud-download'></i> 
         </a>
       </div>
       <div style="clear:both;"></div>
