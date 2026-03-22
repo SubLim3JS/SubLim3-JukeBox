@@ -1,167 +1,99 @@
 #!/bin/bash
 
-set -u
+set -e
 
-SOURCE_DIR="/home/pi/SubLim3-JukeBox"
-TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
+REPO_DIR="/home/pi/SubLim3-JukeBox"
+OVERRIDES_DIR="$REPO_DIR/overrides/htdocs"
+TARGET_DIR="/home/pi/RPi-Jukebox-RFID/htdocs"
+BACKUP_ROOT="$REPO_DIR/backups"
+TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
+BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
 
-OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
-OVERRIDES_SETTINGS="$SOURCE_DIR/overrides/settings"
-OVERRIDES_ICONS="$SOURCE_DIR/overrides/icons"
-
-TARGET_HTDOCS="$TARGET_DIR/htdocs"
-TARGET_SETTINGS="$TARGET_DIR/settings"
-TARGET_ICONS="$TARGET_HTDOCS/_assets/icons"
-TARGET_SCRIPTS="$TARGET_DIR/scripts"
-
-SCRIPT_DIR="$SOURCE_DIR/scripts"
-SCRIPT_NAME="SubLim3-Jukebox-Update.sh"
-
-ERRORS=0
-
-print_header() {
-  printf "\n====================================\n"
-  printf "====== SubLim3 JukeBox Update ======\n"
-  printf "====================================\n\n"
-}
-
-copy_file() {
-  local src="$1"
-  local dst="$2"
-
-  if [ ! -f "$src" ]; then
-    echo "[WARN] Missing source file: $src"
-    ERRORS=$((ERRORS + 1))
-    return
-  fi
-
-  mkdir -p "$(dirname "$dst")"
-
-  if cp "$src" "$dst"; then
-    echo "[OK] $(basename "$src") -> $dst"
-  else
-    echo "[ERROR] Failed to copy $src -> $dst"
-    ERRORS=$((ERRORS + 1))
-  fi
-}
-
-set_permissions() {
-  local file="$1"
-  local mode="$2"
-
-  if [ -e "$file" ]; then
-    if chmod "$mode" "$file"; then
-      echo "[OK] chmod $mode $file"
-    else
-      echo "[WARN] Failed to chmod $mode $file"
-      ERRORS=$((ERRORS + 1))
-    fi
-  fi
-}
-
-update_repo() {
-  echo "Updating SubLim3-JukeBox repository..."
-  echo
-
-  if [ ! -d "$SOURCE_DIR/.git" ]; then
-    echo "[ERROR] $SOURCE_DIR is not a git repository."
-    ERRORS=$((ERRORS + 1))
-    return 1
-  fi
-
-  if git -C "$SOURCE_DIR" fetch origin && git -C "$SOURCE_DIR" reset --hard origin/main; then
+print_section() {
     echo
-    echo "[OK] Repository force-synced successfully."
-    return 0
-  else
-    echo
-    echo "[ERROR] Repository sync failed."
-    ERRORS=$((ERRORS + 1))
-    return 1
-  fi
+    echo "========================================"
+    echo " $1"
+    echo "========================================"
 }
 
-refresh_this_script() {
-  local latest_script="$SCRIPT_DIR/$SCRIPT_NAME"
-
-  if [ -f "$latest_script" ]; then
-    chmod +x "$latest_script" 2>/dev/null || true
-    echo "[OK] Latest update script is present: $latest_script"
-  else
-    echo "[WARN] Latest update script not found at: $latest_script"
-    ERRORS=$((ERRORS + 1))
-  fi
-}
-
-restart_buttons_service() {
-  echo
-  echo "Restarting phoniebox-buttons service..."
-  echo
-
-  if systemctl list-unit-files | grep -q "^phoniebox-buttons.service"; then
-    if sudo systemctl restart phoniebox-buttons; then
-      echo "[OK] phoniebox-buttons service restarted."
-    else
-      echo "[WARN] Failed to restart phoniebox-buttons service."
-      ERRORS=$((ERRORS + 1))
+require_path() {
+    if [ ! -e "$1" ]; then
+        echo "ERROR: Required path not found: $1"
+        exit 1
     fi
-  else
-    echo "[WARN] phoniebox-buttons service not found."
-    ERRORS=$((ERRORS + 1))
-  fi
 }
 
-print_header
+print_section "SubLim3 JukeBox 01 Update"
+echo "Repo directory:      $REPO_DIR"
+echo "Overrides directory: $OVERRIDES_DIR"
+echo "Target directory:    $TARGET_DIR"
 
-update_repo
-echo
-refresh_this_script
-echo
+require_path "$REPO_DIR"
+require_path "$OVERRIDES_DIR"
+require_path "$TARGET_DIR"
 
-echo "Deploying override files..."
-echo
+mkdir -p "$BACKUP_DIR"
 
-# --- CSS ---
-copy_file "$OVERRIDES_HTDOCS/_assets/css/custom-sublim3.css" "$TARGET_HTDOCS/_assets/css/custom-sublim3.css"
+print_section "Backing up target files that will be overridden"
 
-# --- ICONS ---
-copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
-copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
-copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
+cd "$OVERRIDES_DIR"
+find . -type f | while read -r relpath; do
+    CLEAN_RELPATH="${relpath#./}"
+    DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
 
-# --- NAVIGATION ---
-copy_file "$OVERRIDES_HTDOCS/inc.navigation.php" "$TARGET_HTDOCS/inc.navigation.php"
+    if [ -f "$DST_FILE" ]; then
+        mkdir -p "$BACKUP_DIR/$(dirname "$CLEAN_RELPATH")"
+        cp -a "$DST_FILE" "$BACKUP_DIR/$CLEAN_RELPATH"
+        echo "Backed up: $CLEAN_RELPATH"
+    fi
+done
 
-# --- LANGUAGE & PHP FILES ---
-copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
-copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
-copy_file "$OVERRIDES_HTDOCS/settings.php" "$TARGET_HTDOCS/settings.php"
-copy_file "$OVERRIDES_HTDOCS/cardRegisterNew.php" "$TARGET_HTDOCS/cardRegisterNew.php"
-copy_file "$OVERRIDES_HTDOCS/manageFilesFolders.php" "$TARGET_HTDOCS/manageFilesFolders.php"
-copy_file "$OVERRIDES_HTDOCS/search.php" "$TARGET_HTDOCS/search.php"
-copy_file "$OVERRIDES_HTDOCS/cardEdit.php" "$TARGET_HTDOCS/cardEdit.php"
-copy_file "$OVERRIDES_HTDOCS/index-lcd.php" "$TARGET_HTDOCS/index-lcd.php"
-copy_file "$OVERRIDES_HTDOCS/trackEdit.php" "$TARGET_HTDOCS/trackEdit.php"
-copy_file "$OVERRIDES_HTDOCS/userScripts.php" "$TARGET_HTDOCS/userScripts.php"
-copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.php"
-copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
-copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
-copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
-
-# --- SETTINGS ---
-copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
-
-# --- GPIO BUTTON SCRIPT ACTUALLY USED BY THIS BUILD ---
-copy_file "$SCRIPT_DIR/gpio_dual_buttons.py" "$TARGET_SCRIPTS/gpio_dual_buttons.py"
-set_permissions "$TARGET_SCRIPTS/gpio_dual_buttons.py" "755"
-
-restart_buttons_service
-
-echo
-if [ "$ERRORS" -eq 0 ]; then
-  echo "Update complete with no copy errors."
-  exit 0
-else
-  echo "Update finished with $ERRORS error(s)."
-  exit 1
+FUNC_FILE="$TARGET_DIR/func.php"
+if [ -f "$FUNC_FILE" ]; then
+    cp -a "$FUNC_FILE" "$BACKUP_DIR/func.php"
+    echo "Backed up: func.php"
 fi
+
+print_section "Deploying overrides"
+
+cd "$OVERRIDES_DIR"
+find . -type f | while read -r relpath; do
+    CLEAN_RELPATH="${relpath#./}"
+    SRC_FILE="$OVERRIDES_DIR/$CLEAN_RELPATH"
+    DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
+
+    mkdir -p "$(dirname "$DST_FILE")"
+    cp -a "$SRC_FILE" "$DST_FILE"
+    echo "Installed: $CLEAN_RELPATH"
+done
+
+print_section "Ensuring custom-sublim3.css is loaded in func.php"
+
+require_path "$FUNC_FILE"
+
+if grep -Fq 'custom-sublim3.css' "$FUNC_FILE"; then
+    echo "custom-sublim3.css is already referenced in func.php"
+else
+    sed -i '/collapsible\.css/a\        <link rel=\\"stylesheet\\" href=\\"".$url_absolute."_assets/css/custom-sublim3.css\\">' "$FUNC_FILE"
+    echo "Added custom-sublim3.css include to func.php"
+fi
+
+print_section "Protecting local machine-specific files"
+
+if [ ! -f "$TARGET_DIR/config.php" ] && [ -f "$TARGET_DIR/config.php.sample" ]; then
+    cp "$TARGET_DIR/config.php.sample" "$TARGET_DIR/config.php"
+    echo "Recreated missing config.php from config.php.sample"
+fi
+
+print_section "Setting ownership and permissions"
+
+sudo chown -R pi:www-data /home/pi/RPi-Jukebox-RFID
+sudo chmod -R 775 "$TARGET_DIR"
+
+print_section "Restarting lighttpd"
+sudo systemctl restart lighttpd
+echo "Restarted lighttpd"
+
+print_section "Update complete"
+echo "Backup saved to: $BACKUP_DIR"
+echo "Hard refresh your browser with Ctrl+F5"
