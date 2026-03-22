@@ -92,24 +92,6 @@ refresh_this_script() {
   fi
 }
 
-restart_gpio_buttons() {
-  echo
-  echo "Restarting gpio-buttons service..."
-  echo
-
-  if systemctl list-unit-files | grep -q "^gpio-buttons.service"; then
-    if sudo systemctl restart gpio-buttons; then
-      echo "[OK] gpio-buttons service restarted."
-    else
-      echo "[WARN] Failed to restart gpio-buttons service."
-      ERRORS=$((ERRORS + 1))
-    fi
-  else
-    echo "[WARN] gpio-buttons service not found."
-    ERRORS=$((ERRORS + 1))
-  fi
-}
-
 print_header
 
 update_repo
