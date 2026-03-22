@@ -2,22 +2,12 @@
 
 set -e
 
-SOURCE_DIR="/home/pi/RPi-Jukebox-RFID/htdocs"
-OVERRIDES_DIR="/home/pi/SubLim3-JukeBox/overrides/htdocs"
-
-FILES=(
-  "lang/lang-en-UK.php"
-  "systemInfo.php"
-  "settings.php"
-  "cardRegisterNew.php"
-  "manageFilesFolders.php"
-  "search.php"
-  "cardEdit.php"
-  "index-lcd.php"
-  "trackEdit.php"
-  "userScripts.php"
-  "rfidExportCsv.php"
-)
+REPO_DIR="/home/pi/SubLim3-JukeBox"
+OVERRIDES_DIR="$REPO_DIR/overrides/htdocs"
+TARGET_DIR="/home/pi/RPi-Jukebox-RFID/htdocs"
+BACKUP_ROOT="$REPO_DIR/backups"
+TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
+BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
 
 print_section() {
     echo
@@ -33,99 +23,77 @@ require_path() {
     fi
 }
 
-copy_file() {
-    local rel="$1"
-    local src="$SOURCE_DIR/$rel"
-    local dst="$OVERRIDES_DIR/$rel"
+print_section "SubLim3 JukeBox 01 Update"
+echo "Repo directory:      $REPO_DIR"
+echo "Overrides directory: $OVERRIDES_DIR"
+echo "Target directory:    $TARGET_DIR"
 
-    require_path "$src"
-    mkdir -p "$(dirname "$dst")"
-    cp -a "$src" "$dst"
-    echo "Copied: $rel"
-}
+require_path "$REPO_DIR"
+require_path "$OVERRIDES_DIR"
+require_path "$TARGET_DIR"
 
-replace_in_file() {
-    local file="$1"
-    local search="$2"
-    local replace="$3"
+mkdir -p "$BACKUP_DIR"
 
-    if grep -Fq "$search" "$file"; then
-        sed -i "s|$search|$replace|g" "$file"
-        echo "Updated: $(basename "$file") -> $search"
-    else
-        echo "Skipped (not found): $(basename "$file") -> $search"
+print_section "Backing up target files that will be overridden"
+
+cd "$OVERRIDES_DIR"
+find . -type f | while read -r relpath; do
+    CLEAN_RELPATH="${relpath#./}"
+    DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
+
+    if [ -f "$DST_FILE" ]; then
+        mkdir -p "$BACKUP_DIR/$(dirname "$CLEAN_RELPATH")"
+        cp -a "$DST_FILE" "$BACKUP_DIR/$CLEAN_RELPATH"
+        echo "Backed up: $CLEAN_RELPATH"
     fi
-}
-
-print_section "Generating SubLim3 override files"
-echo "Source:    $SOURCE_DIR"
-echo "Overrides: $OVERRIDES_DIR"
-
-require_path "$SOURCE_DIR"
-mkdir -p "$OVERRIDES_DIR"
-
-print_section "Copying source files"
-for rel in "${FILES[@]}"; do
-    copy_file "$rel"
 done
 
-print_section "Applying SubLim3 branding"
+FUNC_FILE="$TARGET_DIR/func.php"
+if [ -f "$FUNC_FILE" ]; then
+    cp -a "$FUNC_FILE" "$BACKUP_DIR/func.php"
+    echo "Backed up: func.php"
+fi
 
-LANG_FILE="$OVERRIDES_DIR/lang/lang-en-UK.php"
-SYSTEMINFO_FILE="$OVERRIDES_DIR/systemInfo.php"
-SETTINGS_FILE="$OVERRIDES_DIR/settings.php"
-CARDREGISTER_FILE="$OVERRIDES_DIR/cardRegisterNew.php"
-MANAGE_FILE="$OVERRIDES_DIR/manageFilesFolders.php"
-SEARCH_FILE="$OVERRIDES_DIR/search.php"
-CARDEDIT_FILE="$OVERRIDES_DIR/cardEdit.php"
-INDEXLCD_FILE="$OVERRIDES_DIR/index-lcd.php"
-TRACKEDIT_FILE="$OVERRIDES_DIR/trackEdit.php"
-USERSCRIPTS_FILE="$OVERRIDES_DIR/userScripts.php"
-RFIDEXPORT_FILE="$OVERRIDES_DIR/rfidExportCsv.php"
+print_section "Deploying overrides"
 
-# lang/lang-en-UK.php
-replace_in_file "$LANG_FILE" "\$lang['navBrand'] = \"Phoniebox\";" "\$lang['navBrand'] = \"SubLim3 JukeBox\";"
-replace_in_file "$LANG_FILE" "connect to the phoniebox" "connect to the SubLim3 JukeBox"
-replace_in_file "$LANG_FILE" "commit your changes to the Phoniebox code :)" "commit your changes to the SubLim3 JukeBox code :)"
-replace_in_file "$LANG_FILE" "hook your Phoniebox into a new Wlan network with dynamic IP" "connect your SubLim3 JukeBox to a new Wlan network with dynamic IP"
+cd "$OVERRIDES_DIR"
+find . -type f | while read -r relpath; do
+    CLEAN_RELPATH="${relpath#./}"
+    SRC_FILE="$OVERRIDES_DIR/$CLEAN_RELPATH"
+    DST_FILE="$TARGET_DIR/$CLEAN_RELPATH"
 
-# systemInfo.php
-replace_in_file "$SYSTEMINFO_FILE" "html_bootstrap3_createHeader(\"en\",\"System Info | Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"System Info | SubLim3 JukeBox\",\$conf['base_url']);"
-replace_in_file "$SYSTEMINFO_FILE" "Phoniebox Setup" "SubLim3 JukeBox Setup"
+    mkdir -p "$(dirname "$DST_FILE")"
+    cp -a "$SRC_FILE" "$DST_FILE"
+    echo "Installed: $CLEAN_RELPATH"
+done
 
-# settings.php
-replace_in_file "$SETTINGS_FILE" "html_bootstrap3_createHeader(\"en\",\"Settings | Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"Settings | SubLim3 JukeBox\",\$conf['base_url']);"
-replace_in_file "$SETTINGS_FILE" "* Phoniebox could send you the IP address over email." "* SubLim3 JukeBox could send you the IP address over email."
-replace_in_file "$SETTINGS_FILE" "* Useful if you move your Phoniebox into a new Wifi which" "* Useful if you move your SubLim3 JukeBox into a new WiFi network which"
+print_section "Ensuring custom-sublim3.css is loaded in func.php"
 
-# cardRegisterNew.php
-replace_in_file "$CARDREGISTER_FILE" "html_bootstrap3_createHeader(\"en\",\"RFID Card | Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"RFID Card | SubLim3 JukeBox\",\$conf['base_url']);"
+require_path "$FUNC_FILE"
 
-# manageFilesFolders.php
-replace_in_file "$MANAGE_FILE" "html_bootstrap3_createHeader(\"en\", \"Files and Folders | Phoniebox\", \$conf['base_url']);" "html_bootstrap3_createHeader(\"en\", \"Files and Folders | SubLim3 JukeBox\", \$conf['base_url']);"
+if grep -Fq 'custom-sublim3.css' "$FUNC_FILE"; then
+    echo "custom-sublim3.css is already referenced in func.php"
+else
+    sed -i '/collapsible\.css/a\        <link rel=\\"stylesheet\\" href=\\"".$url_absolute."_assets/css/custom-sublim3.css\\">' "$FUNC_FILE"
+    echo "Added custom-sublim3.css include to func.php"
+fi
 
-# search.php
-replace_in_file "$SEARCH_FILE" "html_bootstrap3_createHeader(\"en\",\"Search | Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"Search | SubLim3 JukeBox\",\$conf['base_url']);"
+print_section "Protecting local machine-specific files"
 
-# cardEdit.php
-replace_in_file "$CARDEDIT_FILE" "html_bootstrap3_createHeader(\"en\",\"Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"SubLim3 JukeBox\",\$conf['base_url']);"
+if [ ! -f "$TARGET_DIR/config.php" ] && [ -f "$TARGET_DIR/config.php.sample" ]; then
+    cp "$TARGET_DIR/config.php.sample" "$TARGET_DIR/config.php"
+    echo "Recreated missing config.php from config.php.sample"
+fi
 
-# index-lcd.php
-replace_in_file "$INDEXLCD_FILE" "html_bootstrap3_createHeader(\"en\",\"Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"SubLim3 JukeBox\",\$conf['base_url']);"
+print_section "Setting ownership and permissions"
 
-# trackEdit.php
-replace_in_file "$TRACKEDIT_FILE" "html_bootstrap3_createHeader(\"en\",\"Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"SubLim3 JukeBox\",\$conf['base_url']);"
-replace_in_file "$TRACKEDIT_FILE" "mainly German speaking Phoniebox tinkerers." "mainly German speaking SubLim3 JukeBox tinkerers."
+sudo chown -R pi:www-data /home/pi/RPi-Jukebox-RFID
+sudo chmod -R 775 "$TARGET_DIR"
 
-# userScripts.php
-replace_in_file "$USERSCRIPTS_FILE" "html_bootstrap3_createHeader(\"en\",\"Phoniebox\",\$conf['base_url']);" "html_bootstrap3_createHeader(\"en\",\"SubLim3 JukeBox\",\$conf['base_url']);"
+print_section "Restarting lighttpd"
+sudo systemctl restart lighttpd
+echo "Restarted lighttpd"
 
-# rfidExportCsv.php
-replace_in_file "$RFIDEXPORT_FILE" "\$filename = \"PhonieboxRFID-\" . date(\"Y-m-d\") . \"_\" . date(\"G-i-s\") . \".csv\";" "\$filename = \"SubLim3-JukeBox-RFID-\" . date(\"Y-m-d\") . \"_\" . date(\"G-i-s\") . \".csv\";"
-
-print_section "Done"
-echo "Generated override files in:"
-echo "  $OVERRIDES_DIR"
-echo
-echo "Review them, commit them to GitHub, then deploy with:"
-echo "  bash ~/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh"
+print_section "Update complete"
+echo "Backup saved to: $BACKUP_DIR"
+echo "Hard refresh your browser with Ctrl+F5"
