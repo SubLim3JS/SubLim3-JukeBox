@@ -1,11 +1,13 @@
 <?php
 function getWifiIp() {
+    // Prefer wlan0
     $ip = trim(shell_exec("ip -4 addr show wlan0 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
 
     if (!empty($ip)) {
         return $ip;
     }
 
+    // Fallback: any IP
     $ip = trim(shell_exec("hostname -I | awk '{print $1}'"));
 
     if (!empty($ip)) {
@@ -17,8 +19,9 @@ function getWifiIp() {
 
 $ipAddress = getWifiIp();
 
-shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/playout_controls.sh -c=readwifiipoverspeaker >/dev/null 2>&1 &");
-shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh wifi >/dev/null 2>&1 &");
+// 🔊 Speak IP + play feedback (non-blocking)
+exec("bash /home/pi/RPi-Jukebox-RFID/scripts/playout_controls.sh -c=readwifiipoverspeaker >/dev/null 2>&1 &");
+exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh wifi >/dev/null 2>&1 &");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,7 +52,7 @@ shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh wifi >/de
         .ip {
             font-size: 32px;
             font-weight: bold;
-            color: #2e7d32;
+            color: #32CD56;
             margin: 20px 0;
             word-break: break-word;
         }
@@ -61,13 +64,13 @@ shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh wifi >/de
             display: inline-block;
             margin-top: 25px;
             padding: 12px 20px;
-            background: #2e7d32;
+            background: #32CD56;
             color: white;
             text-decoration: none;
             border-radius: 8px;
         }
         .btn:hover {
-            background: #256628;
+            background: #28a745;
         }
     </style>
 </head>
