@@ -116,7 +116,6 @@ copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
 
 # --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
-copy_file "$OVERRIDES_SETTINGS/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
 
 # --- GPIO SCRIPT ---
 copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
