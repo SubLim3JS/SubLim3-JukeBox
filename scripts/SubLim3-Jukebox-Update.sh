@@ -12,6 +12,7 @@ OVERRIDES_ICONS="$SOURCE_DIR/overrides/icons"
 TARGET_HTDOCS="$TARGET_DIR/htdocs"
 TARGET_SETTINGS="$TARGET_DIR/settings"
 TARGET_ICONS="$TARGET_HTDOCS/_assets/icons"
+TARGET_SCRIPTS="$TARGET_DIR/scripts"
 
 SCRIPT_DIR="$SOURCE_DIR/scripts"
 SCRIPT_NAME="SubLim3-Jukebox-Update.sh"
@@ -68,13 +69,13 @@ update_repo() {
     return 1
   fi
 
-  if git -C "$SOURCE_DIR" pull --ff-only origin main; then
+  if git -C "$SOURCE_DIR" fetch origin && git -C "$SOURCE_DIR" reset --hard origin/main; then
     echo
-    echo "[OK] Repository updated successfully."
+    echo "[OK] Repository force-synced successfully."
     return 0
   else
     echo
-    echo "[ERROR] git pull failed."
+    echo "[ERROR] Repository sync failed."
     ERRORS=$((ERRORS + 1))
     return 1
   fi
@@ -92,20 +93,20 @@ refresh_this_script() {
   fi
 }
 
-restart_gpio_buttons() {
+restart_buttons_service() {
   echo
-  echo "Restarting gpio-buttons service..."
+  echo "Restarting phoniebox-buttons service..."
   echo
 
-  if systemctl list-unit-files | grep -q "^gpio-buttons.service"; then
-    if sudo systemctl restart gpio-buttons; then
-      echo "[OK] gpio-buttons service restarted."
+  if systemctl list-unit-files | grep -q "^phoniebox-buttons.service"; then
+    if sudo systemctl restart phoniebox-buttons; then
+      echo "[OK] phoniebox-buttons service restarted."
     else
-      echo "[WARN] Failed to restart gpio-buttons service."
+      echo "[WARN] Failed to restart phoniebox-buttons service."
       ERRORS=$((ERRORS + 1))
     fi
   else
-    echo "[WARN] gpio-buttons service not found."
+    echo "[WARN] phoniebox-buttons service not found."
     ERRORS=$((ERRORS + 1))
   fi
 }
@@ -146,10 +147,15 @@ copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.ph
 copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
 copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
-copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
 
 # --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
+
+# --- GPIO BUTTON SCRIPT ACTUALLY USED BY THIS BUILD ---
+copy_file "$SCRIPT_DIR/gpio_dual_buttons.py" "$TARGET_SCRIPTS/gpio_dual_buttons.py"
+set_permissions "$TARGET_SCRIPTS/gpio_dual_buttons.py" "755"
+
+restart_buttons_service
 
 echo
 if [ "$ERRORS" -eq 0 ]; then
