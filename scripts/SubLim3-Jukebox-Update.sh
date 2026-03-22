@@ -44,6 +44,20 @@ copy_file() {
   fi
 }
 
+set_permissions() {
+  local file="$1"
+  local mode="$2"
+
+  if [ -e "$file" ]; then
+    if chmod "$mode" "$file"; then
+      echo "[OK] chmod $mode $file"
+    else
+      echo "[WARN] Failed to chmod $mode $file"
+      ERRORS=$((ERRORS + 1))
+    fi
+  fi
+}
+
 update_repo() {
   echo "Updating SubLim3-JukeBox repository..."
   echo
@@ -78,6 +92,24 @@ refresh_this_script() {
   fi
 }
 
+restart_gpio_buttons() {
+  echo
+  echo "Restarting gpio-buttons service..."
+  echo
+
+  if systemctl list-unit-files | grep -q "^gpio-buttons.service"; then
+    if sudo systemctl restart gpio-buttons; then
+      echo "[OK] gpio-buttons service restarted."
+    else
+      echo "[WARN] Failed to restart gpio-buttons service."
+      ERRORS=$((ERRORS + 1))
+    fi
+  else
+    echo "[WARN] gpio-buttons service not found."
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
 print_header
 
 update_repo
@@ -96,7 +128,7 @@ copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
 copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
 copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
 
-# --- NAVIGATION (NEW) ---
+# --- NAVIGATION ---
 copy_file "$OVERRIDES_HTDOCS/inc.navigation.php" "$TARGET_HTDOCS/inc.navigation.php"
 
 # --- LANGUAGE & PHP FILES ---
@@ -113,12 +145,16 @@ copy_file "$OVERRIDES_HTDOCS/userScripts.php" "$TARGET_HTDOCS/userScripts.php"
 copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.php"
 copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
+copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
 
 # --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
 # --- GPIO SCRIPT ---
 copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
+set_permissions "$TARGET_SETTINGS/gpio-buttons.py" 755"
+
+restart_gpio_buttons
 
 echo
 if [ "$ERRORS" -eq 0 ]; then
