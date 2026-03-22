@@ -146,15 +146,10 @@ copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.ph
 copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
 copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
+copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
 
 # --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
-
-# --- GPIO SCRIPT ---
-copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
-set_permissions "$TARGET_SETTINGS/gpio-buttons.py" "755"
-
-restart_gpio_buttons
 
 echo
 if [ "$ERRORS" -eq 0 ]; then
