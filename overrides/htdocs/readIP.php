@@ -1,12 +1,12 @@
 <?php
 function getWifiIp() {
-    $ip = trim(shell_exec("hostname -I | awk '{print $1}'"));
+    $ip = trim(shell_exec("ip -4 addr show wlan0 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
 
     if (!empty($ip)) {
         return $ip;
     }
 
-    $ip = trim(shell_exec("ip -4 addr show wlan0 | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
+    $ip = trim(shell_exec("hostname -I | awk '{print $1}'"));
 
     if (!empty($ip)) {
         return $ip;
