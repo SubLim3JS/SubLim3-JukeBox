@@ -152,7 +152,7 @@ copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
 # --- GPIO SCRIPT ---
 copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
-set_permissions "$TARGET_SETTINGS/gpio-buttons.py" 755"
+set_permissions "$TARGET_SETTINGS/gpio-buttons.py" "755"
 
 restart_gpio_buttons
 
