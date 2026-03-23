@@ -76,15 +76,21 @@ update_repo() {
     return 1
   fi
 
-  if git -C "$SOURCE_DIR" pull --ff-only origin main; then
-    echo
-    echo "[OK] Repository updated successfully."
-    return 0
+  if git -C "$SOURCE_DIR" diff --quiet && git -C "$SOURCE_DIR" diff --cached --quiet; then
+    if git -C "$SOURCE_DIR" pull --ff-only origin main; then
+      echo
+      echo "[OK] Repository updated successfully."
+      return 0
+    else
+      echo
+      echo "[ERROR] git pull failed."
+      ERRORS=$((ERRORS + 1))
+      return 1
+    fi
   else
+    echo "[WARN] Local repo has uncommitted changes. Skipping git pull and using local files."
     echo
-    echo "[ERROR] git pull failed."
-    ERRORS=$((ERRORS + 1))
-    return 1
+    return 0
   fi
 }
 
