@@ -188,18 +188,14 @@ echo
 
 print_section "Deploying override files"
 
-# --- CSS ---
 copy_file "$OVERRIDES_HTDOCS/_assets/css/custom-sublim3.css" "$TARGET_HTDOCS/_assets/css/custom-sublim3.css"
 
-# --- ICONS ---
 copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
 copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
 copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
 
-# --- NAVIGATION ---
 copy_file "$OVERRIDES_HTDOCS/inc.navigation.php" "$TARGET_HTDOCS/inc.navigation.php"
 
-# --- LANGUAGE & PHP FILES ---
 copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
 copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
 copy_file "$OVERRIDES_HTDOCS/settings.php" "$TARGET_HTDOCS/settings.php"
@@ -215,24 +211,19 @@ copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
 copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
 
-# --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
-# --- GPIO SCRIPT ---
 copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
 
-# --- OPTIONAL CUSTOM SCRIPTS ---
 copy_file "$SCRIPT_DIR/SubLim3-USB-AutoImport.sh" "$TARGET_DIR/scripts/SubLim3-USB-AutoImport.sh"
 copy_file "$SCRIPT_DIR/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
 
-# --- PERMISSIONS ---
 set_permissions "$TARGET_SETTINGS/gpio-buttons.py" 755
 set_permissions "$TARGET_DIR/scripts/SubLim3-USB-AutoImport.sh" 755
 set_permissions "$TARGET_DIR/scripts/sublim3-feedback.sh" 755
 set_permissions "$TARGET_HTDOCS/update.php" 644
 set_permissions "$TARGET_HTDOCS/readIP.php" 644
 
-# --- SYSTEM SOUNDS ---
 install_sox_if_needed
 generate_sounds
 
