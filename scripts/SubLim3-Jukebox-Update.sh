@@ -17,6 +17,10 @@ SOUNDS_DIR="$TARGET_DIR/shared/sounds"
 SCRIPT_DIR="$SOURCE_DIR/scripts"
 SCRIPT_NAME="SubLim3-Jukebox-Update.sh"
 
+UPDATE_SOUND="$SOUNDS_DIR/update.wav"
+SUCCESS_SOUND="$SOUNDS_DIR/success.wav"
+ERROR_SOUND="$SOUNDS_DIR/error.wav"
+
 ERRORS=0
 
 print_header() {
@@ -160,23 +164,45 @@ generate_sounds() {
 
   generate_sound_file "$SOUNDS_DIR/success.wav" "success.wav" \
     synth 0.2 sine 523 synth 0.2 sine 659 synth 0.2 sine 784 \
-    fade 0.01 0.6 0.05 reverb 30
+    fade 0.01 0.55 0.05 reverb 30
 
   generate_sound_file "$SOUNDS_DIR/error.wav" "error.wav" \
-    synth 0.4 sine 110 synth 0.4 sine 90 \
-    fade 0.01 0.4 0.05 reverb 40
+    synth 0.35 sine 110 synth 0.35 sine 90 \
+    fade 0.01 0.35 0.05 reverb 40
 
   generate_sound_file "$SOUNDS_DIR/wifi.wav" "wifi.wav" \
-    synth 0.1 sine 1200 synth 0.2 sine 900 synth 0.2 sine 1400 \
-    fade 0.01 0.5 0.05 reverb 35
+    synth 0.1 sine 1200 synth 0.18 sine 900 synth 0.18 sine 1400 \
+    fade 0.01 0.46 0.05 reverb 35
 
   generate_sound_file "$SOUNDS_DIR/update.wav" "update.wav" \
-    synth 0.15 sine 400 synth 0.15 sine 600 synth 0.15 sine 800 \
-    fade 0.01 0.45 0.05 reverb 45
+    synth 0.12 sine 400 synth 0.12 sine 600 synth 0.12 sine 800 \
+    fade 0.01 0.36 0.05 reverb 45
 
   generate_sound_file "$SOUNDS_DIR/import.wav" "import.wav" \
-    synth 0.25 sine 440 synth 0.25 sine 660 \
+    synth 0.2 sine 440 synth 0.2 sine 660 \
     fade 0.01 0.4 0.05 reverb 35
+}
+
+play_sound() {
+  local sound_file="$1"
+
+  if [ ! -f "$sound_file" ]; then
+    echo "[WARN] Sound file not found: $sound_file"
+    return 1
+  fi
+
+  if command -v aplay >/dev/null 2>&1; then
+    aplay "$sound_file" >/dev/null 2>&1 &
+    return 0
+  fi
+
+  if command -v play >/dev/null 2>&1; then
+    play -q "$sound_file" >/dev/null 2>&1 &
+    return 0
+  fi
+
+  echo "[WARN] No sound player found (aplay/play)."
+  return 1
 }
 
 print_header
@@ -188,14 +214,18 @@ echo
 
 print_section "Deploying override files"
 
+# --- CSS ---
 copy_file "$OVERRIDES_HTDOCS/_assets/css/custom-sublim3.css" "$TARGET_HTDOCS/_assets/css/custom-sublim3.css"
 
+# --- ICONS ---
 copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
 copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
 copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
 
+# --- NAVIGATION ---
 copy_file "$OVERRIDES_HTDOCS/inc.navigation.php" "$TARGET_HTDOCS/inc.navigation.php"
 
+# --- LANGUAGE & PHP FILES ---
 copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
 copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
 copy_file "$OVERRIDES_HTDOCS/settings.php" "$TARGET_HTDOCS/settings.php"
@@ -211,27 +241,39 @@ copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
 copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
 copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
 
+# --- SETTINGS ---
 copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
 
+# --- GPIO SCRIPT ---
 copy_file "$SCRIPT_DIR/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
 
+# --- OPTIONAL CUSTOM SCRIPTS ---
 copy_file "$SCRIPT_DIR/SubLim3-USB-AutoImport.sh" "$TARGET_DIR/scripts/SubLim3-USB-AutoImport.sh"
 copy_file "$SCRIPT_DIR/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
 
+# --- PERMISSIONS ---
 set_permissions "$TARGET_SETTINGS/gpio-buttons.py" 755
 set_permissions "$TARGET_DIR/scripts/SubLim3-USB-AutoImport.sh" 755
 set_permissions "$TARGET_DIR/scripts/sublim3-feedback.sh" 755
 set_permissions "$TARGET_HTDOCS/update.php" 644
 set_permissions "$TARGET_HTDOCS/readIP.php" 644
 
+# --- SYSTEM SOUNDS ---
 install_sox_if_needed
 generate_sounds
+
+# Play update confirmation after sounds exist
+play_sound "$UPDATE_SOUND"
 
 echo
 if [ "$ERRORS" -eq 0 ]; then
   echo "Update complete with no copy errors."
+  sleep 0.2
+  play_sound "$SUCCESS_SOUND"
   exit 0
 else
   echo "Update finished with $ERRORS error(s)."
+  sleep 0.2
+  play_sound "$ERROR_SOUND"
   exit 1
 fi
