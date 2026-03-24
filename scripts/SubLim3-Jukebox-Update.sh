@@ -89,9 +89,9 @@ update_repo() {
     return 0
   else
     echo
-    echo "[ERROR] git pull failed."
-    ERRORS=$((ERRORS + 1))
-    return 1
+    echo "[WARN] git pull failed. Continuing with local files."
+    echo
+    return 0
   fi
 }
 
