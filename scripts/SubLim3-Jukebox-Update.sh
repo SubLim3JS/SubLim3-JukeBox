@@ -111,78 +111,6 @@ refresh_this_script() {
   fi
 }
 
-install_sox_if_needed() {
-  print_section "Checking SoX installation"
-
-  if command -v sox >/dev/null 2>&1; then
-    printf " - SoX already installed. - \n\n"
-    return 0
-  fi
-
-  printf " - SoX not found. Installing... - \n\n"
-  if sudo apt update && sudo apt install -y sox; then
-    printf " - SoX installed successfully. - \n\n"
-    return 0
-  else
-    printf " - ERROR: Failed to install SoX. - \n\n"
-    ERRORS=$((ERRORS + 1))
-    return 1
-  fi
-}
-
-generate_sound_file() {
-  local output_file="$1"
-  local label="$2"
-  shift 2
-
-  print_section "Generating $label"
-  mkdir -p "$SOUNDS_DIR"
-
-  if sox -n -r 44100 -c 1 "$output_file" "$@"; then
-    printf " - %s created successfully. - \n\n" "$label"
-  else
-    printf " - ERROR: Failed to generate %s - \n\n" "$label"
-    ERRORS=$((ERRORS + 1))
-    return 1
-  fi
-}
-
-generate_sounds() {
-  print_section "Creating custom system sounds"
-
-  mkdir -p "$SOUNDS_DIR"
-
-  if ! command -v sox >/dev/null 2>&1; then
-    printf " - ERROR: SoX is not installed, cannot generate sounds. - \n\n"
-    ERRORS=$((ERRORS + 1))
-    return 1
-  fi
-
-  generate_sound_file "$SOUNDS_DIR/card-scan.wav" "card-scan.wav" \
-    synth 0.15 sine 880 synth 0.15 sine 1760 \
-    fade 0.01 0.15 0.05 reverb 20
-
-  generate_sound_file "$SOUNDS_DIR/success.wav" "success.wav" \
-    synth 0.2 sine 523 synth 0.2 sine 659 synth 0.2 sine 784 \
-    fade 0.01 0.55 0.05 reverb 30
-
-  generate_sound_file "$SOUNDS_DIR/error.wav" "error.wav" \
-    synth 0.35 sine 110 synth 0.35 sine 90 \
-    fade 0.01 0.35 0.05 reverb 40
-
-  generate_sound_file "$SOUNDS_DIR/wifi.wav" "wifi.wav" \
-    synth 0.1 sine 1200 synth 0.18 sine 900 synth 0.18 sine 1400 \
-    fade 0.01 0.46 0.05 reverb 35
-
-  generate_sound_file "$SOUNDS_DIR/update.wav" "update.wav" \
-    synth 0.12 sine 400 synth 0.12 sine 600 synth 0.12 sine 800 \
-    fade 0.01 0.36 0.05 reverb 45
-
-  generate_sound_file "$SOUNDS_DIR/import.wav" "import.wav" \
-    synth 0.2 sine 440 synth 0.2 sine 660 \
-    fade 0.01 0.4 0.05 reverb 35
-}
-
 play_sound() {
   local sound_file="$1"
 
@@ -196,12 +124,7 @@ play_sound() {
     return 0
   fi
 
-  if command -v play >/dev/null 2>&1; then
-    play -q "$sound_file" >/dev/null 2>&1 &
-    return 0
-  fi
-
-  echo "[WARN] No sound player found (aplay/play)."
+  echo "[WARN] aplay not found. Cannot play $sound_file"
   return 1
 }
 
@@ -258,11 +181,7 @@ set_permissions "$TARGET_DIR/scripts/sublim3-feedback.sh" 755
 set_permissions "$TARGET_HTDOCS/update.php" 644
 set_permissions "$TARGET_HTDOCS/readIP.php" 644
 
-# --- SYSTEM SOUNDS ---
-install_sox_if_needed
-generate_sounds
-
-# Play update confirmation after sounds exist
+# --- OPTIONAL PLAYBACK OF EXISTING UPDATE SOUND ---
 play_sound "$UPDATE_SOUND"
 
 echo
