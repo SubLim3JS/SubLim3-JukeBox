@@ -27,9 +27,9 @@ print_header() {
 
 print_section() {
   local title="$1"
-  printf "\n------------------------------------\n"
-  printf "%s\n" "$title"
-  printf "------------------------------------\n\n"
+  printf -- "\n------------------------------------\n"
+  printf -- "%s\n" "$title"
+  printf -- "------------------------------------\n\n"
 }
 
 copy_file() {
