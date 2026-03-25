@@ -1,15 +1,16 @@
 #!/bin/bash
 
 SOUND_DIR="/home/pi/RPi-Jukebox-RFID/shared/sounds"
-LOG_FILE="/home/pi/RPi-Jukebox-RFID/shared/logs/sublim3-feedback.log"
+LOG_DIR="/home/pi/RPi-Jukebox-RFID/shared/logs"
+LOG_FILE="$LOG_DIR/sublim3-feedback.log"
 
-mkdir -p /home/pi/RPi-Jukebox-RFID/shared/logs 2>/dev/null
+mkdir -p "$LOG_DIR" 2>/dev/null
 
 log_msg() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE" 2>/dev/null
 }
 
-case "$1" in
+case "${1:-}" in
     update)
         FILE="$SOUND_DIR/update.wav"
         ;;
@@ -26,7 +27,7 @@ case "$1" in
         FILE="$SOUND_DIR/rfid.wav"
         ;;
     *)
-        log_msg "Invalid sound name: $1"
+        log_msg "Invalid sound name: ${1:-<empty>}"
         exit 1
         ;;
 esac
