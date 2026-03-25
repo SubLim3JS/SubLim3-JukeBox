@@ -8,7 +8,7 @@ TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
 OVERRIDES_SETTINGS="$SOURCE_DIR/overrides/settings"
 OVERRIDES_ICONS="$SOURCE_DIR/overrides/icons"
-SOURCE_CSS="$SOURCE_DIR/htdocs/_assets/css/custom-sublim3.css"
+SOURCE_CSS="$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css"
 SCRIPT_DIR="$SOURCE_DIR/scripts"
 
 TARGET_HTDOCS="$TARGET_DIR/htdocs"
@@ -112,7 +112,7 @@ deploy_files() {
 
     mkdir -p "$TARGET_HTDOCS" "$TARGET_SETTINGS" "$TARGET_ICONS" "$TARGET_CSS" "$TARGET_SCRIPTS"
 
-    # CSS from repo htdocs path
+    # CSS from repo override path
     copy_file "$SOURCE_CSS" "$TARGET_CSS/custom-sublim3.css"
 
     # Icons
