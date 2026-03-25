@@ -1,10 +1,12 @@
 #!/bin/bash
 
 SOUND_DIR="/home/pi/RPi-Jukebox-RFID/shared/sounds"
-LOG_FILE="/tmp/sublim3-feedback.log"
+LOG_FILE="/home/pi/RPi-Jukebox-RFID/shared/logs/sublim3-feedback.log"
+
+mkdir -p /home/pi/RPi-Jukebox-RFID/shared/logs 2>/dev/null
 
 log_msg() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE" 2>/dev/null
 }
 
 case "$1" in
@@ -29,17 +31,14 @@ case "$1" in
         ;;
 esac
 
-# Check file exists
 if [ ! -f "$FILE" ]; then
     log_msg "Missing sound file: $FILE"
     exit 1
 fi
 
-# Play via MPD
 mpc clear >/dev/null 2>&1
 mpc add "$FILE" >/dev/null 2>&1
 mpc play >/dev/null 2>&1
 
 log_msg "Played sound: $FILE"
-
 exit 0
