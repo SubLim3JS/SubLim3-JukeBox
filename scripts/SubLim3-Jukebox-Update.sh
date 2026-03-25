@@ -8,7 +8,7 @@ TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
 OVERRIDES_SETTINGS="$SOURCE_DIR/overrides/settings"
 OVERRIDES_ICONS="$SOURCE_DIR/overrides/icons"
-OVERRIDES_CSS="$SOURCE_DIR/overrides/css"
+SOURCE_CSS="$SOURCE_DIR/htdocs/_assets/css/custom-sublim3.css"
 SCRIPT_DIR="$SOURCE_DIR/scripts"
 
 TARGET_HTDOCS="$TARGET_DIR/htdocs"
@@ -112,8 +112,8 @@ deploy_files() {
 
     mkdir -p "$TARGET_HTDOCS" "$TARGET_SETTINGS" "$TARGET_ICONS" "$TARGET_CSS" "$TARGET_SCRIPTS"
 
-    # CSS
-    copy_file "$OVERRIDES_CSS/custom-sublim3.css" "$TARGET_CSS/custom-sublim3.css"
+    # CSS from repo htdocs path
+    copy_file "$SOURCE_CSS" "$TARGET_CSS/custom-sublim3.css"
 
     # Icons
     copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
@@ -154,6 +154,7 @@ apply_permissions() {
     set_permissions "$TARGET_SCRIPTS/sublim3-feedback.sh" 755
     set_permissions "$TARGET_HTDOCS/update.php" 644
     set_permissions "$TARGET_HTDOCS/readIP.php" 644
+    set_permissions "$TARGET_CSS/custom-sublim3.css" 644
 }
 
 print_result() {
@@ -172,10 +173,7 @@ print_result() {
 
 main() {
     print_header
-
-    # Start sound uses currently deployed feedback script if present
     play_feedback update
-
     update_repo
     deploy_files
     apply_permissions
