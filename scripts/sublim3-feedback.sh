@@ -1,7 +1,8 @@
 #!/bin/bash
 
 SOUND_DIR="/home/pi/RPi-Jukebox-RFID/shared/sounds"
-PLAYER="aplay"
+PLAYER="/usr/bin/aplay"
+DEVICE="plughw:CARD=Headphones,DEV=0"
 
 case "$1" in
   update)  FILE="$SOUND_DIR/update.wav" ;;
@@ -12,8 +13,8 @@ case "$1" in
   *) exit 1 ;;
 esac
 
-if [ -f "$FILE" ]; then
-  $PLAYER -q "$FILE" >/dev/null 2>&1 &
-fi
+[ -f "$FILE" ] || exit 1
+
+"$PLAYER" -D "$DEVICE" "$FILE" >/dev/null 2>&1 &
 
 exit 0
