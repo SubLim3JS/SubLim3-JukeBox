@@ -4,180 +4,266 @@ set -u
 
 SOURCE_DIR="/home/pi/SubLim3-JukeBox"
 TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
-
-OVERRIDES_HTDOCS="$SOURCE_DIR/overrides/htdocs"
-OVERRIDES_SETTINGS="$SOURCE_DIR/overrides/settings"
-OVERRIDES_ICONS="$SOURCE_DIR/overrides/icons"
-SOURCE_CSS="$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css"
-SCRIPT_DIR="$SOURCE_DIR/scripts"
-
-TARGET_HTDOCS="$TARGET_DIR/htdocs"
-TARGET_SETTINGS="$TARGET_DIR/settings"
-TARGET_ICONS="$TARGET_HTDOCS/_assets/icons"
-TARGET_CSS="$TARGET_HTDOCS/_assets/css"
-TARGET_SCRIPTS="$TARGET_DIR/scripts"
-
+BACKUP_SUFFIX="-BACKUP"
 ERRORS=0
 
+SOUNDS_DIR="$TARGET_DIR/shared/sounds"
+FEEDBACK_SCRIPT_TARGET="$TARGET_DIR/scripts/sublim3-feedback.sh"
+RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
+
 print_header() {
-    printf "\n====================================\n"
-    printf "====== SubLim3 JukeBox Update ======\n"
-    printf "====================================\n\n"
+  printf "\n====================================\n"
+  printf "====== SubLim3 JukeBox Update ======\n"
+  printf "====================================\n\n"
 }
 
-play_feedback() {
-    local sound_name="$1"
-    if [ -x "$TARGET_SCRIPTS/sublim3-feedback.sh" ]; then
-        bash "$TARGET_SCRIPTS/sublim3-feedback.sh" "$sound_name" >/dev/null 2>&1 &
-    fi
+print_section() {
+  printf "\n------------------------------------\n"
+  printf "%s\n"
+  printf "------------------------------------\n\n" "$1"
 }
 
-copy_file() {
-    local src="$1"
-    local dst="$2"
+copy_with_backup() {
+  local src="$1"
+  local dst="$2"
+  local label="$3"
 
-    if [ ! -f "$src" ]; then
-        echo "[WARN] Missing source file: $src"
-        ERRORS=$((ERRORS + 1))
-        return
-    fi
+  if [ ! -f "$src" ]; then
+    echo "[WARN] Missing source file: $src"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
 
-    mkdir -p "$(dirname "$dst")"
+  mkdir -p "$(dirname "$dst")"
 
-    if cp "$src" "$dst"; then
-        echo "[OK] $(basename "$src") -> $dst"
-    else
-        echo "[ERROR] Failed to copy $(basename "$src") -> $dst"
-        ERRORS=$((ERRORS + 1))
-    fi
-}
-
-set_permissions() {
-    local path="$1"
-    local mode="$2"
-
-    if [ -e "$path" ]; then
-        if chmod "$mode" "$path"; then
-            echo "[OK] chmod $mode $path"
-        else
-            echo "[ERROR] Failed chmod $mode $path"
-            ERRORS=$((ERRORS + 1))
-        fi
-    else
-        echo "[WARN] Cannot chmod missing file: $path"
-        ERRORS=$((ERRORS + 1))
-    fi
-}
-
-update_repo() {
-    echo "Updating SubLim3-JukeBox repository..."
-    echo
-
-    cd "$SOURCE_DIR" || {
-        echo "[ERROR] Cannot access $SOURCE_DIR"
-        ERRORS=$((ERRORS + 1))
-        return
+  if [ -f "$dst" ]; then
+    cp -f "$dst" "${dst}${BACKUP_SUFFIX}" || {
+      echo "[ERROR] Failed to back up $label"
+      ERRORS=$((ERRORS + 1))
+      return 1
     }
+  fi
 
-    if [ ! -d "$SOURCE_DIR/.git" ]; then
-        echo "[WARN] $SOURCE_DIR is not a git repository."
-        echo "[WARN] Skipping git pull and using local files."
-        echo
-        return
-    fi
+  if cp -f "$src" "$dst"; then
+    echo "[OK] $label -> $dst"
+  else
+    echo "[ERROR] Failed to copy $label"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+}
 
-    if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-        echo "[WARN] Local repo has uncommitted changes."
-        echo "[WARN] Skipping git pull and using local files."
-        echo
-        return
-    fi
+ensure_sox() {
+  print_section "Checking SoX"
 
-    if git pull -q origin main; then
-        echo "[OK] Repository updated from origin/main"
+  if command -v sox >/dev/null 2>&1; then
+    echo "[OK] SoX already installed"
+    return 0
+  fi
+
+  echo "[INFO] Installing SoX..."
+  if sudo apt update && sudo apt install -y sox; then
+    echo "[OK] SoX installed"
+  else
+    echo "[ERROR] Failed to install SoX"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+}
+
+ensure_sound_dir() {
+  print_section "Preparing sound directory"
+
+  mkdir -p "$SOUNDS_DIR" || {
+    echo "[ERROR] Could not create $SOUNDS_DIR"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  }
+
+  echo "[OK] Sound directory ready: $SOUNDS_DIR"
+}
+
+generate_sound() {
+  local file="$1"
+  shift
+
+  if sox "$@" "$file" >/dev/null 2>&1; then
+    echo "[OK] Generated $(basename "$file")"
+  else
+    echo "[ERROR] Failed to generate $(basename "$file")"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
+generate_sounds() {
+  print_section "Generating SubLim3 feedback sounds"
+
+  ensure_sound_dir
+
+  generate_sound "$SOUNDS_DIR/update.wav"  -n -r 22050 -b 16 -c 1 synth 0.20 sine 750 vol 0.9
+  generate_sound "$SOUNDS_DIR/success.wav" -n -r 22050 -b 16 -c 1 synth 0.35 sine 600:1200 vol 0.9
+  generate_sound "$SOUNDS_DIR/error.wav"   -n -r 22050 -b 16 -c 1 synth 0.40 sine 220 vol 0.9
+  generate_sound "$SOUNDS_DIR/wifi.wav"    -n -r 22050 -b 16 -c 1 synth 0.18 sine 880 vol 0.9
+  generate_sound "$SOUNDS_DIR/rfid.wav"    -n -r 22050 -b 16 -c 1 synth 0.12 sine 1000 vol 0.9
+
+  # Compatibility alias for any older calls that still use "card-scan"
+  cp -f "$SOUNDS_DIR/rfid.wav" "$SOUNDS_DIR/card-scan.wav" 2>/dev/null && \
+    echo "[OK] Generated compatibility alias: card-scan.wav"
+}
+
+write_feedback_script() {
+  print_section "Writing sublim3-feedback.sh"
+
+  cat > "$FEEDBACK_SCRIPT_TARGET" <<'EOF'
+#!/bin/bash
+
+SOUND_DIR="/home/pi/RPi-Jukebox-RFID/shared/sounds"
+PLAYER="/usr/bin/aplay"
+DEVICE="plughw:CARD=Headphones,DEV=0"
+EVENT="$1"
+
+case "$EVENT" in
+  update)    FILE="$SOUND_DIR/update.wav" ;;
+  success)   FILE="$SOUND_DIR/success.wav" ;;
+  error)     FILE="$SOUND_DIR/error.wav" ;;
+  wifi)      FILE="$SOUND_DIR/wifi.wav" ;;
+  rfid)      FILE="$SOUND_DIR/rfid.wav" ;;
+  card|card-scan|scan) FILE="$SOUND_DIR/rfid.wav" ;;
+  import)    FILE="$SOUND_DIR/success.wav" ;;
+  *) exit 1 ;;
+esac
+
+[ -f "$FILE" ] || exit 1
+
+"$PLAYER" -D "$DEVICE" "$FILE" >/dev/null 2>&1 &
+exit 0
+EOF
+
+  if chmod 755 "$FEEDBACK_SCRIPT_TARGET"; then
+    echo "[OK] Installed $FEEDBACK_SCRIPT_TARGET"
+  else
+    echo "[ERROR] Failed to set permissions on $FEEDBACK_SCRIPT_TARGET"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
+patch_rfid_trigger() {
+  print_section "Patching rfid_trigger_play.sh"
+
+  if [ ! -f "$RFID_TRIGGER_TARGET" ]; then
+    echo "[ERROR] Missing $RFID_TRIGGER_TARGET"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+
+  cp -f "$RFID_TRIGGER_TARGET" "${RFID_TRIGGER_TARGET}${BACKUP_SUFFIX}" || {
+    echo "[ERROR] Failed to back up rfid_trigger_play.sh"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  }
+
+  if grep -q 'sublim3-feedback.sh' "$RFID_TRIGGER_TARGET"; then
+    echo "[OK] RFID feedback hook already present"
+    return 0
+  fi
+
+  python3 - <<'PY'
+from pathlib import Path
+
+path = Path("/home/pi/RPi-Jukebox-RFID/scripts/rfid_trigger_play.sh")
+text = path.read_text()
+
+old = """if [ "$CARDID" ]; then
+"""
+new = """if [ "$CARDID" ]; then
+    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &
+"""
+
+if old in text:
+    text = text.replace(old, new, 1)
+    path.write_text(text)
+else:
+    raise SystemExit("Could not find CARDID block to patch.")
+PY
+
+  if [ $? -eq 0 ]; then
+    echo "[OK] RFID feedback hook added"
+  else
+    echo "[ERROR] Failed to patch rfid_trigger_play.sh"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
+set_analog_audio() {
+  print_section "Setting analog audio output"
+
+  if command -v amixer >/dev/null 2>&1; then
+    if amixer cset numid=3 1 >/dev/null 2>&1; then
+      echo "[OK] Analog audio output selected"
     else
-        echo "[ERROR] git pull failed"
-        ERRORS=$((ERRORS + 1))
+      echo "[WARN] Could not set analog audio output automatically"
     fi
-
-    echo
+  else
+    echo "[WARN] amixer not available"
+  fi
 }
 
-deploy_files() {
-    echo
-    echo "------------------------------------"
-    echo "Deploying override files"
-    echo "------------------------------------"
-    echo
+fix_permissions() {
+  print_section "Fixing permissions"
 
-    mkdir -p "$TARGET_HTDOCS" "$TARGET_SETTINGS" "$TARGET_ICONS" "$TARGET_CSS" "$TARGET_SCRIPTS"
+  chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null
+  chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
+  chmod +x "$TARGET_DIR/settings/reg-toggle" 2>/dev/null
 
-    # CSS from repo override path
-    copy_file "$SOURCE_CSS" "$TARGET_CSS/custom-sublim3.css"
-
-    # Icons
-    copy_file "$OVERRIDES_ICONS/favicon-16x16.png" "$TARGET_ICONS/favicon-16x16.png"
-    copy_file "$OVERRIDES_ICONS/favicon-32x32.png" "$TARGET_ICONS/favicon-32x32.png"
-    copy_file "$OVERRIDES_ICONS/favicon-96x96.png" "$TARGET_ICONS/favicon-96x96.png"
-
-    # htdocs overrides
-    copy_file "$OVERRIDES_HTDOCS/inc.navigation.php" "$TARGET_HTDOCS/inc.navigation.php"
-    copy_file "$OVERRIDES_HTDOCS/lang/lang-en-UK.php" "$TARGET_HTDOCS/lang/lang-en-UK.php"
-    copy_file "$OVERRIDES_HTDOCS/systemInfo.php" "$TARGET_HTDOCS/systemInfo.php"
-    copy_file "$OVERRIDES_HTDOCS/settings.php" "$TARGET_HTDOCS/settings.php"
-    copy_file "$OVERRIDES_HTDOCS/cardRegisterNew.php" "$TARGET_HTDOCS/cardRegisterNew.php"
-    copy_file "$OVERRIDES_HTDOCS/manageFilesFolders.php" "$TARGET_HTDOCS/manageFilesFolders.php"
-    copy_file "$OVERRIDES_HTDOCS/search.php" "$TARGET_HTDOCS/search.php"
-    copy_file "$OVERRIDES_HTDOCS/cardEdit.php" "$TARGET_HTDOCS/cardEdit.php"
-    copy_file "$OVERRIDES_HTDOCS/index-lcd.php" "$TARGET_HTDOCS/index-lcd.php"
-    copy_file "$OVERRIDES_HTDOCS/trackEdit.php" "$TARGET_HTDOCS/trackEdit.php"
-    copy_file "$OVERRIDES_HTDOCS/userScripts.php" "$TARGET_HTDOCS/userScripts.php"
-    copy_file "$OVERRIDES_HTDOCS/rfidExportCsv.php" "$TARGET_HTDOCS/rfidExportCsv.php"
-    copy_file "$OVERRIDES_HTDOCS/func.php" "$TARGET_HTDOCS/func.php"
-    copy_file "$OVERRIDES_HTDOCS/update.php" "$TARGET_HTDOCS/update.php"
-    copy_file "$OVERRIDES_HTDOCS/readIP.php" "$TARGET_HTDOCS/readIP.php"
-
-    # settings overrides
-    copy_file "$OVERRIDES_SETTINGS/version-number" "$TARGET_SETTINGS/version-number"
-    copy_file "$OVERRIDES_SETTINGS/gpio-buttons.py" "$TARGET_SETTINGS/gpio-buttons.py"
-
-    # script overrides
-    copy_file "$SCRIPT_DIR/SubLim3-USB-AutoImport.sh" "$TARGET_SCRIPTS/SubLim3-USB-AutoImport.sh"
-    copy_file "$SCRIPT_DIR/sublim3-feedback.sh" "$TARGET_SCRIPTS/sublim3-feedback.sh"
-}
-
-apply_permissions() {
-    echo
-
-    set_permissions "$TARGET_SETTINGS/gpio-buttons.py" 755
-    set_permissions "$TARGET_SCRIPTS/SubLim3-USB-AutoImport.sh" 755
-    set_permissions "$TARGET_SCRIPTS/sublim3-feedback.sh" 755
-    set_permissions "$TARGET_HTDOCS/update.php" 644
-    set_permissions "$TARGET_HTDOCS/readIP.php" 644
-    set_permissions "$TARGET_CSS/custom-sublim3.css" 644
-}
-
-print_result() {
-    echo
-
-    if [ "$ERRORS" -eq 0 ]; then
-        echo "Update complete with no copy errors."
-        play_feedback success
-        exit 0
-    else
-        echo "Update completed with $ERRORS error(s)."
-        play_feedback error
-        exit 1
-    fi
+  echo "[OK] Script permissions updated"
 }
 
 main() {
-    print_header
-    play_feedback update
-    update_repo
-    deploy_files
-    apply_permissions
-    print_result
+  print_header
+
+  print_section "Deploying SubLim3 files"
+
+  copy_with_backup "$SOURCE_DIR/func.php"              "$TARGET_DIR/htdocs/func.php"                         "func.php"
+  copy_with_backup "$SOURCE_DIR/custom-green.css"     "$TARGET_DIR/htdocs/_assets/css/custom-green.css"    "custom-green.css"
+  copy_with_backup "$SOURCE_DIR/circle.css"           "$TARGET_DIR/htdocs/_assets/css/circle.css"          "circle.css"
+  copy_with_backup "$SOURCE_DIR/index.php"            "$TARGET_DIR/htdocs/index.php"                        "index.php"
+  copy_with_backup "$SOURCE_DIR/lang-en-UK.php"       "$TARGET_DIR/htdocs/lang/lang-en-UK.php"             "lang-en-UK.php"
+  copy_with_backup "$SOURCE_DIR/readIP.php"           "$TARGET_DIR/htdocs/readIP.php"                       "readIP.php"
+  copy_with_backup "$SOURCE_DIR/search.php"           "$TARGET_DIR/htdocs/search.php"                       "search.php"
+  copy_with_backup "$SOURCE_DIR/settings.php"         "$TARGET_DIR/htdocs/settings.php"                     "settings.php"
+  copy_with_backup "$SOURCE_DIR/systemInfo.php"       "$TARGET_DIR/htdocs/systemInfo.php"                   "systemInfo.php"
+  copy_with_backup "$SOURCE_DIR/update.php"           "$TARGET_DIR/htdocs/update.php"                       "update.php"
+  copy_with_backup "$SOURCE_DIR/inc.navigation.php"   "$TARGET_DIR/htdocs/inc.navigation.php"               "inc.navigation.php"
+  copy_with_backup "$SOURCE_DIR/gpio-buttons.py"      "$TARGET_DIR/settings/gpio-buttons.py"                "gpio-buttons.py"
+  copy_with_backup "$SOURCE_DIR/version-number"       "$TARGET_DIR/settings/version-number"                 "version-number"
+  copy_with_backup "$SOURCE_DIR/reg-toggle"           "$TARGET_DIR/settings/reg-toggle"                     "reg-toggle"
+
+  print_section "Deploying icons"
+
+  copy_with_backup "$SOURCE_DIR/Lidarr-Icon.jpg"      "$TARGET_DIR/htdocs/_assets/icons/Lidarr-Icon.jpg"   "Lidarr-Icon.jpg"
+  copy_with_backup "$SOURCE_DIR/favicon-16x16.png"    "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
+  copy_with_backup "$SOURCE_DIR/favicon-32x32.png"    "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
+  copy_with_backup "$SOURCE_DIR/favicon-96x96.png"    "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
+
+  ensure_sox
+  generate_sounds
+  write_feedback_script
+  patch_rfid_trigger
+  set_analog_audio
+  fix_permissions
+
+  printf "\n====================================\n"
+  if [ "$ERRORS" -eq 0 ]; then
+    echo "[OK] SubLim3 update completed successfully"
+    [ -x "$FEEDBACK_SCRIPT_TARGET" ] && bash "$FEEDBACK_SCRIPT_TARGET" success >/dev/null 2>&1 &
+    printf "====================================\n\n"
+    exit 0
+  else
+    echo "[WARN] SubLim3 update completed with $ERRORS error(s)"
+    [ -x "$FEEDBACK_SCRIPT_TARGET" ] && bash "$FEEDBACK_SCRIPT_TARGET" error >/dev/null 2>&1 &
+    printf "====================================\n\n"
+    exit 1
+  fi
 }
 
 main
