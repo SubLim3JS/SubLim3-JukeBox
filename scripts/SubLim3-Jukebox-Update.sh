@@ -1,3 +1,4 @@
+cat > /home/pi/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh <<'EOF'
 #!/bin/bash
 
 set -u
@@ -18,9 +19,9 @@ print_header() {
 }
 
 print_section() {
-  printf -- "\n------------------------------------\n"
-  printf "%s\n" "$1"
-  printf -- "------------------------------------\n\n"
+  printf '\n------------------------------------\n'
+  printf '%s\n' "$1"
+  printf '------------------------------------\n\n'
 }
 
 copy_with_backup() {
@@ -113,7 +114,7 @@ generate_sounds() {
 write_feedback_script() {
   print_section "Writing sublim3-feedback.sh"
 
-  cat > "$FEEDBACK_SCRIPT_TARGET" <<'EOF'
+  cat > "$FEEDBACK_SCRIPT_TARGET" <<'EOS'
 #!/bin/bash
 
 SOUND_DIR="/home/pi/RPi-Jukebox-RFID/shared/sounds"
@@ -136,7 +137,7 @@ esac
 
 "$PLAYER" -D "$DEVICE" "$FILE" >/dev/null 2>&1 &
 exit 0
-EOF
+EOS
 
   if chmod 755 "$FEEDBACK_SCRIPT_TARGET"; then
     echo "[OK] Installed $FEEDBACK_SCRIPT_TARGET"
@@ -263,3 +264,6 @@ main() {
 }
 
 main
+EOF
+chmod +x /home/pi/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh
+bash /home/pi/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh
