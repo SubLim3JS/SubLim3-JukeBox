@@ -88,7 +88,7 @@ else:
 PY
 
   if [ $? -eq 0 ]; then
-    echo "[OK] RFID feedback hook added"
+    echo "[OK] RFID feedback hook added."
   else
     echo "[ERROR] Failed to patch rfid_trigger_play.sh"
     ERRORS=$((ERRORS + 1))
@@ -100,7 +100,7 @@ fix_permissions() {
 
   chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null
   chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
-  chmod +x "$TARGET_DIR/settings/reg-toggle" 2>/dev/null
+  chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
 
   echo "[OK] Script permissions updated"
 }
@@ -110,25 +110,25 @@ main() {
 
   print_section "Deploying SubLim3 files"
 
-  copy_with_backup "$SOURCE_DIR/custom-green.css"   "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
-  copy_with_backup "$SOURCE_DIR/lang-en-UK.php"     "$TARGET_DIR/htdocs/lang/lang-en-UK.php"          "lang-en-UK.php"
-  copy_with_backup "$SOURCE_DIR/func.php"           "$TARGET_DIR/htdocs/func.php"                      "func.php"
-  copy_with_backup "$SOURCE_DIR/index.php"          "$TARGET_DIR/htdocs/index.php"                     "index.php"
-  copy_with_backup "$SOURCE_DIR/readIP.php"         "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
-  copy_with_backup "$SOURCE_DIR/search.php"         "$TARGET_DIR/htdocs/search.php"                    "search.php"
-  copy_with_backup "$SOURCE_DIR/settings.php"       "$TARGET_DIR/htdocs/settings.php"                  "settings.php"
-  copy_with_backup "$SOURCE_DIR/systemInfo.php"     "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
-  copy_with_backup "$SOURCE_DIR/update.php"         "$TARGET_DIR/htdocs/update.php"                    "update.php"
-  copy_with_backup "$SOURCE_DIR/inc.navigation.php" "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
-  copy_with_backup "$SOURCE_DIR/gpio-buttons.py"    "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
-  copy_with_backup "$SOURCE_DIR/version-number"     "$TARGET_DIR/settings/version-number"              "version-number"
-  copy_with_backup "$SOURCE_DIR/reg-toggle"         "$TARGET_DIR/settings/reg-toggle"                  "reg-toggle"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css"   "$TARGET_DIR/htdocs/_assets/css/custom-sublim3.css" "custom-sublim3.css"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/lang/lang-en-UK.php"     "$TARGET_DIR/htdocs/lang/lang-en-UK.php"          "lang-en-UK.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/func.php"           "$TARGET_DIR/htdocs/func.php"                      "func.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index.php"          "$TARGET_DIR/htdocs/index.php"                     "index.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/readIP.php"         "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/search.php"         "$TARGET_DIR/htdocs/search.php"                    "search.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/settings.php"       "$TARGET_DIR/htdocs/settings.php"                  "settings.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/systemInfo.php"     "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/update.php"         "$TARGET_DIR/htdocs/update.php"                    "update.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/inc.navigation.php" "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
+  copy_with_backup "$SOURCE_DIR/overrides/settings/gpio-buttons.py"    "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
+  copy_with_backup "$SOURCE_DIR/overrides/settings/version-number"     "$TARGET_DIR/settings/version-number"              "version-number"
+  copy_with_backup "$SOURCE_DIR/overrides/settings/cardRegisterAccess"         "$TARGET_DIR/settings/cardRegisterAccess"                  "cardRegisterAccess"
 
   print_section "Deploying icons"
 
-  copy_with_backup "$SOURCE_DIR/favicon-16x16.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
-  copy_with_backup "$SOURCE_DIR/favicon-32x32.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
-  copy_with_backup "$SOURCE_DIR/favicon-96x96.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
+  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-16x16.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
+  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-32x32.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
+  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-96x96.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
 
   patch_rfid_trigger
   fix_permissions
