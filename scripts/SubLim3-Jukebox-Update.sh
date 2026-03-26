@@ -18,9 +18,9 @@ print_header() {
 }
 
 print_section() {
-  printf "\n------------------------------------\n"
-  printf "%s\n"
-  printf "------------------------------------\n\n" "$1"
+  printf -- "\n------------------------------------\n"
+  printf "%s\n" "$1"
+  printf -- "------------------------------------\n\n"
 }
 
 copy_with_backup() {
@@ -87,7 +87,7 @@ generate_sound() {
   local file="$1"
   shift
 
-  if sox "$@" "$file" >/dev/null 2>&1; then
+  if sox -n "$file" "$@" >/dev/null 2>&1; then
     echo "[OK] Generated $(basename "$file")"
   else
     echo "[ERROR] Failed to generate $(basename "$file")"
@@ -100,13 +100,12 @@ generate_sounds() {
 
   ensure_sound_dir
 
-  generate_sound "$SOUNDS_DIR/update.wav"  -n -r 22050 -b 16 -c 1 synth 0.20 sine 750 vol 0.9
-  generate_sound "$SOUNDS_DIR/success.wav" -n -r 22050 -b 16 -c 1 synth 0.35 sine 600:1200 vol 0.9
-  generate_sound "$SOUNDS_DIR/error.wav"   -n -r 22050 -b 16 -c 1 synth 0.40 sine 220 vol 0.9
-  generate_sound "$SOUNDS_DIR/wifi.wav"    -n -r 22050 -b 16 -c 1 synth 0.18 sine 880 vol 0.9
-  generate_sound "$SOUNDS_DIR/rfid.wav"    -n -r 22050 -b 16 -c 1 synth 0.12 sine 1000 vol 0.9
+  generate_sound "$SOUNDS_DIR/update.wav"  -r 22050 -b 16 -c 1 synth 0.20 sine 750 vol 0.9
+  generate_sound "$SOUNDS_DIR/success.wav" -r 22050 -b 16 -c 1 synth 0.35 sine 600:1200 vol 0.9
+  generate_sound "$SOUNDS_DIR/error.wav"   -r 22050 -b 16 -c 1 synth 0.40 sine 220 vol 0.9
+  generate_sound "$SOUNDS_DIR/wifi.wav"    -r 22050 -b 16 -c 1 synth 0.18 sine 880 vol 0.9
+  generate_sound "$SOUNDS_DIR/rfid.wav"    -r 22050 -b 16 -c 1 synth 0.12 sine 1000 vol 0.9
 
-  # Compatibility alias for any older calls that still use "card-scan"
   cp -f "$SOUNDS_DIR/rfid.wav" "$SOUNDS_DIR/card-scan.wav" 2>/dev/null && \
     echo "[OK] Generated compatibility alias: card-scan.wav"
 }
@@ -173,11 +172,8 @@ from pathlib import Path
 path = Path("/home/pi/RPi-Jukebox-RFID/scripts/rfid_trigger_play.sh")
 text = path.read_text()
 
-old = """if [ "$CARDID" ]; then
-"""
-new = """if [ "$CARDID" ]; then
-    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &
-"""
+old = 'if [ "$CARDID" ]; then\n'
+new = 'if [ "$CARDID" ]; then\n    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &\n'
 
 if old in text:
     text = text.replace(old, new, 1)
@@ -223,27 +219,27 @@ main() {
 
   print_section "Deploying SubLim3 files"
 
-  copy_with_backup "$SOURCE_DIR/func.php"              "$TARGET_DIR/htdocs/func.php"                         "func.php"
-  copy_with_backup "$SOURCE_DIR/custom-green.css"     "$TARGET_DIR/htdocs/_assets/css/custom-green.css"    "custom-green.css"
-  copy_with_backup "$SOURCE_DIR/circle.css"           "$TARGET_DIR/htdocs/_assets/css/circle.css"          "circle.css"
-  copy_with_backup "$SOURCE_DIR/index.php"            "$TARGET_DIR/htdocs/index.php"                        "index.php"
-  copy_with_backup "$SOURCE_DIR/lang-en-UK.php"       "$TARGET_DIR/htdocs/lang/lang-en-UK.php"             "lang-en-UK.php"
-  copy_with_backup "$SOURCE_DIR/readIP.php"           "$TARGET_DIR/htdocs/readIP.php"                       "readIP.php"
-  copy_with_backup "$SOURCE_DIR/search.php"           "$TARGET_DIR/htdocs/search.php"                       "search.php"
-  copy_with_backup "$SOURCE_DIR/settings.php"         "$TARGET_DIR/htdocs/settings.php"                     "settings.php"
-  copy_with_backup "$SOURCE_DIR/systemInfo.php"       "$TARGET_DIR/htdocs/systemInfo.php"                   "systemInfo.php"
-  copy_with_backup "$SOURCE_DIR/update.php"           "$TARGET_DIR/htdocs/update.php"                       "update.php"
-  copy_with_backup "$SOURCE_DIR/inc.navigation.php"   "$TARGET_DIR/htdocs/inc.navigation.php"               "inc.navigation.php"
-  copy_with_backup "$SOURCE_DIR/gpio-buttons.py"      "$TARGET_DIR/settings/gpio-buttons.py"                "gpio-buttons.py"
-  copy_with_backup "$SOURCE_DIR/version-number"       "$TARGET_DIR/settings/version-number"                 "version-number"
-  copy_with_backup "$SOURCE_DIR/reg-toggle"           "$TARGET_DIR/settings/reg-toggle"                     "reg-toggle"
+  copy_with_backup "$SOURCE_DIR/func.php"            "$TARGET_DIR/htdocs/func.php"                      "func.php"
+  copy_with_backup "$SOURCE_DIR/custom-green.css"   "$TARGET_DIR/htdocs/_assets/css/custom-green.css" "custom-green.css"
+  copy_with_backup "$SOURCE_DIR/circle.css"         "$TARGET_DIR/htdocs/_assets/css/circle.css"       "circle.css"
+  copy_with_backup "$SOURCE_DIR/index.php"          "$TARGET_DIR/htdocs/index.php"                     "index.php"
+  copy_with_backup "$SOURCE_DIR/lang-en-UK.php"     "$TARGET_DIR/htdocs/lang/lang-en-UK.php"          "lang-en-UK.php"
+  copy_with_backup "$SOURCE_DIR/readIP.php"         "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
+  copy_with_backup "$SOURCE_DIR/search.php"         "$TARGET_DIR/htdocs/search.php"                    "search.php"
+  copy_with_backup "$SOURCE_DIR/settings.php"       "$TARGET_DIR/htdocs/settings.php"                  "settings.php"
+  copy_with_backup "$SOURCE_DIR/systemInfo.php"     "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
+  copy_with_backup "$SOURCE_DIR/update.php"         "$TARGET_DIR/htdocs/update.php"                    "update.php"
+  copy_with_backup "$SOURCE_DIR/inc.navigation.php" "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
+  copy_with_backup "$SOURCE_DIR/gpio-buttons.py"    "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
+  copy_with_backup "$SOURCE_DIR/version-number"     "$TARGET_DIR/settings/version-number"              "version-number"
+  copy_with_backup "$SOURCE_DIR/reg-toggle"         "$TARGET_DIR/settings/reg-toggle"                  "reg-toggle"
 
   print_section "Deploying icons"
 
-  copy_with_backup "$SOURCE_DIR/Lidarr-Icon.jpg"      "$TARGET_DIR/htdocs/_assets/icons/Lidarr-Icon.jpg"   "Lidarr-Icon.jpg"
-  copy_with_backup "$SOURCE_DIR/favicon-16x16.png"    "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
-  copy_with_backup "$SOURCE_DIR/favicon-32x32.png"    "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
-  copy_with_backup "$SOURCE_DIR/favicon-96x96.png"    "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
+  copy_with_backup "$SOURCE_DIR/Lidarr-Icon.jpg"    "$TARGET_DIR/htdocs/_assets/icons/Lidarr-Icon.jpg"   "Lidarr-Icon.jpg"
+  copy_with_backup "$SOURCE_DIR/favicon-16x16.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
+  copy_with_backup "$SOURCE_DIR/favicon-32x32.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
+  copy_with_backup "$SOURCE_DIR/favicon-96x96.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
 
   ensure_sox
   generate_sounds
