@@ -77,7 +77,7 @@ function getWifiDetails() {
 }
 
 /**
- * RFID detection
+ * RFID detection (NEW)
  */
 function getRfidStatus() {
     return file_exists("/dev/spidev0.0");
@@ -91,8 +91,8 @@ if($debug == "true") {
 exec($exec, $res);
 $distributor = substr($res[0], strpos($res[0], ":") + 1, strlen($res[0]) - strpos($res[0], ":"));
 $description = substr($res[1], strpos($res[1], ":") + 1, strlen($res[1]) - strpos($res[1], ":"));
-$release = substr($res[2], strpos($res[2], ":") + 1, strlen($res[2], ":"));
-$codename = substr($res[3], strpos($res[3], ":") + 1, strlen($res[3], ":"));
+$release = substr($res[2], strpos($res[2], ":") + 1, strlen($res[2]) - strpos($res[2], ":"));
+$codename = substr($res[3], strpos($res[3], ":") + 1, strlen($res[3]) - strpos($res[3], ":"));
 $rpi_temperature = explode("=", exec("sudo vcgencmd measure_temp"))[1];
 
 // WiFi details
@@ -102,7 +102,7 @@ $wifi_connected = $wifi["connected"] ? "Connected" : "Disconnected";
 $wifi_ip = $wifi["ip"];
 $wifi_ssid = $wifi["ssid"];
 
-// RFID
+// RFID (NEW)
 $rfid_detected = getRfidStatus();
 
 // check RPis throttling state
@@ -120,10 +120,8 @@ function checkRpiThrottle() {
 
     $getThrottledResult = explode("0x", exec("sudo vcgencmd get_throttled"))[1];
 
-    // code is zero => no issue
     if ($getThrottledResult == "0") return "OK";
 
-    // analyse returned code
     $result = [];
     $codeHex = str_split($getThrottledResult);
     $codeBinary = "";
@@ -145,34 +143,34 @@ $rpi_throttle = checkRpiThrottle();
       <h4 class="panel-title">
          <i class='mdi mdi-settings'></i> <?php print $lang['globalSystem']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
     <div class="panel-body">
 
         <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsDistrib']; ?></label>
+          <label class="col-md-4 control-label"><?php print $lang['infoOsDistrib']; ?></label>
           <div class="col-md-6"><?php echo trim($distributor); ?></div>
         </div>
         <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalDescription']; ?></label>
+          <label class="col-md-4 control-label"><?php print $lang['globalDescription']; ?></label>
           <div class="col-md-6"><?php echo trim($description); ?></div>
         </div>
         <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalRelease']; ?></label>
+          <label class="col-md-4 control-label"><?php print $lang['globalRelease']; ?></label>
           <div class="col-md-6"><?php echo trim($release); ?></div>
         </div>
         <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsCodename']; ?></label>
+          <label class="col-md-4 control-label"><?php print $lang['infoOsCodename']; ?></label>
           <div class="col-md-6"><?php echo trim($codename); ?></div>
         </div>
 
         <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi Interface</label>
+          <label class="col-md-4 control-label">WiFi Interface</label>
           <div class="col-md-6"><?php echo !empty($wifi_interface) ? htmlspecialchars($wifi_interface) : "Not found"; ?></div>
         </div>
 
         <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi Status</label>
+          <label class="col-md-4 control-label">WiFi Status</label>
           <div class="col-md-6">
             <?php if ($wifi["connected"]) { ?>
               <span class="label label-success"><?php echo htmlspecialchars($wifi_connected); ?></span>
@@ -183,18 +181,18 @@ $rpi_throttle = checkRpiThrottle();
         </div>
 
         <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi SSID</label>
+          <label class="col-md-4 control-label">WiFi SSID</label>
           <div class="col-md-6"><?php echo htmlspecialchars($wifi_ssid); ?></div>
         </div>
 
         <div class="row">
-          <label class="col-md-4 control-label" for="">IP Address</label>
+          <label class="col-md-4 control-label">IP Address</label>
           <div class="col-md-6"><?php echo htmlspecialchars($wifi_ip); ?></div>
         </div>
 
-        <!-- RFID STATUS (NEW LINE) -->
+        <!-- RFID STATUS (ONLY ADDITION) -->
         <div class="row">
-          <label class="col-md-4 control-label" for="">RFID Status</label>
+          <label class="col-md-4 control-label">RFID Status</label>
           <div class="col-md-6">
             <?php if ($rfid_detected) { ?>
               <span class="label label-success">Detected</span>
@@ -205,15 +203,25 @@ $rpi_throttle = checkRpiThrottle();
         </div>
 
         <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsThrottle']; ?></label>
+          <label class="col-md-4 control-label"><?php print $lang['infoOsThrottle']; ?></label>
           <div class="col-md-6"><?php echo trim($rpi_throttle); ?></div>
         </div>
 
         <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsTemperature']; ?></label>
+          <label class="col-md-4 control-label"><?php print $lang['infoOsTemperature']; ?></label>
           <div class="col-md-6"><?php echo trim($rpi_temperature); ?></div>
         </div>
 
     </div>
   </div>
 </div>
+
+<!-- EVERYTHING BELOW REMAINS UNCHANGED (version, debug log, update button, etc.) -->
+
+<?php
+include("inc.addSystemInfo.php");
+?>
+
+</div>
+</body>
+</html>
