@@ -113,6 +113,7 @@ main() {
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css"   "$TARGET_DIR/htdocs/_assets/css/custom-sublim3.css" "custom-sublim3.css"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/lang/lang-en-UK.php"     "$TARGET_DIR/htdocs/lang/lang-en-UK.php"      "lang-en-UK.php"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/func.php"           "$TARGET_DIR/htdocs/func.php"                      "func.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index.php"          "$TARGET_DIR/htdocs/index.php"                     "index.php"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/index-lcd.php"          "$TARGET_DIR/htdocs/index-lcd.php"             "index-lcd.php"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/readIP.php"         "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/search.php"         "$TARGET_DIR/htdocs/search.php"                    "search.php"
