@@ -135,14 +135,14 @@ main() {
   patch_rfid_trigger
   fix_permissions
 
-  printf "\n====================================\n"
+  printf "\n==============================================\n"
   if [ "$ERRORS" -eq 0 ]; then
     echo "[OK] SubLim3 update completed successfully"
-    printf "====================================\n\n"
+    printf "==============================================\n\n"
     exit 0
   else
     echo "[WARN] SubLim3 update completed with $ERRORS error(s)"
-    printf "====================================\n\n"
+    printf "==============================================\n\n"
     exit 1
   fi
 }
