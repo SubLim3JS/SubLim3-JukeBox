@@ -4,22 +4,31 @@ $enabled = false;
 $expires = '';
 $expiresTs = false;
 
-if (file_exists($accessFile) && is_readable($accessFile)) {
+if (file_exists($accessFile)) {
     $lines = file($accessFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $config = array();
 
     foreach ($lines as $line) {
-        $line = trim($line);
-
-        if ($line === '' || strpos($line, '#') === 0) {
-            continue;
-        }
-
         if (strpos($line, '=') !== false) {
             list($key, $value) = explode('=', $line, 2);
             $config[trim($key)] = trim($value);
         }
     }
+
+    $isEnabled = isset($config['enabled']) && trim($config['enabled']) === '1';
+    $expires = isset($config['expires']) ? trim($config['expires']) : '';
+
+    if ($isEnabled) {
+        if ($expires === '') {
+            $enabled = true;
+        } else {
+            $expiresTs = strtotime($expires);
+            if ($expiresTs !== false && time() <= $expiresTs) {
+                $enabled = true;
+            }
+        }
+    }
+}
 
     $isEnabled = isset($config['enabled']) && trim($config['enabled']) === '1';
     $expires = isset($config['expires']) ? trim($config['expires']) : '';
