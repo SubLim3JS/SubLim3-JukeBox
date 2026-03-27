@@ -76,6 +76,10 @@ function getWifiDetails() {
     return $result;
 }
 
+function getRfidStatus() {
+    return file_exists("/dev/spidev0.0");
+}
+
 // get System Information and parse into variables
 $exec = "lsb_release -a";
 if($debug == "true") {
@@ -94,6 +98,9 @@ $wifi_interface = $wifi["interface"];
 $wifi_connected = $wifi["connected"] ? "Connected" : "Disconnected";
 $wifi_ip = $wifi["ip"];
 $wifi_ssid = $wifi["ssid"];
+
+// RFID detection
+$rfid_detected = getRfidStatus();
 
 // check RPis throttling state
 function checkRpiThrottle() {
@@ -167,6 +174,16 @@ $rpi_throttle = checkRpiThrottle();
             <?php } else { ?>
               <span class="label label-danger"><?php echo htmlspecialchars($wifi_connected); ?></span>
             <?php } ?>
+          </div>
+        </div>
+      <div class="row">
+  <label class="col-md-4 control-label" for="">RFID Status</label>
+  <div class="col-md-6">
+    <?php if ($rfid_detected) { ?>
+      <span class="label label-success">Detected</span>
+    <?php } else { ?>
+      <span class="label label-danger">Not Detected</span>
+    <?php } ?>
           </div>
         </div>
         <div class="row">
