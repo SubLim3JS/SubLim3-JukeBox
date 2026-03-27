@@ -10,15 +10,15 @@ ERRORS=0
 RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
 
 print_header() {
-  printf "\n====================================\n"
-  printf "====== SubLim3 JukeBox Update ======\n"
-  printf "====================================\n\n"
+  printf "\n==========================================\n"
+  printf "========= SubLim3 JukeBox Update =========\n"
+  printf "==========================================\n\n"
 }
 
 print_section() {
-  printf '\n==================================\n'
+  printf '\n=========================================\n'
   printf '%s\n' "$1"
-  printf '====================================\n\n'
+  printf '=========================================\n\n'
 }
 
 copy_with_backup() {
