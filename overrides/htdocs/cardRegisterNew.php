@@ -1,99 +1,4 @@
 <?php
-$accessFile = '/home/pi/RPi-Jukebox-RFID/settings/cardRegisterAccess';
-$enabled = false;
-$expires = '';
-$expiresTs = false;
-
-if (file_exists($accessFile)) {
-    $lines = file($accessFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $config = array();
-
-    foreach ($lines as $line) {
-        if (strpos($line, '=') !== false) {
-            list($key, $value) = explode('=', $line, 2);
-            $config[trim($key)] = trim($value);
-        }
-    }
-
-    $isEnabled = isset($config['enabled']) && trim($config['enabled']) === '1';
-    $expires = isset($config['expires']) ? trim($config['expires']) : '';
-
-    if ($isEnabled) {
-        if ($expires === '') {
-            $enabled = true;
-        } else {
-            $expiresTs = strtotime($expires);
-            if ($expiresTs !== false && time() <= $expiresTs) {
-                $enabled = true;
-            }
-        }
-    }
-}
-
-if (!$enabled) {
-    http_response_code(403);
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>RFID Card | SubLim3-JukeBox</title>
-        <link rel="stylesheet" href="_assets/bootstrap-3/css/bootstrap.darkly.css">
-        <link rel="stylesheet" href="_assets/css/custom-green.css">
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: #f5f5f5;
-                color: #222;
-                text-align: center;
-                padding: 40px 20px;
-            }
-            .card {
-                max-width: 500px;
-                margin: 40px auto;
-                background: #fff;
-                border-radius: 12px;
-                padding: 30px 20px;
-                box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-            }
-            h1 {
-                margin-top: 0;
-                font-size: 28px;
-            }
-            .note {
-                font-size: 16px;
-                color: #555;
-                margin-top: 20px;
-            }
-            .btn {
-                display: inline-block;
-                margin-top: 25px;
-                padding: 12px 20px;
-                background: #2e7d32;
-                color: white;
-                text-decoration: none;
-                border-radius: 8px;
-            }
-            .btn:hover {
-                background: #256628;
-                color: white;
-                text-decoration: none;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <h1>RFID Registration Disabled</h1>
-            <div class="note">Contact your system admin to re-enable it.</div>
-            <a class="btn" href="index.php">Back to Home</a>
-        </div>
-    </body>
-    </html>
-    <?php
-    exit;
-}
-
 include("inc.header.php");
 
 /**************************************************
@@ -101,19 +6,97 @@ include("inc.header.php");
 * No changes required if you stuck to the
 * INSTALL.md instructions.
 * If you want to change the paths, edit config.php
-* If you want to change the paths, edit config.php
 ***************************************************/
 
 /* NO CHANGES BENEATH THIS LINE ***********/
 
 $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://';
-$conf['url_abs']    = $protocol.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF']; // URL to PHP_SELF
+$conf['url_abs'] = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF']; // URL to PHP_SELF
+
+/*******************************************
+* SUBLIM3 CARD REGISTER ACCESS CONTROL
+*******************************************/
+function getCardRegisterAccessConfig($filePath) {
+    $config = array(
+        'enabled' => true,
+        'expires' => null
+    );
+
+    // Default to enabled if the file is missing
+    if (!file_exists($filePath)) {
+        return $config;
+    }
+
+    $lines = @file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return $config;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+
+        // Skip comments
+        if ($line === '' || strpos($line, '#') === 0) {
+            continue;
+        }
+
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = strtolower(trim($key));
+            $value = trim($value);
+
+            if ($key === 'enabled') {
+                $valueLower = strtolower($value);
+                $config['enabled'] = in_array($valueLower, array('1', 'on', 'true', 'yes', 'enable', 'enabled'), true);
+            }
+
+            if ($key === 'expires') {
+                $config['expires'] = $value;
+            }
+        } else {
+            // Backward compatibility for old single-value files like "enabled"
+            $valueLower = strtolower($line);
+            $config['enabled'] = in_array($valueLower, array('1', 'on', 'true', 'yes', 'enable', 'enabled'), true);
+        }
+    }
+
+    return $config;
+}
+
+function isCardRegisterAccessEnabled($filePath) {
+    $config = getCardRegisterAccessConfig($filePath);
+
+    if (!$config['enabled']) {
+        return false;
+    }
+
+    if (!empty($config['expires'])) {
+        $expiresTs = strtotime($config['expires']);
+        if ($expiresTs !== false && time() > $expiresTs) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+$cardRegisterAccessFile = realpath(getcwd() . '/../settings/') . '/cardRegisterAccess';
+$cardRegisterAccessConfig = getCardRegisterAccessConfig($cardRegisterAccessFile);
+$cardRegisterAccessEnabled = isCardRegisterAccessEnabled($cardRegisterAccessFile);
+$cardRegisterExpired = false;
+
+if (!empty($cardRegisterAccessConfig['expires'])) {
+    $expiresTs = strtotime($cardRegisterAccessConfig['expires']);
+    if ($expiresTs !== false && time() > $expiresTs) {
+        $cardRegisterExpired = true;
+    }
+}
 
 /*******************************************
 * START HTML
 *******************************************/
 
-html_bootstrap3_createHeader("en","RFID Card | Phoniebox",$conf['base_url']);
+html_bootstrap3_createHeader("en", "RFID Card | SubLim3 JukeBox", $conf['base_url']);
 
 ?>
 <body>
@@ -121,81 +104,33 @@ html_bootstrap3_createHeader("en","RFID Card | Phoniebox",$conf['base_url']);
 
 <?php
 include("inc.navigation.php");
-?>
 
-<style>
-.countdown-banner {
-    margin: 15px 0 20px 0;
-    padding: 12px 16px;
-    background: #1f7a5c;
-    color: #fff;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-}
-.countdown-banner.warning {
-    background: #b9770e;
-}
-.countdown-banner.danger {
-    background: #a93226;
-}
-</style>
-
-<?php if ($expiresTs !== false): ?>
-<div id="countdownBanner" class="countdown-banner">
-    Card Registration expires in: <span id="countdownTimer"></span>
-</div>
-<script>
-(function() {
-    var expiresAt = <?php echo $expiresTs; ?> * 1000;
-    var banner = document.getElementById('countdownBanner');
-    var timer = document.getElementById('countdownTimer');
-
-    function updateCountdown() {
-        var now = new Date().getTime();
-        var distance = expiresAt - now;
-
-        if (distance <= 0) {
-            timer.textContent = "Expired";
-            banner.className = "countdown-banner danger";
-            setTimeout(function() {
-                window.location.reload();
-            }, 1500);
-            return;
-        }
-
-        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        var parts = [];
-        if (days > 0) parts.push(days + "d");
-        if (hours > 0 || days > 0) parts.push(hours + "h");
-        parts.push(minutes + "m");
-        parts.push(seconds + "s");
-
-        timer.textContent = parts.join(" ");
-
-        if (distance <= 5 * 60 * 1000) {
-            banner.className = "countdown-banner danger";
-        } else if (distance <= 15 * 60 * 1000) {
-            banner.className = "countdown-banner warning";
-        } else {
-            banner.className = "countdown-banner";
-        }
-    }
-
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-})();
-</script>
-<?php endif; ?>
-
-<?php
 // path to script folder from github repo on RPi
-$conf['shared_abs'] = realpath(getcwd().'/../shared/');
+$conf['shared_abs'] = realpath(getcwd() . '/../shared/');
+
+/*******************************************
+* ACCESS DENIED VIEW
+*******************************************/
+if (!$cardRegisterAccessEnabled) {
+    ?>
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="alert alert-warning">
+          <strong>Card Registration Disabled</strong><br>
+          <?php if ($cardRegisterExpired) { ?>
+            This page is currently disabled because access has expired.
+          <?php } else { ?>
+            This page is currently disabled on SubLim3 JukeBox.
+          <?php } ?>
+        </div>
+      </div>
+    </div>
+  </div><!-- /.container -->
+</body>
+</html>
+<?php
+    exit;
+}
 
 /*******************************************
 * ACTIONS
@@ -207,11 +142,11 @@ include("inc.processCheckCardEditRegister.php");
 /*
 * FILE UPLOAD
 */
-if(!empty($_FILES['importFileUpload'])) {
-    $conf['upload_abs'] = realpath(getcwd().'/../temp/');
-    $uploadFileType = strtolower(pathinfo(basename( $_FILES['importFileUpload']['name']),PATHINFO_EXTENSION));
+if (!empty($_FILES['importFileUpload'])) {
+    $conf['upload_abs'] = realpath(getcwd() . '/../temp/');
+    $uploadFileType = strtolower(pathinfo(basename($_FILES['importFileUpload']['name']), PATHINFO_EXTENSION));
 
-    if($debug == "true") {
+    if ($debug == "true") {
         print "file upload";
         print "<pre>";
         print $conf['upload_abs'];
@@ -220,26 +155,29 @@ if(!empty($_FILES['importFileUpload'])) {
         print "\n";
         print "</pre>";
     }
+
     // check if csv
-    if($uploadFileType == "csv") {
-        if(move_uploaded_file($_FILES['importFileUpload']['tmp_name'], $conf['upload_abs'] . "./rfidImport.csv")) {
-            $messageSuccess .= "<p>" . $lang['cardImportFileSuccessUpload'] .  basename( $_FILES['importFileUpload']['name']). "</p>";
+    if ($uploadFileType == "csv") {
+        if (move_uploaded_file($_FILES['importFileUpload']['tmp_name'], $conf['upload_abs'] . "./rfidImport.csv")) {
+            $messageSuccess .= "<p>" . $lang['cardImportFileSuccessUpload'] . basename($_FILES['importFileUpload']['name']) . "</p>";
+
             /*
             * read RFID into array
             */
             $rfidPostedAudio = array();
             $rfidPostedCommands = array();
-            $fn = fopen($conf['upload_abs'] . "./rfidImport.csv","r");
-            while(! feof($fn))  {
+            $fn = fopen($conf['upload_abs'] . "./rfidImport.csv", "r");
+            while (!feof($fn)) {
                 $pair = explode("\",\"", fgets($fn));
+
                 // ignore header and empty lines
-                if(
+                if (
                     (count($pair) != 2)     // empty line
                     || ($pair[0] == "\"id") // CSV header
                 ) {
                 } else {
                     // system commands?
-                    if(startsWith(trim($pair[1]), "%")) {
+                    if (startsWith(trim($pair[1]), "%")) {
                         // yes, system command
                         $rfidPostedCommands[ltrim($pair[0], '"')] = rtrim(trim($pair[1]), '"');
                     } else {
@@ -249,7 +187,8 @@ if(!empty($_FILES['importFileUpload'])) {
                 }
             }
             fclose($fn);
-            if($debug == "true") {
+
+            if ($debug == "true") {
                 print "<pre>rfidPostedCommands: \n";
                 print_r($rfidPostedCommands);
                 print "\nrfidPostedAudio: \n";
@@ -262,27 +201,34 @@ if(!empty($_FILES['importFileUpload'])) {
             /*
             * do we delete any files?
             */
-            if($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "commands") {
+            if ($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "commands") {
                 // delete commands => create array of available commands with not array of used commands
                 $fillRfidArrAvailWithUsed = fillRfidArrAvailWithUsed($rfidAvailArr);
-                if($debug == "true") {
-                    print "<pre>delete commands - fillRfidArrAvailWithUsed:\n"; print_r($fillRfidArrAvailWithUsed); print "</pre>";
+                if ($debug == "true") {
+                    print "<pre>delete commands - fillRfidArrAvailWithUsed:\n";
+                    print_r($fillRfidArrAvailWithUsed);
+                    print "</pre>";
                 }
                 $messageSuccess .= $lang['cardImportFileDeleteMessageCommands'];
             } else {
                 // keep commands
-                if($debug == "true") {
-                    print "<pre>keep commands - fillRfidArrAvailWithUsed:\n"; print_r($fillRfidArrAvailWithUsed); print "</pre>";
+                if ($debug == "true") {
+                    print "<pre>keep commands - fillRfidArrAvailWithUsed:\n";
+                    print_r($fillRfidArrAvailWithUsed);
+                    print "</pre>";
                 }
             }
-            if($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "audio") {
+
+            if ($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "audio") {
                 // delete audio
-                if($debug == "true") {
-                    print "<pre>delete audio - shortcuts:\n"; print_r($shortcuts); print "</pre>";
+                if ($debug == "true") {
+                    print "<pre>delete audio - shortcuts:\n";
+                    print_r($shortcuts);
+                    print "</pre>";
                 }
-                foreach($shortcuts as $shortcut => $value) {
-                    if($shortcut != "placeholder") {
-                        $exec = "rm ../shared/shortcuts/".$shortcut;
+                foreach ($shortcuts as $shortcut => $value) {
+                    if ($shortcut != "placeholder") {
+                        $exec = "rm ../shared/shortcuts/" . $shortcut;
                         $result = exec($exec);
                     }
                 }
@@ -290,105 +236,106 @@ if(!empty($_FILES['importFileUpload'])) {
             }
 
             // which files to replace?
-            if($_POST['importFileOverwrite'] != "audio") {
+            if ($_POST['importFileOverwrite'] != "audio") {
                 // create commands
                 // fill available commands with posted commands
-                foreach($rfidPostedCommands as $key => $value) {
-                    if($debug == "true") {
-                        print "<p>fillRfidArrAvailWithUsed[".trim($value, '%')."] = ".$key."</p>";
+                foreach ($rfidPostedCommands as $key => $value) {
+                    if ($debug == "true") {
+                        print "<p>fillRfidArrAvailWithUsed[" . trim($value, '%') . "] = " . $key . "</p>";
                     }
                     $fillRfidArrAvailWithUsed[trim($value, '%')] = $key;
                 }
 
                 /******************************************
                 * Create new conf file based on posted values
-                */
+                ******************************************/
                 // copy sample file to conf file
                 exec("cp ../settings/rfid_trigger_play.conf.sample ../settings/rfid_trigger_play.conf; chmod 777 ../settings/rfid_trigger_play.conf");
+
                 // replace posted values in new conf file
-                foreach($fillRfidArrAvailWithUsed as $key => $val) {
+                foreach ($fillRfidArrAvailWithUsed as $key => $val) {
                     // only change those with values in the form (not empty)
-                    if($val != "") {
-                        exec("sed -i 's/%".$key."%/".$val."/' '../settings/rfid_trigger_play.conf'");
+                    if ($val != "") {
+                        exec("sed -i 's/%" . $key . "%/" . $val . "/' '../settings/rfid_trigger_play.conf'");
                     }
                 }
                 $messageSuccess .= $lang['cardImportFileOverwriteMessageCommands'];
             }
-            if($_POST['importFileOverwrite'] != "commands") {
+
+            if ($_POST['importFileOverwrite'] != "commands") {
                 // create audio files
                 foreach ($rfidPostedAudio as $shortcutId => $shortcutFolder) {
-                    $exec = "echo \"".$shortcutFolder."\" > ../shared/shortcuts/".$shortcutId;
+                    $exec = "echo \"" . $shortcutFolder . "\" > ../shared/shortcuts/" . $shortcutId;
                     exec($exec);
                 }
                 exec("chmod 777 ../shared/shortcuts/*");
                 $messageSuccess .= $lang['cardImportFileOverwriteMessageAudio'];
             }
-        } else{
+        } else {
             $messageError .= $lang['cardImportFileErrorUpload'];
         }
     } else {
         $messageError .= $lang['cardImportFileErrorFiletype'];
     }
 } else {
-    if($debug == "true") {
+    if ($debug == "true") {
         print "no file upload";
     }
 }
-
 ?>
 
 <div class="row">
   <div class="col-lg-12">
-  <strong><?php print $lang['globalJumpTo']; ?>:</strong>
-        <a href="#RFIDinteractive" class="btn xbtn-info ">
-        <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
-        </a> |
-        <a href="#RFIDexport" class="btn xbtn-info ">
-        <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
-        </a> |
-        <a href="#RFIDimport" class="btn xbtn-info ">
-        <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
-        </a>
+    <strong><?php print $lang['globalJumpTo']; ?>:</strong>
+    <a href="#RFIDinteractive" class="btn xbtn-info ">
+      <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+    </a> |
+    <a href="#RFIDexport" class="btn xbtn-info ">
+      <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
+    </a> |
+    <a href="#RFIDimport" class="btn xbtn-info ">
+      <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
+    </a>
   </div>
 </div>
-        <br/>
+<br/>
+
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="RFIDinteractive"></a>
-         <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+        <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
       </h4>
     </div><!-- /.panel-heading -->
 
-      <div class="panel-body">
-    <div class="row ">
-      <div class="col-lg-12">
+    <div class="panel-body">
+      <div class="row ">
+        <div class="col-lg-12">
 <?php
 /*
 * Do we need to voice a warning here?
 */
 if ($messageAction == "" && $messageError == "") {
-    $messageAction = $lang['cardRegisterMessageDefault'].$lang['cardRegisterManualLinks'];
+    $messageAction = $lang['cardRegisterMessageDefault'] . $lang['cardRegisterManualLinks'];
 }
-if(isset($messageSuccess) && $messageSuccess != "") {
-    print '<div class="alert alert-success">'.$messageSuccess.'<p>'.$lang['cardRegisterMessageSwipeNew'].'</p></div>';
+if (isset($messageSuccess) && $messageSuccess != "") {
+    print '<div class="alert alert-success">' . $messageSuccess . '<p>' . $lang['cardRegisterMessageSwipeNew'] . '</p></div>';
     unset($post);
 } else {
-    if(isset($warning)) {
-        print '<div class="alert alert-warning">WARNING: '.$warning.'</div>';
+    if (isset($warning)) {
+        print '<div class="alert alert-warning">WARNING: ' . $warning . '</div>';
     }
-    if(isset($messageError) && $messageError != "") {
-        print '<div class="alert alert-danger">ERROR: '.$messageError.'</div>';
+    if (isset($messageError) && $messageError != "") {
+        print '<div class="alert alert-danger">ERROR: ' . $messageError . '</div>';
     }
-    if(isset($messageAction) && $messageAction != "") {
-        print '<div class="alert alert-info">'.$messageAction.'</div>';
+    if (isset($messageAction) && $messageAction != "") {
+        print '<div class="alert alert-info">' . $messageAction . '</div>';
     }
 }
-
 ?>
 
 <?php
-if($debug == "true") {
+if ($debug == "true") {
     print "<pre>";
     print_r($_POST);
     print_r($post);
@@ -397,11 +344,11 @@ if($debug == "true") {
 }
 ?>
 
-       </div>
-    </div>
+        </div>
+      </div>
 
-    <div class="row">
-      <div class="col-lg-12">
+      <div class="row">
+        <div class="col-lg-12">
 <?php
 /*
 * pass on some variables to the form.
@@ -414,62 +361,55 @@ $fdata = array(
 );
 $fpost = $post;
 include("inc.formCardEdit.php");
-        ?>
-              </div><!-- / .col-lg-12 -->
-            </div><!-- /.row -->
-        </div><!-- /.panel-body -->
-
-    </div><!-- /.panel -->
+?>
+        </div><!-- / .col-lg-12 -->
+      </div><!-- /.row -->
+    </div><!-- /.panel-body -->
+  </div><!-- /.panel -->
 </div><!-- /.panel-group -->
-
 
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="RFIDexport"></a>
-         <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
+        <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
       </h4>
     </div><!-- /.panel-heading -->
 
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-lg-12">
-                <a href="rfidExportCsv.php" class="btn btn-primary btn">
-                <i class='mdi mdi-download'></i> <?php print $lang['cardExportButtonLink']; ?>
-                </a>
-          </div><!-- / .col-lg-12 -->
-        </div><!-- /.row -->
-      </div><!-- /.panel-body -->
-
-    </div><!-- /.panel -->
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <a href="rfidExportCsv.php" class="btn btn-primary btn">
+            <i class='mdi mdi-download'></i> <?php print $lang['cardExportButtonLink']; ?>
+          </a>
+        </div><!-- / .col-lg-12 -->
+      </div><!-- /.row -->
+    </div><!-- /.panel-body -->
+  </div><!-- /.panel -->
 </div><!-- /.panel-group -->
 
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="RFIDimport"></a>
-         <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
+        <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
       </h4>
     </div><!-- /.panel-heading -->
 
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-lg-12">
-            <form name='upload' enctype='multipart/form-data' method='post' action='<?php print $_SERVER['PHP_SELF']; ?>'>
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <form name='upload' enctype='multipart/form-data' method='post' action='<?php print $_SERVER['PHP_SELF']; ?>'>
             <fieldset>
-            <!-- Form Name -->
-            <!--legend><?php print $lang['']; ?></legend-->
-            <!-- File Upload -->
-            <div class="form-group">
-              <label class="col-md-4 control-label" for="importFileUpload"><?php print $lang['cardImportFileLabel']; ?></label>
-              <div class="col-md-6">
-                <input type="file" name="importFileUpload" id="importFileUpload"class="form-control input-md" >
-              <span class="help-block"> </span>
+              <div class="form-group">
+                <label class="col-md-4 control-label" for="importFileUpload"><?php print $lang['cardImportFileLabel']; ?></label>
+                <div class="col-md-6">
+                  <input type="file" name="importFileUpload" id="importFileUpload" class="form-control input-md">
+                  <span class="help-block"> </span>
+                </div>
               </div>
-            </div>
             </fieldset>
 
-            <!-- Select Basic -->
             <div class="form-group">
               <label class="col-md-4 control-label" for="importFileOverwrite"><?php print $lang['cardImportFormOverwriteLabel']; ?></label>
               <div class="col-md-6">
@@ -478,11 +418,10 @@ include("inc.formCardEdit.php");
                   <option value="commands"><?php print $lang['cardImportFormOverwriteCommands']; ?></option>
                   <option value="audio"><?php print $lang['cardImportFormOverwriteAudio']; ?></option>
                 </select>
-              <span class="help-block"><?php print $lang['cardImportFormOverwriteHelp']; ?></span>
+                <span class="help-block"><?php print $lang['cardImportFormOverwriteHelp']; ?></span>
               </div>
             </div>
 
-            <!-- Select Basic -->
             <div class="form-group">
               <label class="col-md-4 control-label" for="importFileDelete"><?php print $lang['cardImportFormDeleteLabel']; ?></label>
               <div class="col-md-6">
@@ -492,12 +431,10 @@ include("inc.formCardEdit.php");
                   <option value="commands"><?php print $lang['cardImportFormDeleteCommands']; ?></option>
                   <option value="audio"><?php print $lang['cardImportFormDeleteAudio']; ?></option>
                 </select>
-              <span class="help-block"><?php print $lang['cardImportFormDeleteHelp']; ?></span>
+                <span class="help-block"><?php print $lang['cardImportFormDeleteHelp']; ?></span>
               </div>
             </div>
 
-
-            <!-- Button (Double) -->
             <div class="form-group">
               <label class="col-md-4 control-label" for="submit"></label>
               <div class="col-md-8">
@@ -505,13 +442,11 @@ include("inc.formCardEdit.php");
                 <br clear='all'><br>
               </div>
             </div>
-
-            </form>
-          </div><!-- / .col-lg-12 -->
-        </div><!-- /.row -->
-      </div><!-- /.panel-body -->
-
-    </div><!-- /.panel -->
+          </form>
+        </div><!-- / .col-lg-12 -->
+      </div><!-- /.row -->
+    </div><!-- /.panel-body -->
+  </div><!-- /.panel -->
 </div><!-- /.panel-group -->
 
   </div><!-- /.container -->
@@ -520,10 +455,9 @@ include("inc.formCardEdit.php");
 $(document).ready(function() {
     $('#refresh_id').load('ajax.refresh_id.php');
     var refreshId = setInterval(function() {
-        $('#refresh_id').load('ajax.refresh_id.php?' + 1*new Date());
+        $('#refresh_id').load('ajax.refresh_id.php?' + 1 * new Date());
     }, 1000);
 });
-
 </script>
 
 </body>
