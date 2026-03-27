@@ -121,6 +121,8 @@ main() {
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/systemInfo.php"     "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/update.php"         "$TARGET_DIR/htdocs/update.php"                    "update.php"
   copy_with_backup "$SOURCE_DIR/overrides/htdocs/inc.navigation.php" "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
+  copy_with_backup "$SOURCE_DIR/scripts/SubLim3-Jukebox-Update.sh"   "$TARGET_DIR/scripts/SubLim3-Jukebox-Update.sh"    "SubLim3-Jukebox-Update.sh"
+  copy_with_backup "$SOURCE_DIR/scripts/SubLim3-Audio.sh"            "$TARGET_DIR/scripts/SubLim3-Audio.sh"             "SubLim3-Audio.sh"
   copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh"         "$TARGET_DIR/scripts/sublim3-feedback.sh"          "sublim3-feedback.sh"
   copy_with_backup "$SOURCE_DIR/overrides/settings/gpio-buttons.py"  "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
   copy_with_backup "$SOURCE_DIR/overrides/settings/version-number"   "$TARGET_DIR/settings/version-number"              "version-number"
