@@ -176,16 +176,6 @@ $rpi_throttle = checkRpiThrottle();
             <?php } ?>
           </div>
         </div>
-      <div class="row">
-  <label class="col-md-4 control-label" for="">RFID Status</label>
-  <div class="col-md-6">
-    <?php if ($rfid_detected) { ?>
-      <span class="label label-success">Detected</span>
-    <?php } else { ?>
-      <span class="label label-danger">Not Detected</span>
-    <?php } ?>
-          </div>
-        </div>
         <div class="row">
           <label class="col-md-4 control-label" for="">WiFi SSID</label>
           <div class="col-md-6"><?php echo htmlspecialchars($wifi_ssid); ?></div>
@@ -193,6 +183,16 @@ $rpi_throttle = checkRpiThrottle();
         <div class="row">
           <label class="col-md-4 control-label" for="">IP Address</label>
           <div class="col-md-6"><?php echo htmlspecialchars($wifi_ip); ?></div>
+        </div>
+        <div class="row">
+          <label class="col-md-4 control-label" for="">RFID Status</label>
+          <div class="col-md-6">
+            <?php if ($rfid_detected) { ?>
+              <span class="label label-success">Detected</span>
+            <?php } else { ?>
+              <span class="label label-danger">Not Detected</span>
+            <?php } ?>
+          </div>
         </div>
         <div class="row">
           <label class="col-md-4 control-label" for=""><?php print $lang['infoOsThrottle']; ?></label>
