@@ -10,91 +10,124 @@ ERRORS=0
 RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
 
 print_header() {
-  printf "\n======================================================\n"
-  printf "=============== SubLim3 JukeBox Update ===============\n"
-  printf "======================================================\n\n"
+  echo ""
+  echo "======================================================"
+  echo "=============== SubLim3 JukeBox Update ==============="
+  echo "======================================================"
+  echo ""
 }
 
 print_section() {
-  printf '\n======================================================\n'
-  printf '%s\n' "$1"
-  printf '======================================================\n\n'
+  echo ""
+  echo "======================================================"
+  echo "$1"
+  echo "======================================================"
+  echo ""
 }
 
+#########################################
+# SAFE GIT UPDATE
+#########################################
+update_repo() {
+  print_section "Checking repository state"
+
+  if [ ! -d "$SOURCE_DIR/.git" ]; then
+    echo "[WARN] Not a git repository. Skipping pull."
+    return
+  fi
+
+  cd "$SOURCE_DIR" || return
+
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "[WARN] Local changes detected."
+    echo "[WARN] Skipping git pull and using local files."
+    return
+  fi
+
+  echo "[OK] Repo clean. Pulling latest updates..."
+  git pull -q origin main
+
+  if [ $? -eq 0 ]; then
+    echo "[OK] Repository updated"
+  else
+    echo "[ERROR] Git pull failed"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
+#########################################
+# COPY WITH BACKUP
+#########################################
 copy_with_backup() {
   local src="$1"
   local dst="$2"
-  local label="$3"
 
   if [ ! -f "$src" ]; then
-    echo "[WARN] Missing source file: $src"
+    echo "[WARN] Missing: $src"
     ERRORS=$((ERRORS + 1))
-    return 1
+    return
   fi
 
   mkdir -p "$(dirname "$dst")"
 
   if [ -f "$dst" ]; then
-    cp -f "$dst" "${dst}${BACKUP_SUFFIX}" || {
-      echo "[ERROR] Failed to back up $label"
-      ERRORS=$((ERRORS + 1))
-      return 1
-    }
+    cp -f "$dst" "${dst}${BACKUP_SUFFIX}"
   fi
 
   if cp -f "$src" "$dst"; then
-    echo "[OK] $label -> $dst"
+    echo "[OK] $(basename "$src")"
   else
-    echo "[ERROR] Failed to copy $label"
+    echo "[ERROR] Failed: $(basename "$src")"
     ERRORS=$((ERRORS + 1))
-    return 1
   fi
 }
 
+#########################################
+# DEPLOY DIRECTORY (AUTO MODE)
+#########################################
+deploy_directory() {
+  local src_dir="$1"
+  local dst_dir="$2"
+
+  if [ ! -d "$src_dir" ]; then
+    echo "[WARN] Missing directory: $src_dir"
+    return
+  fi
+
+  find "$src_dir" -type f | while read -r file; do
+    rel="${file#$src_dir/}"
+    copy_with_backup "$file" "$dst_dir/$rel"
+  done
+}
+
+#########################################
+# PATCH RFID SCRIPT
+#########################################
 patch_rfid_trigger() {
-  print_section "Patching rfid_trigger_play.sh"
+  print_section "Patching RFID script"
 
   if [ ! -f "$RFID_TRIGGER_TARGET" ]; then
-    echo "[ERROR] Missing $RFID_TRIGGER_TARGET"
-    ERRORS=$((ERRORS + 1))
-    return 1
+    echo "[WARN] RFID trigger script not found"
+    return
   fi
 
   if grep -q 'sublim3-feedback.sh' "$RFID_TRIGGER_TARGET"; then
-    echo "[OK] RFID feedback hook already present"
-    return 0
+    echo "[OK] RFID patch already applied"
+    return
   fi
 
-  cp -f "$RFID_TRIGGER_TARGET" "${RFID_TRIGGER_TARGET}${BACKUP_SUFFIX}" || {
-    echo "[ERROR] Failed to back up rfid_trigger_play.sh"
-    ERRORS=$((ERRORS + 1))
-    return 1
-  }
+  cp "$RFID_TRIGGER_TARGET" "${RFID_TRIGGER_TARGET}${BACKUP_SUFFIX}"
 
-  python3 - <<'PY'
-from pathlib import Path
+  sed -i '/if \[ "\$CARDID" \]; then/a\
+    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &' \
+    "$RFID_TRIGGER_TARGET"
 
-path = Path("/home/pi/RPi-Jukebox-RFID/scripts/rfid_trigger_play.sh")
-text = path.read_text()
-
-old = 'if [ "$CARDID" ]; then\n'
-new = 'if [ "$CARDID" ]; then\n    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &\n'
-
-if old in text:
-    text = text.replace(old, new, 1)
-    path.write_text(text)
-else:
-    raise SystemExit("Could not find CARDID block to patch.")
-PY
-
-  if [ $? -eq 0 ]; then
-    echo "[OK] RFID feedback hook added."
-  else
-    echo "[ERROR] Failed to patch rfid_trigger_play.sh"
-    ERRORS=$((ERRORS + 1))
-  fi
+  echo "[OK] RFID feedback hook added"
 }
 
+#########################################
+# FIX PERMISSIONS
+#########################################
 fix_permissions() {
   print_section "Fixing permissions"
 
@@ -102,49 +135,39 @@ fix_permissions() {
   chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
   chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
 
-  echo "[OK] Script permissions updated"
+  echo "[OK] Permissions fixed"
 }
 
+#########################################
+# MAIN
+#########################################
 main() {
   print_header
 
-  print_section "Deploying SubLim3 files"
+  update_repo
 
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css" "$TARGET_DIR/htdocs/_assets/css/custom-sublim3.css" "custom-sublim3.css"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/lang/lang-en-UK.php"            "$TARGET_DIR/htdocs/lang/lang-en-UK.php"            "lang-en-UK.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/func.php"                        "$TARGET_DIR/htdocs/func.php"                      "func.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index.php"                       "$TARGET_DIR/htdocs/index.php"                     "index.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index-lcd.php"                   "$TARGET_DIR/htdocs/index-lcd.php"                 "index-lcd.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/readIP.php"                      "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/search.php"                      "$TARGET_DIR/htdocs/search.php"                    "search.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/settings.php"                    "$TARGET_DIR/htdocs/settings.php"                  "settings.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/systemInfo.php"                  "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/update.php"                      "$TARGET_DIR/htdocs/update.php"                    "update.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/inc.navigation.php"              "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
+  print_section "Deploying overrides"
 
-  copy_with_backup "$SOURCE_DIR/overrides/settings/gpio-buttons.py"               "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
-  copy_with_backup "$SOURCE_DIR/overrides/settings/version-number"                "$TARGET_DIR/settings/version-number"              "version-number"
-  copy_with_backup "$SOURCE_DIR/overrides/settings/cardRegisterAccess"            "$TARGET_DIR/settings/cardRegisterAccess"          "cardRegisterAccess"
+  deploy_directory "$SOURCE_DIR/overrides/htdocs" "$TARGET_DIR/htdocs"
+  deploy_directory "$SOURCE_DIR/overrides/settings" "$TARGET_DIR/settings"
+  deploy_directory "$SOURCE_DIR/overrides/icons" "$TARGET_DIR/htdocs/_assets/icons"
 
-  copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh"                      "$TARGET_DIR/scripts/sublim3-feedback.sh"          "sublim3-feedback.sh"
+  print_section "Deploying scripts"
 
-  print_section "Deploying icons"
-
-  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-16x16.png"                "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
-  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-32x32.png"                "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
-  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-96x96.png"                "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
+  copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
 
   patch_rfid_trigger
   fix_permissions
 
-  printf "\n======================================================\n"
+  echo ""
+  echo "======================================================"
   if [ "$ERRORS" -eq 0 ]; then
     echo "[OK] SubLim3 update completed successfully"
-    printf "======================================================\n\n"
+    echo "======================================================"
     exit 0
   else
-    echo "[WARN] SubLim3 update completed with $ERRORS error(s)"
-    printf "======================================================\n\n"
+    echo "[WARN] Completed with $ERRORS error(s)"
+    echo "======================================================"
     exit 1
   fi
 }
