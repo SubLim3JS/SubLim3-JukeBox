@@ -10,9 +10,9 @@ ERRORS=0
 RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
 
 print_header() {
-  printf "\n==================================================\n"
-  printf "============= SubLim3 JukeBox Update =============\n"
-  printf "==================================================\n\n"
+  printf "\n======================================================\n"
+  printf "=============== SubLim3 JukeBox Update ===============\n"
+  printf "======================================================\n\n"
 }
 
 print_section() {
@@ -137,10 +137,10 @@ main() {
   patch_rfid_trigger
   fix_permissions
 
-  printf "\n===================================================\n"
+  printf "\n=======================================================\n"
   if [ "$ERRORS" -eq 0 ]; then
     echo "[OK] SubLim3 update completed successfully"
-    printf "===================================================\n\n"
+    printf "=======================================================\n\n"
     exit 0
   else
     echo "[WARN] SubLim3 update completed with $ERRORS error(s)"
