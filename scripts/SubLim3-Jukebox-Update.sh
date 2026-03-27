@@ -10,15 +10,15 @@ ERRORS=0
 RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
 
 print_header() {
-  printf "\n======================================================\n"
-  printf "=============== SubLim3 JukeBox Update ===============\n"
-  printf "======================================================\n\n"
+  printf "\n====================================\n"
+  printf "====== SubLim3 JukeBox Update ======\n"
+  printf "====================================\n\n"
 }
 
 print_section() {
-  printf '\n======================================================\n'
+  printf '\n------------------------------------\n'
   printf '%s\n' "$1"
-  printf '======================================================\n\n'
+  printf '------------------------------------\n\n'
 }
 
 copy_with_backup() {
@@ -60,16 +60,16 @@ patch_rfid_trigger() {
     return 1
   fi
 
+  if grep -q 'sublim3-feedback.sh' "$RFID_TRIGGER_TARGET"; then
+    echo "[OK] RFID feedback hook already present"
+    return 0
+  fi
+
   cp -f "$RFID_TRIGGER_TARGET" "${RFID_TRIGGER_TARGET}${BACKUP_SUFFIX}" || {
     echo "[ERROR] Failed to back up rfid_trigger_play.sh"
     ERRORS=$((ERRORS + 1))
     return 1
   }
-
-  if grep -q 'sublim3-feedback.sh' "$RFID_TRIGGER_TARGET"; then
-    echo "[OK] RFID feedback hook already present"
-    return 0
-  fi
 
   python3 - <<'PY'
 from pathlib import Path
@@ -110,41 +110,41 @@ main() {
 
   print_section "Deploying SubLim3 files"
 
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css"   "$TARGET_DIR/htdocs/_assets/css/custom-sublim3.css" "custom-sublim3.css"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/lang/lang-en-UK.php"   "$TARGET_DIR/htdocs/lang/lang-en-UK.php"        "lang-en-UK.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/func.php"           "$TARGET_DIR/htdocs/func.php"                      "func.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index.php"          "$TARGET_DIR/htdocs/index.php"                     "index.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index-lcd.php"      "$TARGET_DIR/htdocs/index-lcd.php"                 "index-lcd.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/readIP.php"         "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/search.php"         "$TARGET_DIR/htdocs/search.php"                    "search.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/settings.php"       "$TARGET_DIR/htdocs/settings.php"                  "settings.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/systemInfo.php"     "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/update.php"         "$TARGET_DIR/htdocs/update.php"                    "update.php"
-  copy_with_backup "$SOURCE_DIR/overrides/htdocs/inc.navigation.php" "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
-  copy_with_backup "$SOURCE_DIR/scripts/SubLim3-Jukebox-Update.sh"   "$TARGET_DIR/scripts/SubLim3-Jukebox-Update.sh"    "SubLim3-Jukebox-Update.sh"
-  copy_with_backup "$SOURCE_DIR/scripts/SubLim3-Audio.sh"            "$TARGET_DIR/scripts/SubLim3-Audio.sh"             "SubLim3-Audio.sh"
-  copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh"         "$TARGET_DIR/scripts/sublim3-feedback.sh"          "sublim3-feedback.sh"
-  copy_with_backup "$SOURCE_DIR/overrides/settings/gpio-buttons.py"  "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
-  copy_with_backup "$SOURCE_DIR/overrides/settings/version-number"   "$TARGET_DIR/settings/version-number"              "version-number"
-  copy_with_backup "$SOURCE_DIR/overrides/settings/cardRegisterAccess"   "$TARGET_DIR/settings/cardRegisterAccess"      "cardRegisterAccess"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/_assets/css/custom-sublim3.css" "$TARGET_DIR/htdocs/_assets/css/custom-sublim3.css" "custom-sublim3.css"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/lang/lang-en-UK.php"            "$TARGET_DIR/htdocs/lang/lang-en-UK.php"            "lang-en-UK.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/func.php"                        "$TARGET_DIR/htdocs/func.php"                      "func.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index.php"                       "$TARGET_DIR/htdocs/index.php"                     "index.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/index-lcd.php"                   "$TARGET_DIR/htdocs/index-lcd.php"                 "index-lcd.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/readIP.php"                      "$TARGET_DIR/htdocs/readIP.php"                    "readIP.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/search.php"                      "$TARGET_DIR/htdocs/search.php"                    "search.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/settings.php"                    "$TARGET_DIR/htdocs/settings.php"                  "settings.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/systemInfo.php"                  "$TARGET_DIR/htdocs/systemInfo.php"                "systemInfo.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/update.php"                      "$TARGET_DIR/htdocs/update.php"                    "update.php"
+  copy_with_backup "$SOURCE_DIR/overrides/htdocs/inc.navigation.php"              "$TARGET_DIR/htdocs/inc.navigation.php"            "inc.navigation.php"
+
+  copy_with_backup "$SOURCE_DIR/overrides/settings/gpio-buttons.py"               "$TARGET_DIR/settings/gpio-buttons.py"             "gpio-buttons.py"
+  copy_with_backup "$SOURCE_DIR/overrides/settings/version-number"                "$TARGET_DIR/settings/version-number"              "version-number"
+  copy_with_backup "$SOURCE_DIR/overrides/settings/cardRegisterAccess"            "$TARGET_DIR/settings/cardRegisterAccess"          "cardRegisterAccess"
+
+  copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh"                      "$TARGET_DIR/scripts/sublim3-feedback.sh"          "sublim3-feedback.sh"
 
   print_section "Deploying icons"
 
-  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-16x16.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
-  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-32x32.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
-  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-96x96.png"  "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
+  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-16x16.png"                "$TARGET_DIR/htdocs/_assets/icons/favicon-16x16.png" "favicon-16x16.png"
+  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-32x32.png"                "$TARGET_DIR/htdocs/_assets/icons/favicon-32x32.png" "favicon-32x32.png"
+  copy_with_backup "$SOURCE_DIR/overrides/icons/favicon-96x96.png"                "$TARGET_DIR/htdocs/_assets/icons/favicon-96x96.png" "favicon-96x96.png"
 
   patch_rfid_trigger
   fix_permissions
 
-  printf "\n======================================================\n"
+  printf "\n====================================\n"
   if [ "$ERRORS" -eq 0 ]; then
     echo "[OK] SubLim3 update completed successfully"
-    printf "======================================================\n\n"
+    printf "====================================\n\n"
     exit 0
   else
     echo "[WARN] SubLim3 update completed with $ERRORS error(s)"
-    printf "======================================================\n\n"
+    printf "====================================\n\n"
     exit 1
   fi
 }
