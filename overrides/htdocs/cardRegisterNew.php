@@ -80,15 +80,58 @@ function isCardRegisterAccessEnabled($filePath) {
     return true;
 }
 
+function formatTimeRemaining($seconds) {
+    $seconds = max(0, (int)$seconds);
+
+    $days = floor($seconds / 86400);
+    $hours = floor(($seconds % 86400) / 3600);
+    $minutes = floor(($seconds % 3600) / 60);
+    $secs = $seconds % 60;
+
+    $parts = array();
+
+    if ($days > 0) {
+        $parts[] = $days . 'd';
+    }
+    if ($hours > 0 || $days > 0) {
+        $parts[] = $hours . 'h';
+    }
+    if ($minutes > 0 || $hours > 0 || $days > 0) {
+        $parts[] = $minutes . 'm';
+    }
+    $parts[] = $secs . 's';
+
+    return implode(' ', $parts);
+}
+
 $cardRegisterAccessFile = realpath(getcwd() . '/../settings/') . '/cardRegisterAccess';
 $cardRegisterAccessConfig = getCardRegisterAccessConfig($cardRegisterAccessFile);
 $cardRegisterAccessEnabled = isCardRegisterAccessEnabled($cardRegisterAccessFile);
 $cardRegisterExpired = false;
+$cardRegisterExpiresTs = null;
+$cardRegisterSecondsRemaining = null;
+$cardRegisterCountdownText = '';
+$cardRegisterBannerClass = 'alert-success';
 
 if (!empty($cardRegisterAccessConfig['expires'])) {
     $expiresTs = strtotime($cardRegisterAccessConfig['expires']);
-    if ($expiresTs !== false && time() > $expiresTs) {
-        $cardRegisterExpired = true;
+    if ($expiresTs !== false) {
+        $cardRegisterExpiresTs = $expiresTs;
+        $cardRegisterSecondsRemaining = $expiresTs - time();
+
+        if ($cardRegisterSecondsRemaining <= 0) {
+            $cardRegisterExpired = true;
+        } else {
+            $cardRegisterCountdownText = formatTimeRemaining($cardRegisterSecondsRemaining);
+
+            if ($cardRegisterSecondsRemaining < 600) {
+                $cardRegisterBannerClass = 'alert-danger';
+            } elseif ($cardRegisterSecondsRemaining <= 1800) {
+                $cardRegisterBannerClass = 'alert-warning';
+            } else {
+                $cardRegisterBannerClass = 'alert-success';
+            }
+        }
     }
 }
 
@@ -284,6 +327,23 @@ if (!empty($_FILES['importFileUpload'])) {
 }
 ?>
 
+<?php if ($cardRegisterExpiresTs !== null && !$cardRegisterExpired) { ?>
+<div class="row">
+  <div class="col-lg-12">
+    <div id="cardRegisterCountdownBanner" class="alert <?php print $cardRegisterBannerClass; ?>">
+      <strong>Temporary Access Active</strong><br>
+      Card registration access expires in
+      <span id="cardRegisterCountdown"
+            data-expire-ts="<?php print $cardRegisterExpiresTs; ?>">
+        <?php print htmlspecialchars($cardRegisterCountdownText); ?>
+      </span>
+      <br>
+      <small>Expires at: <?php print htmlspecialchars($cardRegisterAccessConfig['expires']); ?></small>
+    </div>
+  </div>
+</div>
+<?php } ?>
+
 <div class="row">
   <div class="col-lg-12">
     <strong><?php print $lang['globalJumpTo']; ?>:</strong>
@@ -458,6 +518,69 @@ $(document).ready(function() {
         $('#refresh_id').load('ajax.refresh_id.php?' + 1 * new Date());
     }, 1000);
 });
+</script>
+
+<script>
+(function() {
+    var countdownEl = document.getElementById('cardRegisterCountdown');
+    var bannerEl = document.getElementById('cardRegisterCountdownBanner');
+
+    if (!countdownEl || !bannerEl) {
+        return;
+    }
+
+    var expireTs = parseInt(countdownEl.getAttribute('data-expire-ts'), 10);
+
+    function formatRemaining(seconds) {
+        seconds = Math.max(0, seconds);
+
+        var days = Math.floor(seconds / 86400);
+        var hours = Math.floor((seconds % 86400) / 3600);
+        var minutes = Math.floor((seconds % 3600) / 60);
+        var secs = seconds % 60;
+
+        var parts = [];
+
+        if (days > 0) {
+            parts.push(days + 'd');
+        }
+        if (hours > 0 || days > 0) {
+            parts.push(hours + 'h');
+        }
+        if (minutes > 0 || hours > 0 || days > 0) {
+            parts.push(minutes + 'm');
+        }
+        parts.push(secs + 's');
+
+        return parts.join(' ');
+    }
+
+    function updateCountdown() {
+        var now = Math.floor(Date.now() / 1000);
+        var remaining = expireTs - now;
+
+        if (remaining <= 0) {
+            countdownEl.textContent = '0s';
+            bannerEl.className = 'alert alert-danger';
+            bannerEl.innerHTML = '<strong>Card Registration Expired</strong><br>This page has expired and should be refreshed.';
+            return;
+        }
+
+        countdownEl.textContent = formatRemaining(remaining);
+
+        bannerEl.className = 'alert';
+        if (remaining < 600) {
+            bannerEl.className += ' alert-danger';
+        } else if (remaining <= 1800) {
+            bannerEl.className += ' alert-warning';
+        } else {
+            bannerEl.className += ' alert-success';
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
 </script>
 
 </body>
