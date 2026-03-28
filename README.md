@@ -36,8 +36,11 @@ ________________________________________________________________________________
 Executes at the root folder.
 
 ```bash
-cd ~/SubLim3-JukeBox
-git pull origin main
+rm -rf ~/SubLim3-JukeBox/
+
+cd /home/pi
+git clone https://github.com/SubLim3JS/SubLim3-JukeBox.git
+
 chmod +x ~/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh
 bash ~/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh
 ```
