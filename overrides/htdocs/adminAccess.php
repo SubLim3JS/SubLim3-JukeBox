@@ -268,7 +268,7 @@ include("inc.navigation.php");
 
           <div class="alert alert-info">
             This page can unlock the RFID card registration page even when the
-            <code>cardRegisterAccess</code> file has expired or is disabled.
+            Access file has expired or is disabled. It also allows for file management.
           </div>
 
 <div class="row">
