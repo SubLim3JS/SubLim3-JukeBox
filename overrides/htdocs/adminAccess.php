@@ -271,25 +271,25 @@ include("inc.navigation.php");
             <code>cardRegisterAccess</code> file has expired or is disabled.
           </div>
 
-          <div class="row">
-            <div class="col-md-4" style="margin-bottom:15px;">
-              <a href="adminAccess.php?enableAdminOverride=1" class="btn btn-success btn-lg btn-block">
-                <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
-              </a>
-            </div>
+<div class="row">
+  <div class="col-md-4" style="margin-bottom:15px;">
+    <a href="adminAccess.php?enableAdminOverride=1" class="btn btn-success btn-lg btn-block">
+      <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
+    </a>
+  </div>
 
-            <div class="col-md-4" style="margin-bottom:15px;">
-              <a href="manageFilesFolders.php" class="btn btn-warning btn-lg btn-block">
-                <i class='mdi mdi-cards-outline'></i> Open Folder Manager
-              </a>
-            </div>
+  <div class="col-md-4" style="margin-bottom:15px;">
+    <a href="manageFilesFolders.php" class="btn btn-warning btn-lg btn-block">
+      <i class='mdi mdi-folder-multiple'></i> Open Folder Manager
+    </a>
+  </div>
 
-            <div class="col-md-4" style="margin-bottom:15px;">
-              <a href="adminAccess.php?disableAdminOverride=1" class="btn btn-danger btn-lg btn-block">
-                <i class='mdi mdi-lock'></i> Disable Admin Override
-              </a>
-            </div>
-          </div>
+  <div class="col-md-4" style="margin-bottom:15px;">
+    <a href="adminAccess.php?disableAdminOverride=1" class="btn btn-danger btn-lg btn-block">
+      <i class='mdi mdi-lock'></i> Disable Admin Override
+    </a>
+  </div>
+</div>
 
           <div class="row" style="margin-top:10px;">
             <div class="col-md-12" style="margin-bottom:15px;">
