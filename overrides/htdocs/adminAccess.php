@@ -1,5 +1,8 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include("inc.header.php");
 
 /**************************************************
@@ -12,7 +15,7 @@ include("inc.header.php");
 /* NO CHANGES BENEATH THIS LINE ***********/
 
 $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://';
-$conf['url_abs'] = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF']; // URL to PHP_SELF
+$conf['url_abs'] = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
 
 /*******************************************
 * SUBLIM3 CARD REGISTER ACCESS CONTROL
@@ -119,10 +122,11 @@ if (!empty($cardRegisterAccessConfig['expires'])) {
 
         if ($cardRegisterSecondsRemaining <= 0) {
             $cardRegisterExpired = true;
+            $cardRegisterBannerClass = 'alert-danger';
         } else {
             $cardRegisterCountdownText = formatTimeRemaining($cardRegisterSecondsRemaining);
 
-            if ($cardRegisterSecondsRemaining < 600) {
+            if ($cardRegisterSecondsRemaining <= 300) {
                 $cardRegisterBannerClass = 'alert-danger';
             } elseif ($cardRegisterSecondsRemaining <= 1800) {
                 $cardRegisterBannerClass = 'alert-warning';
@@ -136,7 +140,7 @@ if (!empty($cardRegisterAccessConfig['expires'])) {
 /*******************************************
 * ADMIN OVERRIDE SESSION
 *******************************************/
-$overrideDuration = 900; // 15 minutes
+$overrideDuration = 1800; // 30 minutes
 
 if (isset($_GET['enableAdminOverride']) && $_GET['enableAdminOverride'] == '1') {
     $_SESSION['sublim3_admin_override_until'] = time() + $overrideDuration;
@@ -166,9 +170,9 @@ if (
     $adminOverrideRemaining = $adminOverrideUntil - time();
     $adminOverrideCountdownText = formatTimeRemaining($adminOverrideRemaining);
 
-    if ($adminOverrideRemaining < 600) {
+    if ($adminOverrideRemaining <= 300) {
         $adminOverrideBannerClass = 'alert-danger';
-    } elseif ($adminOverrideRemaining <= 1800) {
+    } elseif ($adminOverrideRemaining <= 900) {
         $adminOverrideBannerClass = 'alert-warning';
     } else {
         $adminOverrideBannerClass = 'alert-success';
@@ -195,8 +199,7 @@ include("inc.navigation.php");
     <div id="cardRegisterCountdownBanner" class="alert <?php print $cardRegisterBannerClass; ?>">
       <strong>Card Register Access File Status</strong><br>
       Access file expires in
-      <span id="cardRegisterCountdown"
-            data-expire-ts="<?php print $cardRegisterExpiresTs; ?>">
+      <span id="cardRegisterCountdown" data-expire-ts="<?php print $cardRegisterExpiresTs; ?>">
         <?php print htmlspecialchars($cardRegisterCountdownText); ?>
       </span>
       <br>
@@ -370,13 +373,14 @@ include("inc.navigation.php");
         if (remaining <= 0) {
             countdownEl.textContent = '0s';
             bannerEl.className = 'alert alert-danger';
+            bannerEl.innerHTML = '<strong>Card Register Access Expired</strong><br>The normal access window has expired.';
             return;
         }
 
         countdownEl.textContent = formatRemaining(remaining);
 
         bannerEl.className = 'alert';
-        if (remaining < 600) {
+        if (remaining <= 300) {
             bannerEl.className += ' alert-danger';
         } else if (remaining <= 1800) {
             bannerEl.className += ' alert-warning';
@@ -433,9 +437,9 @@ include("inc.navigation.php");
         countdownEl.textContent = formatRemaining(remaining);
 
         bannerEl.className = 'alert';
-        if (remaining < 600) {
+        if (remaining <= 300) {
             bannerEl.className += ' alert-danger';
-        } else if (remaining <= 1800) {
+        } else if (remaining <= 900) {
             bannerEl.className += ' alert-warning';
         } else {
             bannerEl.className += ' alert-success';
