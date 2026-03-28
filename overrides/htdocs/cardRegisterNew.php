@@ -26,7 +26,6 @@ function getCardRegisterAccessConfig($filePath) {
         'expires' => null
     );
 
-    // Default to enabled if the file is missing
     if (!file_exists($filePath)) {
         return $config;
     }
@@ -39,7 +38,6 @@ function getCardRegisterAccessConfig($filePath) {
     foreach ($lines as $line) {
         $line = trim($line);
 
-        // Skip comments
         if ($line === '' || strpos($line, '#') === 0) {
             continue;
         }
@@ -58,7 +56,6 @@ function getCardRegisterAccessConfig($filePath) {
                 $config['expires'] = $value;
             }
         } else {
-            // Backward compatibility for old single-value files like "enabled"
             $valueLower = strtolower($line);
             $config['enabled'] = in_array($valueLower, array('1', 'on', 'true', 'yes', 'enable', 'enabled'), true);
         }
@@ -154,9 +151,9 @@ $adminOverrideCountdownText = $adminOverrideActive ? formatTimeRemaining($adminO
 $adminOverrideBannerClass = 'alert-warning';
 
 if ($adminOverrideActive) {
-    if ($adminOverrideSecondsRemaining < 600) {
+    if ($adminOverrideSecondsRemaining <= 300) {
         $adminOverrideBannerClass = 'alert-danger';
-    } elseif ($adminOverrideSecondsRemaining <= 1800) {
+    } elseif ($adminOverrideSecondsRemaining <= 900) {
         $adminOverrideBannerClass = 'alert-warning';
     } else {
         $adminOverrideBannerClass = 'alert-success';
@@ -227,32 +224,24 @@ if (!empty($_FILES['importFileUpload'])) {
         print "</pre>";
     }
 
-    // check if csv
     if ($uploadFileType == "csv") {
         if (move_uploaded_file($_FILES['importFileUpload']['tmp_name'], $conf['upload_abs'] . "./rfidImport.csv")) {
             $messageSuccess .= "<p>" . $lang['cardImportFileSuccessUpload'] . basename($_FILES['importFileUpload']['name']) . "</p>";
 
-            /*
-            * read RFID into array
-            */
             $rfidPostedAudio = array();
             $rfidPostedCommands = array();
             $fn = fopen($conf['upload_abs'] . "./rfidImport.csv", "r");
             while (!feof($fn)) {
                 $pair = explode("\",\"", fgets($fn));
 
-                // ignore header and empty lines
                 if (
-                    (count($pair) != 2)     // empty line
-                    || ($pair[0] == "\"id") // CSV header
+                    (count($pair) != 2)
+                    || ($pair[0] == "\"id")
                 ) {
                 } else {
-                    // system commands?
                     if (startsWith(trim($pair[1]), "%")) {
-                        // yes, system command
                         $rfidPostedCommands[ltrim($pair[0], '"')] = rtrim(trim($pair[1]), '"');
                     } else {
-                        // no, audio link
                         $rfidPostedAudio[ltrim($pair[0], '"')] = rtrim(trim($pair[1]), '"');
                     }
                 }
@@ -269,11 +258,7 @@ if (!empty($_FILES['importFileUpload'])) {
                 print "</pre>";
             }
 
-            /*
-            * do we delete any files?
-            */
             if ($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "commands") {
-                // delete commands => create array of available commands with not array of used commands
                 $fillRfidArrAvailWithUsed = fillRfidArrAvailWithUsed($rfidAvailArr);
                 if ($debug == "true") {
                     print "<pre>delete commands - fillRfidArrAvailWithUsed:\n";
@@ -282,7 +267,6 @@ if (!empty($_FILES['importFileUpload'])) {
                 }
                 $messageSuccess .= $lang['cardImportFileDeleteMessageCommands'];
             } else {
-                // keep commands
                 if ($debug == "true") {
                     print "<pre>keep commands - fillRfidArrAvailWithUsed:\n";
                     print_r($fillRfidArrAvailWithUsed);
@@ -291,7 +275,6 @@ if (!empty($_FILES['importFileUpload'])) {
             }
 
             if ($_POST['importFileDelete'] == "all" || $_POST['importFileDelete'] == "audio") {
-                // delete audio
                 if ($debug == "true") {
                     print "<pre>delete audio - shortcuts:\n";
                     print_r($shortcuts);
@@ -306,10 +289,7 @@ if (!empty($_FILES['importFileUpload'])) {
                 $messageSuccess .= $lang['cardImportFileDeleteMessageAudio'];
             }
 
-            // which files to replace?
             if ($_POST['importFileOverwrite'] != "audio") {
-                // create commands
-                // fill available commands with posted commands
                 foreach ($rfidPostedCommands as $key => $value) {
                     if ($debug == "true") {
                         print "<p>fillRfidArrAvailWithUsed[" . trim($value, '%') . "] = " . $key . "</p>";
@@ -317,15 +297,9 @@ if (!empty($_FILES['importFileUpload'])) {
                     $fillRfidArrAvailWithUsed[trim($value, '%')] = $key;
                 }
 
-                /******************************************
-                * Create new conf file based on posted values
-                ******************************************/
-                // copy sample file to conf file
                 exec("cp ../settings/rfid_trigger_play.conf.sample ../settings/rfid_trigger_play.conf; chmod 777 ../settings/rfid_trigger_play.conf");
 
-                // replace posted values in new conf file
                 foreach ($fillRfidArrAvailWithUsed as $key => $val) {
-                    // only change those with values in the form (not empty)
                     if ($val != "") {
                         exec("sed -i 's/%" . $key . "%/" . $val . "/' '../settings/rfid_trigger_play.conf'");
                     }
@@ -334,7 +308,6 @@ if (!empty($_FILES['importFileUpload'])) {
             }
 
             if ($_POST['importFileOverwrite'] != "commands") {
-                // create audio files
                 foreach ($rfidPostedAudio as $shortcutId => $shortcutFolder) {
                     $exec = "echo \"" . $shortcutFolder . "\" > ../shared/shortcuts/" . $shortcutId;
                     exec($exec);
@@ -410,15 +383,12 @@ if (!empty($_FILES['importFileUpload'])) {
       <h4 class="panel-title"><a name="RFIDinteractive"></a>
         <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
     <div class="panel-body">
       <div class="row ">
         <div class="col-lg-12">
 <?php
-/*
-* Do we need to voice a warning here?
-*/
 if ($messageAction == "" && $messageError == "") {
     $messageAction = $lang['cardRegisterMessageDefault'] . $lang['cardRegisterManualLinks'];
 }
@@ -454,10 +424,6 @@ if ($debug == "true") {
       <div class="row">
         <div class="col-lg-12">
 <?php
-/*
-* pass on some variables to the form.
-* Doing this so I can reuse the form in other places to edit or register cards.
-*/
 $fdata = array(
     "streamURL_ajax" => "true",
     "streamURL_label" => $lang['globalLastUsedCard'],
@@ -466,11 +432,11 @@ $fdata = array(
 $fpost = $post;
 include("inc.formCardEdit.php");
 ?>
-        </div><!-- / .col-lg-12 -->
-      </div><!-- /.row -->
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -478,7 +444,7 @@ include("inc.formCardEdit.php");
       <h4 class="panel-title"><a name="RFIDexport"></a>
         <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
     <div class="panel-body">
       <div class="row">
@@ -486,11 +452,11 @@ include("inc.formCardEdit.php");
           <a href="rfidExportCsv.php" class="btn btn-primary btn">
             <i class='mdi mdi-download'></i> <?php print $lang['cardExportButtonLink']; ?>
           </a>
-        </div><!-- / .col-lg-12 -->
-      </div><!-- /.row -->
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -498,7 +464,7 @@ include("inc.formCardEdit.php");
       <h4 class="panel-title"><a name="RFIDimport"></a>
         <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
     <div class="panel-body">
       <div class="row">
@@ -547,11 +513,11 @@ include("inc.formCardEdit.php");
               </div>
             </div>
           </form>
-        </div><!-- / .col-lg-12 -->
-      </div><!-- /.row -->
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
   </div><!-- /.container -->
 
@@ -676,9 +642,9 @@ $(document).ready(function() {
         countdownEl.textContent = formatRemaining(remaining);
 
         bannerEl.className = 'alert';
-        if (remaining < 600) {
+        if (remaining <= 300) {
             bannerEl.className += ' alert-danger';
-        } else if (remaining <= 1800) {
+        } else if (remaining <= 900) {
             bannerEl.className += ' alert-warning';
         } else {
             bannerEl.className += ' alert-success';
