@@ -2,16 +2,15 @@
 $updateScript = "/home/pi/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh";
 $feedbackScript = "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh";
 
-// Play "update started"
+// Play "update started" as pi
 if (file_exists($feedbackScript)) {
-    shell_exec("bash " . escapeshellarg($feedbackScript) . " update >/dev/null 2>&1 &");
+    shell_exec("sudo -u pi nohup bash " . escapeshellarg($feedbackScript) . " update >/dev/null 2>&1 &");
 }
 
 $output = array();
 $returnCode = 1;
 
-// Run the canonical update script only.
-// The script itself now decides whether to pull, skip pull, deploy, patch, etc.
+// Run the canonical update script only
 if (file_exists($updateScript)) {
     $cmd = "sudo -u pi bash " . escapeshellarg($updateScript) . " 2>&1";
     exec($cmd, $output, $returnCode);
@@ -23,12 +22,12 @@ if (file_exists($updateScript)) {
 // Determine result
 $isSuccess = ($returnCode === 0);
 
-// Play completion sound
+// Play completion sound as pi
 if (file_exists($feedbackScript)) {
     if ($isSuccess) {
-        shell_exec("bash " . escapeshellarg($feedbackScript) . " success >/dev/null 2>&1 &");
+        shell_exec("sudo -u pi nohup bash " . escapeshellarg($feedbackScript) . " success >/dev/null 2>&1 &");
     } else {
-        shell_exec("bash " . escapeshellarg($feedbackScript) . " error >/dev/null 2>&1 &");
+        shell_exec("sudo -u pi nohup bash " . escapeshellarg($feedbackScript) . " error >/dev/null 2>&1 &");
     }
 }
 
