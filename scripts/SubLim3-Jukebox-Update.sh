@@ -8,6 +8,7 @@ BACKUP_SUFFIX="-BACKUP"
 ERRORS=0
 
 RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
+FEEDBACK_SCRIPT="$TARGET_DIR/scripts/sublim3-feedback.sh"
 
 print_header() {
   echo ""
@@ -23,6 +24,13 @@ print_section() {
   echo "$1"
   echo "======================================================"
   echo ""
+}
+
+play_feedback() {
+  local sound="$1"
+  if [ -x "$FEEDBACK_SCRIPT" ]; then
+    bash "$FEEDBACK_SCRIPT" "$sound" >/dev/null 2>&1 &
+  fi
 }
 
 #########################################
@@ -83,7 +91,7 @@ copy_with_backup() {
 }
 
 #########################################
-# DEPLOY DIRECTORY (AUTO MODE)
+# DEPLOY DIRECTORY
 #########################################
 deploy_directory() {
   local src_dir="$1"
@@ -94,10 +102,10 @@ deploy_directory() {
     return
   fi
 
-  find "$src_dir" -type f | while read -r file; do
+  while IFS= read -r file; do
     rel="${file#$src_dir/}"
     copy_with_backup "$file" "$dst_dir/$rel"
-  done
+  done < <(find "$src_dir" -type f)
 }
 
 #########################################
@@ -156,16 +164,21 @@ main() {
 
   copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
 
+  # now that the feedback script has been deployed, play the start sound
+  play_feedback update
+
   patch_rfid_trigger
   fix_permissions
 
   echo ""
   echo "======================================================"
   if [ "$ERRORS" -eq 0 ]; then
+    play_feedback success
     echo "[OK] SubLim3 update completed successfully"
     echo "======================================================"
     exit 0
   else
+    play_feedback error
     echo "[WARN] Completed with $ERRORS error(s)"
     echo "======================================================"
     exit 1
