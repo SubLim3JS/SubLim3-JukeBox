@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include("inc.header.php");
 
 /**************************************************
@@ -136,6 +140,30 @@ if (!empty($cardRegisterAccessConfig['expires'])) {
 }
 
 /*******************************************
+* ADMIN OVERRIDE SUPPORT
+*******************************************/
+$adminOverrideActive = (
+    isset($_SESSION['sublim3_admin_override_until']) &&
+    is_numeric($_SESSION['sublim3_admin_override_until']) &&
+    $_SESSION['sublim3_admin_override_until'] > time()
+);
+
+$adminOverrideUntil = $adminOverrideActive ? (int) $_SESSION['sublim3_admin_override_until'] : null;
+$adminOverrideSecondsRemaining = $adminOverrideActive ? ($adminOverrideUntil - time()) : 0;
+$adminOverrideCountdownText = $adminOverrideActive ? formatTimeRemaining($adminOverrideSecondsRemaining) : '';
+$adminOverrideBannerClass = 'alert-warning';
+
+if ($adminOverrideActive) {
+    if ($adminOverrideSecondsRemaining < 600) {
+        $adminOverrideBannerClass = 'alert-danger';
+    } elseif ($adminOverrideSecondsRemaining <= 1800) {
+        $adminOverrideBannerClass = 'alert-warning';
+    } else {
+        $adminOverrideBannerClass = 'alert-success';
+    }
+}
+
+/*******************************************
 * START HTML
 *******************************************/
 
@@ -154,7 +182,7 @@ $conf['shared_abs'] = realpath(getcwd() . '/../shared/');
 /*******************************************
 * ACCESS DENIED VIEW
 *******************************************/
-if (!$cardRegisterAccessEnabled) {
+if (!$cardRegisterAccessEnabled && !$adminOverrideActive) {
     ?>
     <div class="row">
       <div class="col-lg-12">
@@ -326,6 +354,22 @@ if (!empty($_FILES['importFileUpload'])) {
     }
 }
 ?>
+
+<?php if ($adminOverrideActive) { ?>
+<div class="row">
+  <div class="col-lg-12">
+    <div id="adminOverrideBanner" class="alert <?php print $adminOverrideBannerClass; ?>">
+      <strong>Admin Override Active</strong><br>
+      This page is bypassing the normal card register access file for
+      <span id="adminOverrideCountdown" data-expire-ts="<?php print $adminOverrideUntil; ?>">
+        <?php print htmlspecialchars($adminOverrideCountdownText); ?>
+      </span>
+      <br>
+      <small>Override expires at: <?php print date("Y-m-d H:i:s", $adminOverrideUntil); ?></small>
+    </div>
+  </div>
+</div>
+<?php } ?>
 
 <?php if ($cardRegisterExpiresTs !== null && !$cardRegisterExpired) { ?>
 <div class="row">
@@ -563,6 +607,69 @@ $(document).ready(function() {
             countdownEl.textContent = '0s';
             bannerEl.className = 'alert alert-danger';
             bannerEl.innerHTML = '<strong>Card Registration Expired</strong><br>This page has expired and should be refreshed.';
+            return;
+        }
+
+        countdownEl.textContent = formatRemaining(remaining);
+
+        bannerEl.className = 'alert';
+        if (remaining < 600) {
+            bannerEl.className += ' alert-danger';
+        } else if (remaining <= 1800) {
+            bannerEl.className += ' alert-warning';
+        } else {
+            bannerEl.className += ' alert-success';
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
+</script>
+
+<script>
+(function() {
+    var countdownEl = document.getElementById('adminOverrideCountdown');
+    var bannerEl = document.getElementById('adminOverrideBanner');
+
+    if (!countdownEl || !bannerEl) {
+        return;
+    }
+
+    var expireTs = parseInt(countdownEl.getAttribute('data-expire-ts'), 10);
+
+    function formatRemaining(seconds) {
+        seconds = Math.max(0, seconds);
+
+        var days = Math.floor(seconds / 86400);
+        var hours = Math.floor((seconds % 86400) / 3600);
+        var minutes = Math.floor((seconds % 3600) / 60);
+        var secs = seconds % 60;
+
+        var parts = [];
+
+        if (days > 0) {
+            parts.push(days + 'd');
+        }
+        if (hours > 0 || days > 0) {
+            parts.push(hours + 'h');
+        }
+        if (minutes > 0 || hours > 0 || days > 0) {
+            parts.push(minutes + 'm');
+        }
+        parts.push(secs + 's');
+
+        return parts.join(' ');
+    }
+
+    function updateCountdown() {
+        var now = Math.floor(Date.now() / 1000);
+        var remaining = expireTs - now;
+
+        if (remaining <= 0) {
+            countdownEl.textContent = '0s';
+            bannerEl.className = 'alert alert-danger';
+            bannerEl.innerHTML = '<strong>Admin Override Expired</strong><br>Refresh the page to return to normal access checks.';
             return;
         }
 
