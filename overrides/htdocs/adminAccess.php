@@ -279,8 +279,8 @@ include("inc.navigation.php");
             </div>
 
             <div class="col-md-4" style="margin-bottom:15px;">
-              <a href="manageFilesFolders.php" class="btn btn-warning btn-lg btn-block">
-                <i class='mdi mdi-folder-multiple'></i> Open Card Register
+              <a href="cardRegisterNew.php" class="btn btn-warning btn-lg btn-block">
+                <i class='mdi mdi-cards-outline'></i> Open Card Register
               </a>
             </div>
 
