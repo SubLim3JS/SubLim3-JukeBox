@@ -279,8 +279,8 @@ include("inc.navigation.php");
             </div>
 
             <div class="col-md-4" style="margin-bottom:15px;">
-              <a href="cardRegisterNew.php" class="btn btn-primary btn-lg btn-block">
-                <i class='mdi mdi-cards-outline'></i> Open Card Register
+              <a href="manageFilesFolders.php" class="btn btn-warning btn-lg btn-block">
+                <i class='mdi mdi-folder-multiple'></i> Open Card Register
               </a>
             </div>
 
@@ -292,15 +292,9 @@ include("inc.navigation.php");
           </div>
 
           <div class="row" style="margin-top:10px;">
-            <div class="col-md-6" style="margin-bottom:15px;">
+            <div class="col-md-12" style="margin-bottom:15px;">
               <a href="manageFilesFolders.php" class="btn btn-success btn-lg btn-block">
                 <i class='mdi mdi-folder-multiple'></i> Manage Files / Folders
-              </a>
-            </div>
-
-            <div class="col-md-6" style="margin-bottom:15px;">
-              <a href="cardRegisterNew.php" class="btn btn-warning btn-lg btn-block">
-                <i class='mdi mdi-cards-outline'></i> Launch Card Registration
               </a>
             </div>
           </div>
