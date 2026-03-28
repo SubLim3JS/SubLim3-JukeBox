@@ -29,7 +29,14 @@ print_section() {
 play_feedback() {
   local sound="$1"
   if [ -x "$FEEDBACK_SCRIPT" ]; then
-    bash "$FEEDBACK_SCRIPT" "$sound" >/dev/null 2>&1 &
+    bash "$FEEDBACK_SCRIPT" "$sound" >/dev/null 2>&1
+  fi
+}
+
+play_feedback_bg() {
+  local sound="$1"
+  if [ -x "$FEEDBACK_SCRIPT" ]; then
+    nohup bash "$FEEDBACK_SCRIPT" "$sound" >/dev/null 2>&1 &
   fi
 }
 
@@ -164,8 +171,8 @@ main() {
 
   copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
 
-  # now that the feedback script has been deployed, play the start sound
-  play_feedback update
+  # Play "update started" after feedback script is deployed
+  play_feedback_bg update
 
   patch_rfid_trigger
   fix_permissions
