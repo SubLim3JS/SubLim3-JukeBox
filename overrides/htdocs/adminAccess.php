@@ -242,13 +242,22 @@ html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base
       </h4>
     </div>
 
-    <div class="panel-body">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="alert alert-info">
-            This page can unlock the RFID card registration page even when the RFID Page has expired or is disabled.<br>
-            It also has a button to go into the Folder Management page. It also has a QR Code to download the app.
-          </div>
+<div style="
+  background:#007bff !important;
+  border:1px solid #007bff !important;
+  color:#ffffff !important;
+  padding:15px;
+  border-radius:4px;
+  margin-bottom:15px;
+">
+  <strong>Admin Tools Overview</strong><br>
+  Use this page to:
+  <ul style="margin-bottom:0; padding-left:20px;">
+    <li>Bypass RFID card registration restrictions</li>
+    <li>Access the Folder Management page</li>
+    <li>Download the SubLim3 JukeBox app via QR code</li>
+  </ul>
+</div>
 
           <div class="row">
             <div class="col-sm-4" style="margin-bottom:15px;">
