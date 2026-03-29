@@ -266,7 +266,7 @@ html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base
           <a href="adminAccess.php?enableAdminOverride=1"
              class="btn btn-success btn-lg btn-block"
              style="display:block !important; visibility:visible !important;">
-            <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
+            <i class='mdi mdi-lock-open'></i> Enable Admin Override
           </a>
         </div>
 
