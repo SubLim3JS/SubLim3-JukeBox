@@ -22,9 +22,6 @@ $currentTheme = "green";
 $themeMessage = "";
 $themeMessageType = "success";
 
-/*******************************************
- * LOAD CURRENT THEME
- *******************************************/
 if (file_exists($themeFile)) {
     $lines = @file($themeFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     if ($lines !== false) {
@@ -41,9 +38,6 @@ if (file_exists($themeFile)) {
     }
 }
 
-/*******************************************
- * HANDLE THEME FORM SUBMIT
- *******************************************/
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["sublim3_theme_save"])) {
     $selectedTheme = isset($_POST["sublim3_theme"]) ? trim($_POST["sublim3_theme"]) : "";
 
@@ -66,8 +60,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["sublim3_theme_save"])
 }
 
 /*******************************************
- * START HTML
- *******************************************/
+* START HTML
+*******************************************/
+
 html_bootstrap3_createHeader("en","Settings | SubLim3 JukeBox",$conf['base_url']);
 
 ?>
@@ -125,10 +120,9 @@ if($debug == "true") {
         <a href="#DebugLogSettings" class="xbtn xbtn-default ">
         <i class='mdi mdi-text'></i> <?php print $lang['infoDebugLogSettings']; ?>
         </a>
-
   </div>
 </div>
-        <br/>
+<br/>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -136,41 +130,41 @@ if($debug == "true") {
       <h4 class="panel-title"><a name="theme"></a>
          <i class='mdi mdi-palette'></i> SubLim3 Theme
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-lg-12">
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-lg-12">
 
-            <?php if (!empty($themeMessage)) { ?>
-              <div class="alert alert-<?php echo htmlspecialchars($themeMessageType); ?>">
-                <?php echo htmlspecialchars($themeMessage); ?>
-              </div>
-            <?php } ?>
+          <?php if (!empty($themeMessage)) { ?>
+            <div class="alert alert-<?php echo htmlspecialchars($themeMessageType); ?>">
+              <?php echo htmlspecialchars($themeMessage); ?>
+            </div>
+          <?php } ?>
 
-            <form method="post" class="form-inline">
-              <div class="form-group" style="margin-right: 15px; min-width: 260px;">
-                <label for="sublim3_theme" style="display:block; margin-bottom:6px;">Select Theme Color</label>
-                <select name="sublim3_theme" id="sublim3_theme" class="form-control">
-                  <?php foreach ($availableThemes as $value => $label) { ?>
-                    <option value="<?php echo htmlspecialchars($value); ?>" <?php echo ($currentTheme === $value ? 'selected="selected"' : ''); ?>>
-                      <?php echo htmlspecialchars($label); ?>
-                    </option>
-                  <?php } ?>
-                </select>
-              </div>
+          <form method="post" class="form-inline">
+            <div class="form-group" style="margin-right: 15px; min-width: 260px;">
+              <label for="sublim3_theme" style="display:block; margin-bottom:6px;">Select Theme Color</label>
+              <select name="sublim3_theme" id="sublim3_theme" class="form-control">
+                <?php foreach ($availableThemes as $value => $label) { ?>
+                  <option value="<?php echo htmlspecialchars($value); ?>" <?php echo ($currentTheme === $value ? 'selected="selected"' : ''); ?>>
+                    <?php echo htmlspecialchars($label); ?>
+                  </option>
+                <?php } ?>
+              </select>
+            </div>
 
-              <button type="submit" name="sublim3_theme_save" value="1" class="btn btn-primary" style="margin-top: 24px;">
-                <i class='mdi mdi-content-save'></i> Save Theme
-              </button>
-            </form>
+            <button type="submit" name="sublim3_theme_save" value="1" class="btn btn-primary" style="margin-top: 24px;">
+              <i class='mdi mdi-content-save'></i> Save Theme
+            </button>
+          </form>
 
-          </div><!-- / .col-lg-12 -->
-        </div><!-- /.row -->
-      </div><!-- /.panel-body -->
+        </div>
+      </div>
+    </div>
 
-    </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -178,7 +172,7 @@ if($debug == "true") {
       <h4 class="panel-title"><a name="RFID"></a>
          <i class='mdi mdi-cards-outline'></i> <?php print $lang['indexManageFilesChips']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
       <div class="panel-body">
         <div class="row">
@@ -186,12 +180,12 @@ if($debug == "true") {
                 <a href="cardRegisterNew.php" class="btn btn-primary btn">
                 <i class='mdi mdi-cards-outline'></i> <?php print $lang['globalRegisterCard']; ?>
                 </a>
-          </div><!-- / .col-lg-12 -->
-        </div><!-- /.row -->
-      </div><!-- /.panel-body -->
+          </div>
+        </div>
+      </div>
 
-    </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+    </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -199,15 +193,15 @@ if($debug == "true") {
       <h4 class="panel-title"><a name="language"></a>
          <i class='mdi mdi-emoticon'></i> <?php print $lang['globalLanguageSettings']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
     <div class="panel-body">
       <div class="row">
 <?php
 include("inc.setLanguage.php");
 ?>
-      </div><!-- / .row -->
-    </div><!-- /.panel-body -->
+      </div>
+    </div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -215,18 +209,18 @@ include("inc.setLanguage.php");
       <h4 class="panel-title"><a name="language"></a>
          <i class='mdi mdi-emoticon'></i> <?php print $lang['settingsPlayoutBehaviourCard']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
     
     <div class="panel-body">
       <div class="row">
 <?php
 include("inc.setPlayerBehaviourRFID.php");
 ?>
-      </div><!-- / .row -->
-    </div><!-- /.panel-body -->
+      </div>
+    </div>
 
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -234,7 +228,7 @@ include("inc.setPlayerBehaviourRFID.php");
       <h4 class="panel-title"><a name="volume"></a>
          <i class='mdi mdi-volume-high'></i> <?php print $lang['globalVolumeSettings']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
     <div class="panel-body">
       <div class="row">
@@ -245,12 +239,11 @@ include("inc.setVolumeStep.php");
 include("inc.setStartupVolume.php");
 include("inc.setBootVolume.php");
 ?>
-      </div><!-- / .row -->
-    </div><!-- /.panel-body -->
+      </div>
+    </div>
 
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
+  </div>
+</div>
 
 <?php
 $filename = $conf['settings_abs'].'/bluetooth-sink-switch';
@@ -261,14 +254,13 @@ if (file_exists($filename)) {
 }
 ?>
 
-
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="autoShutdown"></a>
         <i class='mdi mdi-clock-end'></i> <?php print $lang['globalAutoShutdown']." ".$lang['globalSettings']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
     <div class="panel-body">
 
         <div class="row">
@@ -279,12 +271,12 @@ include("inc.setSleeptimer.php");
 include("inc.setShutdownVolumeReduction.php");
 include("inc.setIdleShutdown.php");
 ?>
-        </div><!-- / .row -->
+        </div>
 
-    </div><!-- /.panel-body -->
+    </div>
 
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -292,25 +284,18 @@ include("inc.setIdleShutdown.php");
       <h4 class="panel-title"><a name="wifi"></a>
         <i class='mdi mdi-wifi'></i> <?php print $lang['globalWifiSettings']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
       <div class="panel-body">
 <?php
 include("inc.setWifi.php");
 ?>
-      </div><!-- /.panel-body -->
+      </div>
 
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+  </div>
+</div>
 
 <?php
-/*
-* This is work in progress. 
-* If you were to have a local mailserver installed, 
-* SubLim3 JukeBox could send you the IP address over email.
-* Useful if you move your SubLim3 JukeBox into a new Wifi which
-* assigns a dynmamic IP.
-*/
 include("inc.setWlanIpRead.php");
 ?>
 
@@ -320,7 +305,7 @@ include("inc.setWlanIpRead.php");
       <h4 class="panel-title"><a name="webInterface"></a>
         <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsWebInterface']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
       <div class="panel-body">
 
@@ -328,9 +313,9 @@ include("inc.setWlanIpRead.php");
 include("inc.setWebUI.php");
 ?>
 
-      </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+      </div>
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -338,15 +323,15 @@ include("inc.setWebUI.php");
       <h4 class="panel-title"><a name="externalInterfaces"></a>
         <i class='mdi mdi-usb'></i> <?php print $lang['globalExternalInterfaces']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
       <div class="panel-body">
 <?php
 include("inc.setInputDevices.php");
 ?>
-      </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+      </div>
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -354,7 +339,7 @@ include("inc.setInputDevices.php");
       <h4 class="panel-title"><a name="secondSwipe"></a>
         <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsSecondSwipe']; ?>
       </h4>
-    </div><!-- /.panel-heading -->
+    </div>
 
       <div class="panel-body">
 <?php
@@ -362,14 +347,14 @@ include("inc.setSecondSwipe.php");
 include("inc.setSecondSwipePause.php");
 include("inc.setSecondSwipePauseControls.php");
 ?>
-      </div><!-- /.panel-body -->
+      </div>
 
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
+  </div>
+</div>
 
 <?php include("inc.setDebugLogConf.php"); ?>
 
-</div><!-- /.container -->
+</div>
 
 </body>
 <script src="js/jukebox.js">
