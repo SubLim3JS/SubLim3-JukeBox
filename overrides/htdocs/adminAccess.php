@@ -246,7 +246,7 @@ html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base
       <div class="row">
         <div class="col-lg-12">
           <div class="alert alert-info">
-            This page can unlock the RFID card registration page even when the RFID Page has expired or is disabled.
+            This page can unlock the RFID card registration page even when the RFID Page has expired or is disabled.<br>
             It also has a button to go into the Folder Management page. It also has a QR Code to download the app.
           </div>
 
