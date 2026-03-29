@@ -5,21 +5,9 @@ if (session_status() === PHP_SESSION_NONE) {
 
 include("inc.header.php");
 
-/**************************************************
-* VARIABLES
-* No changes required if you stuck to the
-* INSTALL.md instructions.
-* If you want to change the paths, edit config.php
-***************************************************/
-
-/* NO CHANGES BENEATH THIS LINE ***********/
-
 $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://';
 $conf['url_abs'] = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
 
-/*******************************************
-* SUBLIM3 CARD REGISTER ACCESS CONTROL
-*******************************************/
 function getCardRegisterAccessConfig($filePath) {
     $config = array(
         'enabled' => true,
@@ -137,9 +125,6 @@ if (!empty($cardRegisterAccessConfig['expires'])) {
     }
 }
 
-/*******************************************
-* ADMIN OVERRIDE SESSION
-*******************************************/
 $overrideDuration = 1800; // 30 minutes
 
 if (isset($_GET['enableAdminOverride']) && $_GET['enableAdminOverride'] == '1') {
@@ -181,17 +166,12 @@ if (
     unset($_SESSION['sublim3_admin_override_until']);
 }
 
-/*******************************************
-* START HTML
-*******************************************/
 html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base_url']);
 ?>
 <body>
   <div class="container">
 
-<?php
-include("inc.navigation.php");
-?>
+<?php include("inc.navigation.php"); ?>
 
 <?php if ($cardRegisterExpiresTs !== null && !$cardRegisterExpired) { ?>
 <div class="row">
@@ -265,36 +245,34 @@ include("inc.navigation.php");
     <div class="panel-body">
       <div class="row">
         <div class="col-lg-12">
-
           <div class="alert alert-info">
             This page can unlock the RFID card registration page even when the
-            Access file has expired or is disabled. It also allows for file management.
+            <code>cardRegisterAccess</code> file has expired or is disabled.
           </div>
 
-<div class="row">
-  <div class="col-md-4" style="margin-bottom:15px;">
-    <a href="adminAccess.php?enableAdminOverride=1" class="btn btn-success btn-lg btn-block">
-      <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
-    </a>
-  </div>
+          <div class="row">
+            <div class="col-sm-4" style="margin-bottom:15px;">
+              <a href="adminAccess.php?enableAdminOverride=1"
+                 class="btn btn-success btn-lg btn-block"
+                 style="display:block !important; visibility:visible !important;">
+                <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
+              </a>
+            </div>
 
-  <div class="col-md-4" style="margin-bottom:15px;">
-    <a href="manageFilesFolders.php" class="btn btn-warning btn-lg btn-block">
-      <i class='mdi mdi-folder-multiple'></i> Open Folder Manager
-    </a>
-  </div>
+            <div class="col-sm-4" style="margin-bottom:15px;">
+              <button type="button"
+                      class="btn btn-warning btn-lg btn-block"
+                      style="display:block !important; visibility:visible !important; width:100% !important;"
+                      onclick="window.location.href='manageFilesFolders.php';">
+                <i class='mdi mdi-folder-multiple'></i> Open Folder Manager
+              </button>
+            </div>
 
-  <div class="col-md-4" style="margin-bottom:15px;">
-    <a href="adminAccess.php?disableAdminOverride=1" class="btn btn-danger btn-lg btn-block">
-      <i class='mdi mdi-lock'></i> Disable Admin Override
-    </a>
-  </div>
-</div>
-
-          <div class="row" style="margin-top:10px;">
-            <div class="col-md-12" style="margin-bottom:15px;">
-              <a href="manageFilesFolders.php" class="btn btn-success btn-lg btn-block">
-                <i class='mdi mdi-folder-multiple'></i> Manage Files / Folders
+            <div class="col-sm-4" style="margin-bottom:15px;">
+              <a href="adminAccess.php?disableAdminOverride=1"
+                 class="btn btn-danger btn-lg btn-block"
+                 style="display:block !important; visibility:visible !important;">
+                <i class='mdi mdi-lock'></i> Disable Admin Override
               </a>
             </div>
           </div>
@@ -319,7 +297,7 @@ include("inc.navigation.php");
           <img
             src="_assets/icons/SubLim3-JukeBox-App-QR.png"
             alt="SubLim3 JukeBox App QR Code"
-            style="max-width: 100%; width: 320px; height: auto; border: 1px solid #ddd; padding: 10px; background: #fff;"
+            style="max-width:100%; width:320px; height:auto; border:1px solid #ddd; padding:10px; background:#fff;"
           >
           <br><br>
           <p>Scan this QR code to access the SubLim3 JukeBox app.</p>
@@ -351,7 +329,6 @@ include("inc.navigation.php");
         var secs = seconds % 60;
 
         var parts = [];
-
         if (days > 0) parts.push(days + 'd');
         if (hours > 0 || days > 0) parts.push(hours + 'h');
         if (minutes > 0 || hours > 0 || days > 0) parts.push(minutes + 'm');
@@ -408,7 +385,6 @@ include("inc.navigation.php");
         var secs = seconds % 60;
 
         var parts = [];
-
         if (days > 0) parts.push(days + 'd');
         if (hours > 0 || days > 0) parts.push(hours + 'h');
         if (minutes > 0 || hours > 0 || days > 0) parts.push(minutes + 'm');
