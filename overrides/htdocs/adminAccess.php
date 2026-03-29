@@ -277,6 +277,12 @@ html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base
               </button>
             </div>
 
+            <div style="margin-top: 15px;">
+    <a href="readIP.php" class="btn btn-primary btn-lg" style="min-width: 260px;">
+        <i class="mdi mdi-wifi"></i> Read IP Address
+    </a>
+</div>
+
             <div class="col-sm-4" style="margin-bottom:15px;">
               <a href="adminAccess.php?disableAdminOverride=1"
                  class="btn btn-danger btn-lg btn-block"
