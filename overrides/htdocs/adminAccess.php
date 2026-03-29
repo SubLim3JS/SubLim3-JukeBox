@@ -242,61 +242,65 @@ html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base
       </h4>
     </div>
 
-<div style="
-  background:#007bff !important;
-  border:1px solid #007bff !important;
-  color:#ffffff !important;
-  padding:15px;
-  border-radius:4px;
-  margin-bottom:15px;
-">
-  <strong>Admin Tools Overview</strong><br>
-  Use this page to:
-  <ul style="margin-bottom:0; padding-left:20px;">
-    <li>Bypass RFID card registration restrictions</li>
-    <li>Access the Folder Management page</li>
-    <li>Download the SubLim3 JukeBox app via QR code</li>
-  </ul>
-</div>
+    <div class="panel-body">
 
-          <div class="row">
-            <div class="col-sm-4" style="margin-bottom:15px;">
-              <a href="adminAccess.php?enableAdminOverride=1"
-                 class="btn btn-success btn-lg btn-block"
-                 style="display:block !important; visibility:visible !important;">
-                <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
-              </a>
-            </div>
+      <div style="
+        background:#007bff !important;
+        border:1px solid #007bff !important;
+        color:#ffffff !important;
+        padding:15px;
+        border-radius:4px;
+        margin-bottom:15px;
+      ">
+        <strong>Admin Tools Overview</strong><br>
+        Use this page to:
+        <ul style="margin-bottom:0; padding-left:20px;">
+          <li>Bypass RFID card registration restrictions</li>
+          <li>Access the Folder Management page</li>
+          <li>Download the SubLim3 JukeBox app via QR code</li>
+        </ul>
+      </div>
 
-            <div class="col-sm-4" style="margin-bottom:15px;">
-              <button type="button"
-                      class="btn btn-warning btn-lg btn-block"
-                      style="display:block !important; visibility:visible !important; width:100% !important;"
-                      onclick="window.location.href='manageFilesFolders.php';">
-                <i class='mdi mdi-folder-multiple'></i> Open Folder Manager
-              </button>
-            </div>
+      <div class="row">
+        <div class="col-sm-4" style="margin-bottom:15px;">
+          <a href="adminAccess.php?enableAdminOverride=1"
+             class="btn btn-success btn-lg btn-block"
+             style="display:block !important; visibility:visible !important;">
+            <i class='mdi mdi-lock-open-variant'></i> Enable Admin Override
+          </a>
+        </div>
 
-            <div class="col-sm-4" style="margin-bottom:15px;">
-              <a href="adminAccess.php?disableAdminOverride=1"
-                 class="btn btn-danger btn-lg btn-block"
-                 style="display:block !important; visibility:visible !important;">
-                <i class='mdi mdi-lock'></i> Disable Admin Override
-              </a>
-            </div>
-          </div>
+        <div class="col-sm-4" style="margin-bottom:15px;">
+          <button type="button"
+                  class="btn btn-warning btn-lg btn-block"
+                  style="display:block !important; visibility:visible !important; width:100% !important;"
+                  onclick="window.location.href='manageFilesFolders.php';">
+            <i class='mdi mdi-folder-multiple'></i> Open Folder Manager
+          </button>
+        </div>
 
-                  <div style="margin-top: 15px;">
-    <a href="readIP.php" class="btn btn-primary btn-lg" style="min-width: 260px;">
-        <i class="mdi mdi-wifi"></i> Read IP Address
-    </a>
-</div>
-
+        <div class="col-sm-4" style="margin-bottom:15px;">
+          <a href="adminAccess.php?disableAdminOverride=1"
+             class="btn btn-danger btn-lg btn-block"
+             style="display:block !important; visibility:visible !important;">
+            <i class='mdi mdi-lock'></i> Disable Admin Override
+          </a>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+
+      <div class="row">
+        <div class="col-sm-4" style="margin-bottom:15px;">
+          <a href="readIP.php"
+             class="btn btn-primary btn-lg btn-block"
+             style="display:block !important; visibility:visible !important;">
+            <i class='mdi mdi-wifi'></i> Read IP Address
+          </a>
+        </div>
+      </div>
+
+    </div><!-- /.panel-body -->
+  </div><!-- /.panel -->
+</div><!-- /.panel-group -->
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -318,9 +322,9 @@ html_bootstrap3_createHeader("en", "Admin Access | SubLim3 JukeBox", $conf['base
           <p>Scan this QR code to access the SubLim3 JukeBox app.</p>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+    </div><!-- /.panel-body -->
+  </div><!-- /.panel -->
+</div><!-- /.panel-group -->
 
   </div><!-- /.container -->
 
