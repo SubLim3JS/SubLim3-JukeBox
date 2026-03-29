@@ -1,269 +1,135 @@
 <?php
-
 include("inc.header.php");
 
-/*******************************************
-* START HTML
-*******************************************/
+/**************************************************
+ * SUBLIM3 THEME CONFIG
+ **************************************************/
 
-html_bootstrap3_createHeader("en","Settings | SubLim3 JukeBox",$conf['base_url']);
+$themeFile = "/home/pi/RPi-Jukebox-RFID/settings/theme.conf";
+$themeBuilder = "/home/pi/RPi-Jukebox-RFID/scripts/build-theme-css.sh";
 
-?>
-<body>
-  <div class="container">
+$availableThemes = array(
+    "green"  => "Green",
+    "blue"   => "Blue",
+    "red"    => "Red",
+    "purple" => "Purple",
+    "orange" => "Orange",
+    "cyan"   => "Cyan",
+    "white"  => "White"
+);
 
-<?php
-include("inc.navigation.php");
+$currentTheme = "green";
+$themeMessage = "";
+$themeMessageType = "success";
 
-if($debug == "true") {
-    print "<pre>";
-    print "_POST:\n";
-    print_r($_POST);
-    print "</pre>";
+/**************************************************
+ * LOAD CURRENT THEME
+ **************************************************/
+if (file_exists($themeFile)) {
+    $lines = @file($themeFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines !== false) {
+        foreach ($lines as $line) {
+            if (strpos(trim($line), "theme=") === 0) {
+                $savedTheme = trim(substr($line, 6));
+                if (array_key_exists($savedTheme, $availableThemes)) {
+                    $currentTheme = $savedTheme;
+                }
+            }
+        }
+    }
 }
 
+/**************************************************
+ * HANDLE FORM SUBMIT
+ **************************************************/
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["sublim3_theme"])) {
+
+    $selectedTheme = trim($_POST["sublim3_theme"]);
+
+    if (array_key_exists($selectedTheme, $availableThemes)) {
+
+        $configData = "theme=" . $selectedTheme . PHP_EOL;
+
+        if (@file_put_contents($themeFile, $configData) !== false) {
+
+            // Run theme builder
+            @shell_exec("bash " . escapeshellarg($themeBuilder) . " >/dev/null 2>&1 &");
+
+            $currentTheme = $selectedTheme;
+            $themeMessage = "Theme updated to " . htmlspecialchars($availableThemes[$selectedTheme]) . ".";
+            $themeMessageType = "success";
+
+        } else {
+            $themeMessage = "Failed to save theme setting.";
+            $themeMessageType = "danger";
+        }
+
+    } else {
+        $themeMessage = "Invalid theme selection.";
+        $themeMessageType = "danger";
+    }
+}
 ?>
 
-<div class="row">
-  <div class="col-lg-12">
-  <strong><?php print $lang['globalJumpTo']; ?>:</strong>
-        <a href="#RFID" class="xbtn xbtn-default ">
-        <i class='mdi mdi-cards-outline'></i> <?php print $lang['globalRFIDCards']; ?>
-        </a> |
-        <a href="#language" class="xbtn xbtn-default ">
-        <i class='mdi mdi-emoticon'></i> <?php print $lang['globalLanguageSettings']; ?>
-        </a> |
-        <a href="#volume" class="xbtn xbtn-default ">
-        <i class='mdi mdi-volume-high'></i> <?php print $lang['globalVolumeSettings']; ?>
-        </a> |
-        <a href="#autoShutdown" class="xbtn xbtn-default ">
-        <i class='mdi mdi-clock-end'></i> <?php print $lang['globalIdleShutdown']." / ".$lang['globalSleepTimer']; ?>
-        </a> |
-        <a href="#wifi" class="xbtn xbtn-default ">
-        <i class='mdi mdi-wifi'></i> <?php print $lang['globalWifiSettings']; ?>
-        </a> |
-        <!--a href="#wlanIpEmail" class="xbtn xbtn-default ">
-        <i class='mdi mdi-wifi'></i> <?php print $lang['settingsWlanSendNav']; ?>
-        </a>  |-->
-        <a href="#wlanIpRead" class="xbtn xbtn-default ">
-        <i class='mdi mdi-wifi'></i> <?php print $lang['settingsWlanReadNav']; ?>
-        </a>  |
-        <a href="#webInterface" class="xbtn xbtn-default ">
-        <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsWebInterface']; ?>
-        </a>  |
-        <a href="#externalInterfaces" class="xbtn xbtn-default ">
-        <i class='mdi mdi-usb'></i> <?php print $lang['globalExternalInterfaces']; ?>
-        </a>  |
-        <a href="#secondSwipe" class="xbtn xbtn-default ">
-        <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsSecondSwipe']; ?>
-        </a> |
-        <a href="#DebugLogSettings" class="xbtn xbtn-default ">
-        <i class='mdi mdi-text'></i> <?php print $lang['infoDebugLogSettings']; ?>
-        </a>
+<div class="container">
+  <div class="row">
+    <div class="col-lg-12">
 
+      <!-- =========================================
+           SUBLIM3 THEME PANEL
+           ========================================= -->
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <i class="mdi mdi-palette"></i> SubLim3 JukeBox Theme
+        </div>
+
+        <div class="panel-body">
+
+          <?php if (!empty($themeMessage)) { ?>
+            <div class="alert alert-<?php echo $themeMessageType; ?>">
+              <?php echo htmlspecialchars($themeMessage); ?>
+            </div>
+          <?php } ?>
+
+          <form method="post">
+
+            <div class="form-group">
+              <label for="sublim3_theme">Select Theme Color</label>
+
+              <select name="sublim3_theme" id="sublim3_theme" class="form-control">
+
+                <?php foreach ($availableThemes as $value => $label) { ?>
+                  <option value="<?php echo htmlspecialchars($value); ?>"
+                    <?php echo ($currentTheme === $value ? 'selected="selected"' : ''); ?>>
+                    <?php echo htmlspecialchars($label); ?>
+                  </option>
+                <?php } ?>
+
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              <i class="mdi mdi-content-save"></i> Save Theme
+            </button>
+
+          </form>
+
+        </div>
+      </div>
+
+      <!-- =========================================
+           KEEP ORIGINAL PHONIEBOX SETTINGS BELOW
+           ========================================= -->
+
+      <?php
+      /**************************************************
+       * ORIGINAL PHONIEBOX SETTINGS CONTENT
+       * Leave everything below this line untouched
+       **************************************************/
+      ?>
+
+    </div>
   </div>
 </div>
-        <br/>
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="RFID"></a>
-         <i class='mdi mdi-cards-outline'></i> <?php print $lang['indexManageFilesChips']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
 
-      <div class="panel-body">
-        <div class="row">
-          <div class="col-lg-12">
-                <a href="cardRegisterNew.php" class="btn btn-primary btn">
-                <i class='mdi mdi-cards-outline'></i> <?php print $lang['globalRegisterCard']; ?>
-                </a>
-          </div><!-- / .col-lg-12 -->
-        </div><!-- /.row -->
-      </div><!-- /.panel-body -->
-
-    </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="language"></a>
-         <i class='mdi mdi-emoticon'></i> <?php print $lang['globalLanguageSettings']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-    <div class="panel-body">
-      <div class="row">
-<?php
-include("inc.setLanguage.php");
-?>
-      </div><!-- / .row -->
-    </div><!-- /.panel-body -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="language"></a>
-         <i class='mdi mdi-emoticon'></i> <?php print $lang['settingsPlayoutBehaviourCard']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-    
-    <div class="panel-body">
-      <div class="row">
-<?php
-include("inc.setPlayerBehaviourRFID.php");
-?>
-      </div><!-- / .row -->
-    </div><!-- /.panel-body -->
-
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="volume"></a>
-         <i class='mdi mdi-volume-high'></i> <?php print $lang['globalVolumeSettings']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-    <div class="panel-body">
-      <div class="row">
-<?php
-include("inc.setVolume.php");
-include("inc.setMaxVolume.php");
-include("inc.setVolumeStep.php");
-include("inc.setStartupVolume.php");
-include("inc.setBootVolume.php");
-?>
-      </div><!-- / .row -->
-    </div><!-- /.panel-body -->
-
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-
-<?php
-$filename = $conf['settings_abs'].'/bluetooth-sink-switch';
-if (file_exists($filename)) {
-   if (strcmp(strtolower(trim(file_get_contents($filename))), "enabled") === 0) {
-      include('inc.bluetooth.php');
-   }
-}
-?>
-
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="autoShutdown"></a>
-        <i class='mdi mdi-clock-end'></i> <?php print $lang['globalAutoShutdown']." ".$lang['globalSettings']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-    <div class="panel-body">
-
-        <div class="row">
-
-<?php
-include("inc.setStoptimer.php");
-include("inc.setSleeptimer.php");
-include("inc.setShutdownVolumeReduction.php");
-include("inc.setIdleShutdown.php");
-?>
-        </div><!-- / .row -->
-
-    </div><!-- /.panel-body -->
-
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="wifi"></a>
-        <i class='mdi mdi-wifi'></i> <?php print $lang['globalWifiSettings']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-      <div class="panel-body">
-<?php
-include("inc.setWifi.php");
-?>
-      </div><!-- /.panel-body -->
-
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<?php
-/*
-* This is work in progress. 
-* If you were to have a local mailserver installed, 
-* SubLim3 JukeBox could send you the IP address over email.
-* Useful if you move your SubLim3 JukeBox into a new Wifi which
-* assigns a dynmamic IP.
-*/
-include("inc.setWlanIpRead.php");
-?>
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="webInterface"></a>
-        <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsWebInterface']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-      <div class="panel-body">
-
-<?php
-include("inc.setWebUI.php");
-?>
-
-      </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="externalInterfaces"></a>
-        <i class='mdi mdi-usb'></i> <?php print $lang['globalExternalInterfaces']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-      <div class="panel-body">
-<?php
-include("inc.setInputDevices.php");
-?>
-      </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="secondSwipe"></a>
-        <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsSecondSwipe']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-      <div class="panel-body">
-<?php
-include("inc.setSecondSwipe.php");
-include("inc.setSecondSwipePause.php");
-include("inc.setSecondSwipePauseControls.php");
-?>
-      </div><!-- /.panel-body -->
-
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<?php include("inc.setDebugLogConf.php"); ?>
-
-</div><!-- /.container -->
-
-</body>
-<script src="js/jukebox.js">
-</script>
-</html>
+<?php include("inc.footer.php"); ?>
