@@ -8,17 +8,14 @@
   --primary-hover: #28a745;
   --primary-light: #7dff9a;
   --primary-text: #ffffff;
+  --primary-border: #28a745;
 
-  /* Extra variables for better control */
   --border-color: rgba(0, 0, 0, 0.15);
   --panel-bg: #ffffff;
   --text-color: #222222;
 }
 
-/* =========================================
-   GLOBAL
-   ========================================= */
-
+/* GLOBAL */
 body {
   color: var(--text-color);
 }
@@ -34,16 +31,13 @@ a:focus {
   text-decoration: none;
 }
 
-/* =========================================
-   BUTTONS
-   ========================================= */
-
+/* BUTTONS */
 .btn-primary,
 .btn-success,
 .btn-info,
 .btn-default {
   background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
   color: var(--primary-text) !important;
 }
 
@@ -54,68 +48,60 @@ a:focus {
 .btn-primary:focus,
 .btn-success:focus,
 .btn-info:focus,
-.btn-default:focus {
+.btn-default:focus,
+.btn-primary:active,
+.btn-success:active,
+.btn-info:active,
+.btn-default:active {
   background-color: var(--primary-hover) !important;
   border-color: var(--primary-hover) !important;
   color: var(--primary-text) !important;
 }
 
-/* Disabled buttons */
 .btn[disabled],
 .btn.disabled {
   opacity: 0.65;
 }
 
-/* =========================================
-   PANELS
-   ========================================= */
-
+/* PANELS */
 .panel {
   border-color: var(--border-color) !important;
 }
 
 .panel-primary {
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
 }
 
 .panel-primary > .panel-heading {
   background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
   color: var(--primary-text) !important;
 }
 
-/* Panel body */
 .panel-body {
   background-color: var(--panel-bg);
 }
 
-/* =========================================
-   ALERTS
-   ========================================= */
-
+/* ALERTS */
 .alert-info {
   background-color: var(--primary-light) !important;
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
   color: #222 !important;
 }
 
 .alert-success {
   background-color: var(--primary-light) !important;
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
   color: #222 !important;
 }
 
-/* Keep danger red */
 .alert-danger {
   background-color: #f2dede !important;
   border-color: #ebccd1 !important;
   color: #a94442 !important;
 }
 
-/* =========================================
-   NAVBAR
-   ========================================= */
-
+/* NAVBAR */
 .navbar-default .navbar-brand {
   color: var(--primary-color) !important;
 }
@@ -125,16 +111,12 @@ a:focus {
   color: var(--primary-color) !important;
 }
 
-/* Active nav item */
 .navbar-default .navbar-nav > .active > a {
   background-color: var(--primary-light) !important;
   color: #000 !important;
 }
 
-/* =========================================
-   NAV PILLS / TABS
-   ========================================= */
-
+/* NAV PILLS / TABS */
 .nav-pills > li.active > a,
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus {
@@ -142,89 +124,58 @@ a:focus {
   color: var(--primary-text) !important;
 }
 
-/* =========================================
-   PROGRESS BAR
-   ========================================= */
-
+/* PROGRESS */
 .progress-bar {
   background-color: var(--primary-color) !important;
 }
 
-/* =========================================
-   LABELS / BADGES
-   ========================================= */
-
+/* LABELS / BADGES */
 .label-primary,
 .badge {
   background-color: var(--primary-color) !important;
   color: var(--primary-text) !important;
 }
 
-/* =========================================
-   FORMS
-   ========================================= */
-
+/* FORMS */
 .form-control {
   border-color: var(--border-color);
 }
 
 .form-control:focus {
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
 }
 
-/* =========================================
-   TABLES
-   ========================================= */
-
+/* TABLES */
 .table > thead > tr > th {
-  border-bottom: 2px solid var(--primary-color);
+  border-bottom: 2px solid var(--primary-border);
 }
 
 .table-striped > tbody > tr:nth-of-type(odd) {
   background-color: rgba(0, 0, 0, 0.02);
 }
 
-/* =========================================
-   LIST GROUPS
-   ========================================= */
-
+/* LIST GROUPS */
 .list-group-item.active,
 .list-group-item.active:hover,
 .list-group-item.active:focus {
   background-color: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
+  border-color: var(--primary-border) !important;
   color: var(--primary-text) !important;
 }
 
-/* =========================================
-   CUSTOM IMPROVEMENTS
-   ========================================= */
-
-/* Buttons spacing consistency */
+/* POLISH */
 .btn {
   border-radius: 4px;
 }
 
-/* Panels smoother look */
 .panel {
   border-radius: 6px;
 }
 
-/* Improve readability on light themes (white/cyan) */
 .panel-heading,
 .btn,
 .label,
 .badge {
   text-shadow: none !important;
 }
-
-/* Fix white theme contrast */
-body.white-theme .panel,
-body.white-theme .panel-body {
-  border: 1px solid #ddd !important;
-}
-
-/* =========================================
-   END
-   ========================================= */
