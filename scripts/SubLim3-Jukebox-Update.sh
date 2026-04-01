@@ -315,7 +315,6 @@ main() {
 
   print_section "Deploying scripts"
   copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
-  copy_with_backup "$SOURCE_DIR/scripts/SubLim3-USB-AutoImport.sh" "$SOURCE_DIR/scripts/SubLim3-USB-AutoImport.sh"
 
   play_feedback_bg update
 
