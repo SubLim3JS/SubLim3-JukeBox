@@ -1,4 +1,3 @@
-sudo tee /etc/systemd/system/sublim3-usb-import@.service > /dev/null <<'EOF'
 [Unit]
 Description=SubLim3 USB Auto Import for %I
 After=multi-user.target
@@ -13,4 +12,3 @@ IOSchedulingPriority=7
 
 [Install]
 WantedBy=multi-user.target
-EOF
