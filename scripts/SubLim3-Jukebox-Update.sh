@@ -10,6 +10,12 @@ ERRORS=0
 RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
 FEEDBACK_SCRIPT="$TARGET_DIR/scripts/sublim3-feedback.sh"
 
+UDEV_SOURCE_DIR="$SOURCE_DIR/overrides/udev"
+SYSTEMD_SOURCE_DIR="$SOURCE_DIR/overrides/systemd"
+
+UDEV_TARGET_DIR="/etc/udev/rules.d"
+SYSTEMD_TARGET_DIR="/etc/systemd/system"
+
 print_header() {
   echo ""
   echo "======================================================"
@@ -40,6 +46,16 @@ play_feedback_bg() {
   fi
 }
 
+need_sudo() {
+  if ! sudo -n true >/dev/null 2>&1; then
+    echo "[ERROR] This script needs passwordless sudo for system file deployment."
+    echo "[ERROR] Please run it with a user that can sudo, or configure sudo permissions."
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+  return 0
+}
+
 update_repo() {
   print_section "Updating repository"
 
@@ -55,7 +71,9 @@ update_repo() {
     return 1
   }
 
-  echo "[INFO] Current branch:" git branch --show-current 2>/dev/null
+  local current_branch
+  current_branch="$(git branch --show-current 2>/dev/null)"
+  echo "[INFO] Current branch: ${current_branch:-unknown}"
 
   if ! git rev-parse --verify origin/main >/dev/null 2>&1; then
     echo "[INFO] Fetching origin/main..."
@@ -104,7 +122,7 @@ copy_with_backup() {
   if [ ! -f "$src" ]; then
     echo "[WARN] Missing source file: $src"
     ERRORS=$((ERRORS + 1))
-    return
+    return 1
   fi
 
   mkdir -p "$(dirname "$dst")"
@@ -115,9 +133,37 @@ copy_with_backup() {
 
   if cp -f "$src" "$dst"; then
     echo "[OK] $(basename "$src") -> $dst"
+    return 0
   else
     echo "[ERROR] Failed to copy $(basename "$src")"
     ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+}
+
+copy_with_backup_sudo() {
+  local src="$1"
+  local dst="$2"
+
+  if [ ! -f "$src" ]; then
+    echo "[WARN] Missing source file: $src"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+
+  sudo mkdir -p "$(dirname "$dst")"
+
+  if sudo test -f "$dst"; then
+    sudo cp -f "$dst" "${dst}${BACKUP_SUFFIX}"
+  fi
+
+  if sudo cp -f "$src" "$dst"; then
+    echo "[OK] $(basename "$src") -> $dst"
+    return 0
+  else
+    echo "[ERROR] Failed to copy $(basename "$src") to $dst"
+    ERRORS=$((ERRORS + 1))
+    return 1
   fi
 }
 
@@ -127,7 +173,7 @@ deploy_directory() {
 
   if [ ! -d "$src_dir" ]; then
     echo "[WARN] Missing directory: $src_dir"
-    return
+    return 0
   fi
 
   while IFS= read -r file; do
@@ -136,24 +182,64 @@ deploy_directory() {
   done < <(find "$src_dir" -type f | sort)
 }
 
+deploy_directory_sudo() {
+  local src_dir="$1"
+  local dst_dir="$2"
+
+  if [ ! -d "$src_dir" ]; then
+    echo "[WARN] Missing directory: $src_dir"
+    return 0
+  fi
+
+  while IFS= read -r file; do
+    local rel="${file#$src_dir/}"
+    copy_with_backup_sudo "$file" "$dst_dir/$rel"
+  done < <(find "$src_dir" -type f | sort)
+}
+
+deploy_system_files() {
+  print_section "Deploying system files"
+
+  need_sudo || return 1
+
+  deploy_directory_sudo "$UDEV_SOURCE_DIR" "$UDEV_TARGET_DIR"
+  deploy_directory_sudo "$SYSTEMD_SOURCE_DIR" "$SYSTEMD_TARGET_DIR"
+
+  echo "[INFO] Reloading udev rules..."
+  if sudo udevadm control --reload-rules; then
+    echo "[OK] udev rules reloaded"
+  else
+    echo "[ERROR] Failed to reload udev rules"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  echo "[INFO] Reloading systemd daemon..."
+  if sudo systemctl daemon-reload; then
+    echo "[OK] systemd daemon reloaded"
+  else
+    echo "[ERROR] Failed to reload systemd daemon"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
 patch_rfid_trigger() {
   print_section "Patching RFID script"
 
   if [ ! -f "$RFID_TRIGGER_TARGET" ]; then
     echo "[WARN] RFID trigger script not found"
-    return
+    return 0
   fi
 
-  if grep -q 'sublim3-feedback.sh' "$RFID_TRIGGER_TARGET"; then
+  if grep -q 'sublim3-feedback.sh" rfid' "$RFID_TRIGGER_TARGET"; then
     echo "[OK] RFID patch already applied"
-    return
+    return 0
   fi
 
   cp "$RFID_TRIGGER_TARGET" "${RFID_TRIGGER_TARGET}${BACKUP_SUFFIX}"
 
   sed -i '/if \[ "\$CARDID" \]; then/a\    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &' "$RFID_TRIGGER_TARGET"
 
-  if grep -q 'sublim3-feedback.sh' "$RFID_TRIGGER_TARGET"; then
+  if grep -q 'sublim3-feedback.sh" rfid' "$RFID_TRIGGER_TARGET"; then
     echo "[OK] RFID feedback hook added"
   else
     echo "[ERROR] Failed to patch RFID trigger script"
@@ -164,9 +250,18 @@ patch_rfid_trigger() {
 fix_permissions() {
   print_section "Fixing permissions"
 
+  chmod +x "$SOURCE_DIR/scripts/"*.sh 2>/dev/null
   chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null
   chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
   chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
+
+  if [ -d "$SYSTEMD_SOURCE_DIR" ]; then
+    chmod 644 "$SYSTEMD_SOURCE_DIR"/* 2>/dev/null
+  fi
+
+  if [ -d "$UDEV_SOURCE_DIR" ]; then
+    chmod 644 "$UDEV_SOURCE_DIR"/* 2>/dev/null
+  fi
 
   echo "[OK] Permissions fixed"
 }
@@ -190,6 +285,24 @@ show_version_check() {
   fi
 }
 
+show_system_file_check() {
+  print_section "System file check"
+
+  if sudo test -f "$UDEV_TARGET_DIR/99-sublim3-usb-autoimport.rules"; then
+    echo "[OK] udev rule installed: $UDEV_TARGET_DIR/99-sublim3-usb-autoimport.rules"
+  else
+    echo "[WARN] udev rule not found in $UDEV_TARGET_DIR"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  if sudo test -f "$SYSTEMD_TARGET_DIR/sublim3-usb-import@.service"; then
+    echo "[OK] systemd service installed: $SYSTEMD_TARGET_DIR/sublim3-usb-import@.service"
+  else
+    echo "[WARN] systemd service not found in $SYSTEMD_TARGET_DIR"
+    ERRORS=$((ERRORS + 1))
+  fi
+}
+
 main() {
   print_header
 
@@ -202,12 +315,15 @@ main() {
 
   print_section "Deploying scripts"
   copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
+  copy_with_backup "$SOURCE_DIR/scripts/SubLim3-USB-AutoImport.sh" "$SOURCE_DIR/scripts/SubLim3-USB-AutoImport.sh"
 
   play_feedback_bg update
 
   patch_rfid_trigger
   fix_permissions
+  deploy_system_files
   show_version_check
+  show_system_file_check
 
   echo ""
   echo "======================================================"
