@@ -55,8 +55,7 @@ update_repo() {
     return 1
   }
 
-  echo "[INFO] Current branch:"
-  git branch --show-current 2>/dev/null
+  echo "[INFO] Current branch:" git branch --show-current 2>/dev/null
 
   if ! git rev-parse --verify origin/main >/dev/null 2>&1; then
     echo "[INFO] Fetching origin/main..."
