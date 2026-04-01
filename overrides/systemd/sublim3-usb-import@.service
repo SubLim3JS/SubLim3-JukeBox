@@ -1,3 +1,16 @@
-sudo tee /etc/udev/rules.d/99-sublim3-usb-autoimport.rules > /dev/null <<'EOF'
-ACTION=="add", SUBSYSTEM=="block", KERNEL=="sd[a-z][0-9]", ENV{ID_BUS}=="usb", TAG+="systemd", ENV{SYSTEMD_WANTS}+="sublim3-usb-import@%k.service"
+sudo tee /etc/systemd/system/sublim3-usb-import@.service > /dev/null <<'EOF'
+[Unit]
+Description=SubLim3 USB Auto Import for %I
+After=multi-user.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/bin/bash /home/pi/SubLim3-JukeBox/scripts/SubLim3-USB-AutoImport.sh /dev/%I
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+[Install]
+WantedBy=multi-user.target
 EOF
