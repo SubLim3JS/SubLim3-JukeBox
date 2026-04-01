@@ -17,19 +17,27 @@
 set -uo pipefail
 
 DEVICE="${1:-}"
-LOG_FILE="/home/pi/SubLim3-JukeBox/logs/usb-auto-import.log"
-LOCK_FILE="/tmp/sublim3-usb-auto-import.lock"
-DEST_ROOT="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
 
 PI_USER="pi"
 PI_GROUP="www-data"
 AUDIO_USER="pi"
 
+DEST_ROOT="/home/pi/RPi-Jukebox-RFID/shared/audiofolders"
+
+LOG_DIR="/home/pi/RPi-Jukebox-RFID/shared/logs"
+LOG_FILE="$LOG_DIR/usb-auto-import.log"
+
+LOCK_DIR="/tmp"
+LOCK_FILE="$LOCK_DIR/sublim3-usb-auto-import.lock"
+
 SUCCESS_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/success.wav"
 ERROR_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/error.wav"
 
-mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$LOG_DIR"
 mkdir -p "$DEST_ROOT"
+mkdir -p "$LOCK_DIR"
+touch "$LOG_FILE"
+chmod 664 "$LOG_FILE"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -46,9 +54,13 @@ play_sound() {
     log "Attempting to play sound: $sound_file"
 
     sudo -u "$AUDIO_USER" /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
-    sudo -u "$AUDIO_USER" /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+
+    if command -v paplay >/dev/null 2>&1; then
+        sudo -u "$AUDIO_USER" /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+        /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+    fi
+
     /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
-    /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
 
     log "Audio playback failed for: $sound_file"
     return 1
