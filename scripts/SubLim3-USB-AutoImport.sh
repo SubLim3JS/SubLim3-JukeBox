@@ -11,7 +11,7 @@
 # or error sound, then unmounts/ejects the USB.
 #
 # Usage:
-#   sudo /home/pi/SubLim3-JukeBox/SubLim3-USB-AutoImport.sh /dev/sda1
+#   sudo /home/pi/SubLim3-JukeBox/scripts/SubLim3-USB-AutoImport.sh /dev/sda1
 # ============================================================
 
 set -uo pipefail
