@@ -290,8 +290,16 @@ fix_permissions() {
   chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
   chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
 
+  chgrp -R www-data "$TARGET_DIR/settings" 2>/dev/null
+  chmod 775 "$TARGET_DIR/settings" 2>/dev/null
+
   if [ -f "$TARGET_DIR/settings/theme-color" ]; then
+    chgrp www-data "$TARGET_DIR/settings/theme-color" 2>/dev/null
     chmod 664 "$TARGET_DIR/settings/theme-color" 2>/dev/null
+  fi
+
+  if [ -f "$TARGET_DIR/settings/cardRegisterAccess" ]; then
+    chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
   fi
 
   if [ -d "$SYSTEMD_SOURCE_DIR" ]; then
