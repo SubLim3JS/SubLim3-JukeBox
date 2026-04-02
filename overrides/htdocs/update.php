@@ -2,6 +2,22 @@
 $updateScript = "/home/pi/SubLim3-JukeBox/scripts/SubLim3-Jukebox-Update.sh";
 $feedbackScript = "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh";
 
+/*
+ * SubLim3 Theme Support
+ */
+$sublim3AllowedThemes = array('green', 'blue', 'red', 'purple', 'orange', 'cyan', 'white');
+$sublim3ThemeFile = '/home/pi/RPi-Jukebox-RFID/settings/theme-color';
+$sublim3Theme = 'green';
+
+if (file_exists($sublim3ThemeFile)) {
+    $savedTheme = trim(file_get_contents($sublim3ThemeFile));
+    if (in_array($savedTheme, $sublim3AllowedThemes)) {
+        $sublim3Theme = $savedTheme;
+    }
+}
+
+$sublim3ThemeClass = 'sublim3-theme-' . $sublim3Theme;
+
 // Play "update started" as pi
 if (file_exists($feedbackScript)) {
     shell_exec("sudo -u pi nohup bash " . escapeshellarg($feedbackScript) . " update >/dev/null 2>&1 &");
@@ -46,11 +62,91 @@ $statusClass = $isSuccess ? "success" : "error";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update | SubLim3 JukeBox</title>
     <style>
+        :root {
+            --sublim3-primary: #32CD56;
+            --sublim3-primary-dark: #28a745;
+            --sublim3-primary-light: #7dff9a;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #eaf8ee;
+            --sublim3-page-bg-bottom: #f6fbf7;
+            --sublim3-card-bg: #ffffff;
+            --sublim3-card-shadow: rgba(0, 0, 0, 0.10);
+            --sublim3-note-text: #4b5563;
+            --sublim3-output-title: #111827;
+            --sublim3-output-bg: #0f172a;
+            --sublim3-output-text: #e5e7eb;
+            --sublim3-secondary-btn: #4b5563;
+            --sublim3-secondary-btn-dark: #374151;
+        }
+
+        body.sublim3-theme-green {
+            --sublim3-primary: #32CD56;
+            --sublim3-primary-dark: #28a745;
+            --sublim3-primary-light: #7dff9a;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #eaf8ee;
+            --sublim3-page-bg-bottom: #f6fbf7;
+        }
+
+        body.sublim3-theme-blue {
+            --sublim3-primary: #3498db;
+            --sublim3-primary-dark: #217dbb;
+            --sublim3-primary-light: #85c1e9;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #eaf4fb;
+            --sublim3-page-bg-bottom: #f4f9fd;
+        }
+
+        body.sublim3-theme-red {
+            --sublim3-primary: #e74c3c;
+            --sublim3-primary-dark: #c0392b;
+            --sublim3-primary-light: #f1948a;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #fdf0ef;
+            --sublim3-page-bg-bottom: #fff7f6;
+        }
+
+        body.sublim3-theme-purple {
+            --sublim3-primary: #9b59b6;
+            --sublim3-primary-dark: #7d3c98;
+            --sublim3-primary-light: #c39bd3;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #f5eef8;
+            --sublim3-page-bg-bottom: #fbf7fd;
+        }
+
+        body.sublim3-theme-orange {
+            --sublim3-primary: #f39c12;
+            --sublim3-primary-dark: #d68910;
+            --sublim3-primary-light: #f8c471;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #fef5e7;
+            --sublim3-page-bg-bottom: #fffaf2;
+        }
+
+        body.sublim3-theme-cyan {
+            --sublim3-primary: #1abc9c;
+            --sublim3-primary-dark: #148f77;
+            --sublim3-primary-light: #76d7c4;
+            --sublim3-text-on-primary: #ffffff;
+            --sublim3-page-bg-top: #e8f8f5;
+            --sublim3-page-bg-bottom: #f4fcfa;
+        }
+
+        body.sublim3-theme-white {
+            --sublim3-primary: #ecf0f1;
+            --sublim3-primary-dark: #bdc3c7;
+            --sublim3-primary-light: #ffffff;
+            --sublim3-text-on-primary: #222222;
+            --sublim3-page-bg-top: #f4f6f7;
+            --sublim3-page-bg-bottom: #ffffff;
+        }
+
         body {
             margin: 0;
             padding: 30px 15px;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #eaf8ee 0%, #f6fbf7 100%);
+            background: linear-gradient(180deg, var(--sublim3-page-bg-top) 0%, var(--sublim3-page-bg-bottom) 100%);
             color: #1f2937;
         }
 
@@ -60,15 +156,15 @@ $statusClass = $isSuccess ? "success" : "error";
         }
 
         .card {
-            background: #ffffff;
+            background: var(--sublim3-card-bg);
             border-radius: 16px;
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
+            box-shadow: 0 8px 28px var(--sublim3-card-shadow);
             overflow: hidden;
         }
 
         .card-header {
-            background: #32CD56;
-            color: #ffffff;
+            background: var(--sublim3-primary);
+            color: var(--sublim3-text-on-primary);
             text-align: center;
             padding: 24px 20px;
         }
@@ -113,7 +209,7 @@ $statusClass = $isSuccess ? "success" : "error";
         .note {
             text-align: center;
             font-size: 16px;
-            color: #4b5563;
+            color: var(--sublim3-note-text);
             margin-bottom: 24px;
         }
 
@@ -121,13 +217,13 @@ $statusClass = $isSuccess ? "success" : "error";
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 10px;
-            color: #111827;
+            color: var(--sublim3-output-title);
         }
 
         .output {
             text-align: left;
-            background: #0f172a;
-            color: #e5e7eb;
+            background: var(--sublim3-output-bg);
+            color: var(--sublim3-output-text);
             border-radius: 12px;
             padding: 18px;
             font-family: Consolas, "Courier New", monospace;
@@ -149,8 +245,8 @@ $statusClass = $isSuccess ? "success" : "error";
             display: inline-block;
             margin: 0 8px;
             padding: 12px 20px;
-            background: #32CD56;
-            color: #ffffff;
+            background: var(--sublim3-primary);
+            color: var(--sublim3-text-on-primary);
             text-decoration: none;
             border-radius: 10px;
             font-weight: bold;
@@ -158,15 +254,17 @@ $statusClass = $isSuccess ? "success" : "error";
         }
 
         .btn:hover {
-            background: #28a745;
+            background: var(--sublim3-primary-dark);
         }
 
         .btn.secondary {
-            background: #4b5563;
+            background: var(--sublim3-secondary-btn);
+            color: #ffffff;
         }
 
         .btn.secondary:hover {
-            background: #374151;
+            background: var(--sublim3-secondary-btn-dark);
+            color: #ffffff;
         }
 
         @media (max-width: 640px) {
@@ -189,7 +287,7 @@ $statusClass = $isSuccess ? "success" : "error";
         }
     </style>
 </head>
-<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
+<body class="<?php print htmlspecialchars($sublim3ThemeClass); ?>">
     <div class="wrapper">
         <div class="card">
             <div class="card-header">
