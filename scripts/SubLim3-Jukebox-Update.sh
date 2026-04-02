@@ -207,7 +207,7 @@ deploy_directory() {
     local rel="${file#$src_dir/}"
 
     case "$rel" in
-      theme-color|cardRegisterAccess)
+      theme-color)
         copy_if_missing "$file" "$dst_dir/$rel"
         ;;
       *)
