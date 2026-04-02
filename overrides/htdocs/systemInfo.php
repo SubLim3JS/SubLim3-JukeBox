@@ -1,384 +1,227 @@
 <?php
-
 include("inc.header.php");
 
-/*******************************************
-* START HTML
-*******************************************/
+function run_cmd($cmd)
+{
+    return trim(shell_exec($cmd));
+}
 
-html_bootstrap3_createHeader("en","System Info | SubLim3 JukeBox",$conf['base_url']);
+function esc_html($value)
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
 
-?>
-<body>
-  <div class="container">
-
-<?php
-include("inc.navigation.php");
-
-/**
- * Get wireless interface name
- */
-function getWirelessInterface() {
-    $preferred = "wlan0";
-
-    if (is_dir("/sys/class/net/" . $preferred . "/wireless")) {
-        return $preferred;
+function getWifiIp()
+{
+    $ip = trim(shell_exec("ip -4 addr show wlan0 2>/dev/null | awk '/inet / {print \$2}' | cut -d/ -f1 | head -n 1"));
+    if (!empty($ip)) {
+        return $ip;
     }
 
-    $interfaces = @scandir("/sys/class/net/");
-    if ($interfaces !== false) {
-        foreach ($interfaces as $iface) {
-            if ($iface === "." || $iface === "..") {
-                continue;
-            }
-            if (is_dir("/sys/class/net/" . $iface . "/wireless")) {
-                return $iface;
-            }
+    $ip = trim(shell_exec("hostname -I 2>/dev/null | awk '{print \$1}'"));
+    if (!empty($ip)) {
+        return $ip;
+    }
+
+    return "Not connected";
+}
+
+function getWifiSsid()
+{
+    $ssid = trim(shell_exec("iwgetid -r 2>/dev/null"));
+    if (!empty($ssid)) {
+        return $ssid;
+    }
+
+    return "Hidden / Not connected";
+}
+
+function getHostnameValue()
+{
+    $hostname = trim(shell_exec("hostname 2>/dev/null"));
+    return !empty($hostname) ? $hostname : "Unknown";
+}
+
+function getUptimeValue()
+{
+    $uptime = trim(shell_exec("uptime -p 2>/dev/null"));
+    return !empty($uptime) ? $uptime : "Unknown";
+}
+
+function getLoadValue()
+{
+    $load = trim(shell_exec("cat /proc/loadavg 2>/dev/null | awk '{print \$1, \$2, \$3}'"));
+    return !empty($load) ? $load : "Unknown";
+}
+
+function getMemoryValue()
+{
+    $mem = trim(shell_exec("free -h 2>/dev/null | awk '/^Mem:/ {print \$3 \" / \" \$2}'"));
+    return !empty($mem) ? $mem : "Unknown";
+}
+
+function getDiskValue()
+{
+    $disk = trim(shell_exec("df -h / 2>/dev/null | awk 'NR==2 {print \$3 \" used / \" \$2 \" total (\" \$5 \")\"}'"));
+    return !empty($disk) ? $disk : "Unknown";
+}
+
+function getVersionValue()
+{
+    $versionFile = '/home/pi/RPi-Jukebox-RFID/settings/version-number';
+    if (file_exists($versionFile)) {
+        $version = trim(file_get_contents($versionFile));
+        if (!empty($version)) {
+            return $version;
         }
     }
-
-    return "";
+    return "Unknown";
 }
 
-/**
- * Get WiFi connection details
- */
-function getWifiDetails() {
-    $iface = getWirelessInterface();
-
-    $result = array(
-        "interface" => $iface,
-        "connected" => false,
-        "ip" => "Not connected",
-        "ssid" => "Unknown"
-    );
-
-    if (empty($iface)) {
-        $result["ip"] = "No wireless interface found";
-        $result["ssid"] = "No wireless interface found";
-        return $result;
+function getRfidDetected()
+{
+    $latestFile = '/home/pi/RPi-Jukebox-RFID/settings/Latest_RFID';
+    if (file_exists($latestFile)) {
+        $value = trim(file_get_contents($latestFile));
+        if (!empty($value)) {
+            return $value;
+        }
     }
+    return "No recent scan";
+}
 
-    $operstate = trim(@file_get_contents("/sys/class/net/" . $iface . "/operstate"));
-    $ip = trim(shell_exec("ip -4 addr show " . escapeshellarg($iface) . " | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
-    $ssid = trim(shell_exec("iwgetid -r " . escapeshellarg($iface) . " 2>/dev/null"));
+$statusFile = '/home/pi/RPi-Jukebox-RFID/shared/logs/usb-import-status.json';
+$usbImportStatus = null;
 
-    if (!empty($ip) && ($operstate === "up" || !empty($ssid))) {
-        $result["connected"] = true;
-        $result["ip"] = $ip;
-        $result["ssid"] = !empty($ssid) ? $ssid : "Connected";
-    } else {
-        $result["connected"] = false;
-        $result["ip"] = "Not connected";
-        $result["ssid"] = "Not connected";
+if (file_exists($statusFile) && is_readable($statusFile)) {
+    $json = file_get_contents($statusFile);
+    $data = json_decode($json, true);
+    if (is_array($data)) {
+        $usbImportStatus = $data;
     }
-
-    return $result;
 }
 
-function getRfidStatus() {
-    return file_exists("/dev/spidev0.0");
+$wifiIp = getWifiIp();
+$wifiSsid = getWifiSsid();
+$hostname = getHostnameValue();
+$uptime = getUptimeValue();
+$load = getLoadValue();
+$memory = getMemoryValue();
+$disk = getDiskValue();
+$version = getVersionValue();
+$rfidDetected = getRfidDetected();
+
+$openUrl = "#";
+if ($wifiIp !== "Not connected") {
+    $openUrl = "http://" . $wifiIp;
 }
-
-// get System Information and parse into variables
-$exec = "lsb_release -a";
-if($debug == "true") {
-    print "Command: ".$exec;
-}
-exec($exec, $res);
-$distributor = substr($res[0], strpos($res[0], ":") + 1, strlen($res[0]) - strpos($res[0], ":"));
-$description = substr($res[1], strpos($res[1], ":") + 1, strlen($res[1]) - strpos($res[1], ":"));
-$release = substr($res[2], strpos($res[2], ":") + 1, strlen($res[2]) - strpos($res[2], ":"));
-$codename = substr($res[3], strpos($res[3], ":") + 1, strlen($res[3]) - strpos($res[3], ":"));
-$rpi_temperature = explode("=", exec("sudo vcgencmd measure_temp"))[1];
-
-// WiFi details
-$wifi = getWifiDetails();
-$wifi_interface = $wifi["interface"];
-$wifi_connected = $wifi["connected"] ? "Connected" : "Disconnected";
-$wifi_ip = $wifi["ip"];
-$wifi_ssid = $wifi["ssid"];
-
-// RFID detection
-$rfid_detected = getRfidStatus();
-
-// check RPis throttling state
-function checkRpiThrottle() {
-    $codes = array(
-        0  => "under-voltage detected",
-        1  => "arm frequency capped",
-        2  => "currently throttled",
-        3  => "soft temperature limit active",
-        16 => "under-voltage has occurred",
-        17 => "arm frequency capped has occurred",
-        18 => "throttling has occurred",
-        19 => "soft temperature limit has occurred"
-    );
-
-    $getThrottledResult = explode("0x", exec("sudo vcgencmd get_throttled"))[1];
-
-    // code is zero => no issue
-    if ($getThrottledResult == "0") return "OK";
-
-    // analyse returned code
-    $result = [];
-    $codeHex = str_split($getThrottledResult);
-    $codeBinary = "";
-    foreach ($codeHex as $fourbits) {
-        $codeBinary .= str_pad(base_convert($fourbits, 16, 2), 4, "0", STR_PAD_LEFT);
-    }
-    $codeBinary = array_reverse(str_split($codeBinary));
-    foreach ($codeBinary as $bitNumber => $bitValue) {
-        if ($bitValue) $result[] = $codes[$bitNumber];
-    }
-    return "WARNING: " . implode(", ", $result);
-}
-$rpi_throttle = checkRpiThrottle();
-
 ?>
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title">
-         <i class='mdi mdi-settings'></i> <?php print $lang['globalSystem']; ?>
-      </h4>
-    </div><!-- /.panel-heading -->
 
-    <div class="panel-body">
+<div class="container">
+  <div class="row">
+    <div class="col-lg-12">
 
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsDistrib']; ?></label>
-          <div class="col-md-6"><?php echo trim($distributor); ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalDescription']; ?></label>
-          <div class="col-md-6"><?php echo trim($description); ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalRelease']; ?></label>
-          <div class="col-md-6"><?php echo trim($release); ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsCodename']; ?></label>
-          <div class="col-md-6"><?php echo trim($codename); ?></div>
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h3 class="panel-title">
+            <i class="mdi mdi-information-outline"></i> SubLim3 JukeBox Info
+          </h3>
         </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi Interface</label>
-          <div class="col-md-6"><?php echo !empty($wifi_interface) ? htmlspecialchars($wifi_interface) : "Not found"; ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi Status</label>
-          <div class="col-md-6">
-            <?php if ($wifi["connected"]) { ?>
-              <span class="label label-success"><?php echo htmlspecialchars($wifi_connected); ?></span>
-            <?php } else { ?>
-              <span class="label label-danger"><?php echo htmlspecialchars($wifi_connected); ?></span>
-            <?php } ?>
+
+        <div class="panel-body">
+
+          <?php if (!empty($usbImportStatus) && (($usbImportStatus['state'] ?? '') === 'running')): ?>
+            <div class="alert alert-info">
+              <strong>USB Import In Progress</strong><br>
+              <?php echo esc_html($usbImportStatus['message'] ?? 'Importing files from USB...'); ?><br>
+              <?php if (!empty($usbImportStatus['updated'])): ?>
+                <small>Last updated: <?php echo esc_html($usbImportStatus['updated']); ?></small><br>
+              <?php endif; ?>
+              Please do not remove the USB drive yet.
+            </div>
+          <?php endif; ?>
+
+          <div class="row">
+            <div class="col-md-6">
+              <h4>System</h4>
+              <table class="table table-striped table-condensed">
+                <tr>
+                  <th style="width: 180px;">Hostname</th>
+                  <td><?php echo esc_html($hostname); ?></td>
+                </tr>
+                <tr>
+                  <th>Version</th>
+                  <td><?php echo esc_html($version); ?></td>
+                </tr>
+                <tr>
+                  <th>Uptime</th>
+                  <td><?php echo esc_html($uptime); ?></td>
+                </tr>
+                <tr>
+                  <th>Load Average</th>
+                  <td><?php echo esc_html($load); ?></td>
+                </tr>
+                <tr>
+                  <th>Memory Usage</th>
+                  <td><?php echo esc_html($memory); ?></td>
+                </tr>
+                <tr>
+                  <th>Disk Usage</th>
+                  <td><?php echo esc_html($disk); ?></td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="col-md-6">
+              <h4>Network & RFID</h4>
+              <table class="table table-striped table-condensed">
+                <tr>
+                  <th style="width: 180px;">WiFi SSID</th>
+                  <td><?php echo esc_html($wifiSsid); ?></td>
+                </tr>
+                <tr>
+                  <th>WiFi IP</th>
+                  <td>
+                    <?php if ($wifiIp !== "Not connected"): ?>
+                      <a href="<?php echo esc_html($openUrl); ?>" target="_blank"><?php echo esc_html($wifiIp); ?></a>
+                    <?php else: ?>
+                      <?php echo esc_html($wifiIp); ?>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+                <tr>
+                  <th>RFID Detected</th>
+                  <td><?php echo esc_html($rfidDetected); ?></td>
+                </tr>
+              </table>
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi SSID</label>
-          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ssid); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">IP Address</label>
-          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ip); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">RFID Status</label>
-          <div class="col-md-6">
-            <?php if ($rfid_detected) { ?>
-              <span class="label label-success">Detected</span>
-            <?php } else { ?>
-              <span class="label label-danger">Not Detected</span>
-            <?php } ?>
+
+          <hr>
+
+          <div class="row">
+            <div class="col-lg-12 text-center">
+              <a href="readIP.php" class="btn btn-info" style="margin: 5px;">
+                <i class="mdi mdi-wifi"></i> Read IP Address
+              </a>
+
+              <a href="adminAccess.php" class="btn btn-warning" style="margin: 5px;">
+                <i class="mdi mdi-shield-key-outline"></i> Admin Tools
+              </a>
+
+              <a href="update.php" class="btn btn-success" style="margin: 5px;">
+                <i class="mdi mdi-update"></i> Run Update
+              </a>
+            </div>
           </div>
+
         </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsThrottle']; ?></label>
-          <div class="col-md-6"><?php echo trim($rpi_throttle); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsTemperature']; ?></label>
-          <div class="col-md-6"><?php echo trim($rpi_temperature); ?></div>
-        </div>
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel panel-default-->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title">
-         <i class='mdi mdi-settings'></i> SubLim3 JukeBox Setup
-      </h4>
-    </div><!-- /.panel-heading -->
-
-    <div class="panel-body">
-
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalVersion']; ?></label>
-          <div class="col-md-6"><?php
-            // create current version
-
-            // get information for version number on current running system
-            $exec = "cat ../settings/version-number";
-            $VERSION_NO = exec($exec);
-            $exec = "git --git-dir=../.git rev-parse --abbrev-ref HEAD";
-            $USED_BRANCH = exec($exec);
-            $exec = "git --git-dir=../.git describe --always";
-            $COMMIT_NO = exec($exec);
-            $version = $VERSION_NO . " - " . $COMMIT_NO . " - " . $USED_BRANCH;
-
-            // write version to file
-            $exec = "echo ${version} > ../settings/version";
-            exec($exec);
-
-            // write new version number to global config file
-            exec("sudo ".$conf['scripts_abs']."/inc.writeGlobalConfig.sh");
-            exec("sudo chmod 777 ".$conf['settings_abs']."/global.conf");
-
-            // and print the version on the info site
-            echo $version;
-          ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalEdition']; ?></label>
-          <div class="col-md-6"><?php echo $lang[$edition]; ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for="">
-          <?php
-          if ($edition == "classic") {
-              print $lang['infoMPDStatus']."</label>
-          <div id='mpdstatus'></div>";
-          } elseif ($edition == "plusSpotify") {
-              print $lang['infoMopidyStatus']."</label>
-          <div id='mopidystatus'></div>";
-          }
-          ?>
-        </div>
-        <!-- / row -->
-
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel panel-default-->
-</div><!-- /.panel-group -->
-
-
-<?php
-if ($edition == "classic") {
-    print "<script>
-$(document).ready(function() {
-    $('#mpdstatus').load('ajax.loadMPDStatus.php');
-    var refreshId = setInterval(function() {
-        $('#mpdstatus').load('ajax.loadMPDStatus.php?' + 1*new Date());
-    }, 5000);
-});
-
-</script>";
-} elseif ($edition == "plusSpotify") {
-    print "<script>
-$(document).ready(function() {
-    $('#mopidystatus').load('ajax.loadMopidyStatus.php');
-    var refreshId = setInterval(function() {
-        $('#mopidystatus').load('ajax.loadMopidyStatus.php?' + 1*new Date());
-    }, 5000);
-});
-
-</script>";
-}
-?>
-
-<?php
-// get the information of storage usage
-$exec = "df -H -B K / ";
-if($debug == "true") {
-    print "Command: ".$exec;
-}
-$exploded = preg_split("/ +/", exec($exec));
-// all values are in MeBit
-$all = round(trim(substr($exploded[1], 0, strpos($exploded[1], "K"))) / 1024, 2);
-$used = round(trim(substr($exploded[2], 0, strpos($exploded[2], "K"))) / 1024, 2);
-$free = round(trim(substr($exploded[3], 0, strpos($exploded[3], "K"))) / 1024, 2);
-?>
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title">
-        <i class='mdi mdi-server'></i> <?php print $lang['globalStorage']; ?> <small>(<?php echo round($all/1024,2); ?> GB)</small>
-      </h4>
-    </div><!-- /.panel-heading -->
-
-    <div class="panel-body">
-
-        <?php
-            // get information about the shared folder to calculate media size
-            $exec = "du -H -B K -s ".$conf['base_path']."/shared/";
-            if($debug == "true") {
-                print "Command: ".$exec;
-            }
-            $res = exec($exec);
-            $exploded = explode("/", $res);
-            $Media = round(trim(substr($exploded[0], 0, strpos($exploded[0], "K"))) / 1024, 2);
-            // make some percentage calculation
-            $percent = 100 / $all;
-            $reserved = $all - $used - $free;
-            $system = $used - $Media;
-        ?>
-
-            <h5><?php print $lang['infoStorageUsed']; ?> <small>(<?php echo round($free/1024,2); ?> GB free)</small></h5>
-            <div class="row">
-                <div class="col-xs-12">
-                    <div class="progress">
-                        <div class="progress-bar progress-bar-warning" role="progressbar" title="Reserved: <?php echo round($reserved*$percent, 2); ?>%" style="width:<?php echo round($reserved*$percent, 2); ?>%">Res.</div>
-                        <div class="progress-bar progress-bar-danger" role="progressbar" title="System: <?php echo round($system*$percent, 2); ?>%" style="width:<?php echo round($system*$percent, 2); ?>%">Sys.</div>
-                        <div class="progress-bar progress-bar-info" role="progressbar" title="Media: <?php echo round($Media*$percent, 2); ?>%" style="width:<?php echo round($Media*$percent, 2); ?>%">Media</div>
-                        <div class="progress-bar progress-bar-success" role="progressbar" title="Free: <?php echo round($free*$percent, 2); ?>%" style="width:<?php echo round($free*$percent, 2); ?>%">Free</div>
-                    </div><!-- / .progress -->
-                </div><!-- / .col-xs-12 -->
-            </div><!-- / .row -->
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<?php
-include("inc.addSystemInfo.php");
-?>
-
-<!-- debug.log -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading clearfix">
-      <div style="float:left;">
-        <h4 class="panel-title" style="margin-top:8px;">
-          <i class='mdi mdi-text'></i> <?php print $lang['infoDebugLogTail']; ?>
-        </h4>
       </div>
-      <div style="float:right;">
-        <a href="systemInfo.php?DebugLogClear=true" class="btn btn-info">
-          <?php print $lang['infoDebugLogClear']; ?>
-        </a>
-        <a href="update.php" class="btn btn-success" style="margin-left:10px;">
-          <i class='mdi mdi-cloud-download'></i> 
-        </a>
-      </div>
-      <div style="clear:both;"></div>
-    </div><!-- /.panel-heading -->
 
-    <div class="panel-body">
+    </div>
+  </div>
+</div>
 
-        <?php
-        $res = tailShell("../logs/debug.log", 40);
-        print "<pre>\n".$res."\n</pre>";
-        ?>
-
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-</div><!-- /.container -->
-
-</body>
-</html>
+<?php
+include("inc.footer.php");
+?>
