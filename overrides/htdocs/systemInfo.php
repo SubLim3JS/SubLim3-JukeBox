@@ -14,53 +14,8 @@ html_bootstrap3_createHeader("en","System Info | SubLim3 JukeBox",$conf['base_ur
 
 <?php
 include("inc.navigation.php");
-
-// get System Information and parse into variables
-$exec = "lsb_release -a";
-if($debug == "true") {
-    print "Command: ".$exec;
-}
-exec($exec, $res);
-$distributor = substr($res[0], strpos($res[0], ":") + 1, strlen($res[0]) - strpos($res[0], ":"));
-$description = substr($res[1], strpos($res[1], ":") + 1, strlen($res[1]) - strpos($res[1], ":"));
-$release = substr($res[2], strpos($res[2], ":") + 1, strlen($res[2]) - strpos($res[2], ":"));
-$codename = substr($res[3], strpos($res[3], ":") + 1, strlen($res[3]) - strpos($res[3], ":"));
-$rpi_temperature = explode("=", exec("sudo vcgencmd measure_temp"))[1];
-
-// check RPis throttling state
-function checkRpiThrottle() {
-    $codes = array(
-        0  => "under-voltage detected",
-        1  => "arm frequency capped",
-        2  => "currently throttled",
-        3  => "soft temperature limit active",
-        16 => "under-voltage has occurred",
-        17 => "arm frequency capped has occurred",
-        18 => "throttling has occurred",
-        19 => "soft temperature limit has occurred"
-    );
-
-    $getThrottledResult = explode("0x", exec("sudo vcgencmd get_throttled"))[1];
-
-    // code is zero => no issue
-    if ($getThrottledResult == "0") return "OK";
-
-    // analyse returned code
-    $result = [];
-    $codeHex = str_split($getThrottledResult);
-    $codeBinary = "";
-    foreach ($codeHex as $fourbits) {
-        $codeBinary .= str_pad(base_convert($fourbits, 16, 2), 4, "0", STR_PAD_LEFT);
-    }
-    $codeBinary = array_reverse(str_split($codeBinary));
-    foreach ($codeBinary as $bitNumber => $bitValue) {
-        if ($bitValue) $result[] = $codes[$bitNumber];
-    }
-    return "WARNING: " . implode(", ", $result);
-}
-$rpi_throttle = checkRpiThrottle();
-
 ?>
+
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
@@ -71,30 +26,7 @@ $rpi_throttle = checkRpiThrottle();
 
     <div class="panel-body">
         <div id="system-live">
-            <div class="row">
-              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsDistrib']; ?></label>
-              <div class="col-md-6"><?php echo trim($distributor); ?></div>
-            </div><!-- / row -->
-            <div class="row">
-              <label class="col-md-4 control-label" for=""><?php print $lang['globalDescription']; ?></label>
-              <div class="col-md-6"><?php echo trim($description); ?></div>
-            </div><!-- / row -->
-            <div class="row">
-              <label class="col-md-4 control-label" for=""><?php print $lang['globalRelease']; ?></label>
-              <div class="col-md-6"><?php echo trim($release); ?></div>
-            </div><!-- / row -->
-            <div class="row">
-              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsCodename']; ?></label>
-              <div class="col-md-6"><?php echo trim($codename); ?></div>
-            </div>
-            <div class="row">
-              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsThrottle']; ?></label>
-              <div class="col-md-6"><?php echo trim($rpi_throttle); ?></div>
-            </div>
-            <div class="row">
-              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsTemperature']; ?></label>
-              <div class="col-md-6"><?php echo trim($rpi_temperature); ?></div>
-            </div>
+            <div class="text-muted">Loading system status...</div>
         </div>
     </div><!-- /.panel-body -->
   </div><!-- /.panel panel-default-->
@@ -113,9 +45,6 @@ $rpi_throttle = checkRpiThrottle();
         <div class="row">
           <label class="col-md-4 control-label" for=""><?php print $lang['globalVersion']; ?></label>
           <div class="col-md-6"><?php
-            // create current version
-
-            // get information for version number on current running system
             $exec = "cat ../settings/version-number";
             $VERSION_NO = exec($exec);
             $exec = "git --git-dir=../.git rev-parse --abbrev-ref HEAD";
@@ -124,15 +53,12 @@ $rpi_throttle = checkRpiThrottle();
             $COMMIT_NO = exec($exec);
             $version = $VERSION_NO . " - " . $COMMIT_NO . " - " . $USED_BRANCH;
 
-            // write version to file
             $exec = "echo ${version} > ../settings/version";
             exec($exec);
 
-            // write new version number to global config file
             exec("sudo ".$conf['scripts_abs']."/inc.writeGlobalConfig.sh");
             exec("sudo chmod 777 ".$conf['settings_abs']."/global.conf");
 
-            // and print the version on the info site
             echo $version;
           ?></div>
         </div><!-- / row -->
@@ -158,7 +84,6 @@ $rpi_throttle = checkRpiThrottle();
   </div><!-- /.panel panel-default-->
 </div><!-- /.panel-group -->
 
-
 <?php
 if ($edition == "classic") {
     print "<script>
@@ -168,7 +93,6 @@ $(document).ready(function() {
         $('#mpdstatus').load('ajax.loadMPDStatus.php?' + 1*new Date());
     }, 5000);
 });
-
 </script>";
 } elseif ($edition == "plusSpotify") {
     print "<script>
@@ -178,19 +102,16 @@ $(document).ready(function() {
         $('#mopidystatus').load('ajax.loadMopidyStatus.php?' + 1*new Date());
     }, 5000);
 });
-
 </script>";
 }
 ?>
 
 <?php
-// get the information of storage usage
 $exec = "df -H -B K / ";
 if($debug == "true") {
     print "Command: ".$exec;
 }
 $exploded = preg_split("/ +/", exec($exec));
-// all values are in MeBit
 $all = round(trim(substr($exploded[1], 0, strpos($exploded[1], "K"))) / 1024, 2);
 $used = round(trim(substr($exploded[2], 0, strpos($exploded[2], "K"))) / 1024, 2);
 $free = round(trim(substr($exploded[3], 0, strpos($exploded[3], "K"))) / 1024, 2);
@@ -207,7 +128,6 @@ $free = round(trim(substr($exploded[3], 0, strpos($exploded[3], "K"))) / 1024, 2
     <div class="panel-body">
 
         <?php
-            // get information about the shared folder to calculate media size
             $exec = "du -H -B K -s ".$conf['base_path']."/shared/";
             if($debug == "true") {
                 print "Command: ".$exec;
@@ -215,7 +135,6 @@ $free = round(trim(substr($exploded[3], 0, strpos($exploded[3], "K"))) / 1024, 2
             $res = exec($exec);
             $exploded = explode("/", $res);
             $Media = round(trim(substr($exploded[0], 0, strpos($exploded[0], "K"))) / 1024, 2);
-            // make some percentage calculation
             $percent = 100 / $all;
             $reserved = $all - $used - $free;
             $system = $used - $Media;
@@ -239,8 +158,6 @@ $free = round(trim(substr($exploded[3], 0, strpos($exploded[3], "K"))) / 1024, 2
 <?php
 include("inc.addSystemInfo.php");
 ?>
-
-<!-- debug.log -->
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -277,7 +194,7 @@ include("inc.addSystemInfo.php");
 <script>
 $(document).ready(function() {
     function refreshSystem() {
-        $("#system-live").load("ajax.systemStatus.php", function() {
+        $("#system-live").load("ajax.systemStatus.php?_=" + new Date().getTime(), function() {
             setTimeout(refreshSystem, 1000);
         });
     }
