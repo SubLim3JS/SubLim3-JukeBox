@@ -1,10 +1,11 @@
 [Unit]
 Description=SubLim3 USB Auto Import for %I
-After=multi-user.target
+After=systemd-udevd.service local-fs.target
 
 [Service]
 Type=oneshot
 User=root
+ExecStartPre=/bin/sleep 2
 ExecStart=/bin/bash /home/pi/SubLim3-JukeBox/scripts/SubLim3-USB-AutoImport.sh /dev/%I
 Nice=10
 IOSchedulingClass=best-effort
