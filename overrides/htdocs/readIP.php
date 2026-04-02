@@ -27,12 +27,100 @@ shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/playout_controls.sh -c=readwi
 shell_exec("bash /home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh wifi >/dev/null 2>&1 &");
 ?>
 
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
+
 <style>
+:root {
+    --sublim3-primary: #32CD56;
+    --sublim3-primary-dark: #28a745;
+    --sublim3-primary-light: #7dff9a;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #eaf8ee;
+    --sublim3-page-bg-bottom: #f6fbf7;
+    --sublim3-card-bg: #ffffff;
+    --sublim3-card-shadow: rgba(0, 0, 0, 0.10);
+    --sublim3-note-text: #4b5563;
+    --sublim3-ip-bg: #0f172a;
+    --sublim3-ip-text: #e5e7eb;
+    --sublim3-secondary-btn: #4b5563;
+    --sublim3-secondary-btn-dark: #374151;
+}
+
+/* Green */
+body.sublim3-theme-green {
+    --sublim3-primary: #32CD56;
+    --sublim3-primary-dark: #28a745;
+    --sublim3-primary-light: #7dff9a;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #eaf8ee;
+    --sublim3-page-bg-bottom: #f6fbf7;
+}
+
+/* Blue */
+body.sublim3-theme-blue {
+    --sublim3-primary: #3498db;
+    --sublim3-primary-dark: #217dbb;
+    --sublim3-primary-light: #85c1e9;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #eaf4fb;
+    --sublim3-page-bg-bottom: #f4f9fd;
+}
+
+/* Red */
+body.sublim3-theme-red {
+    --sublim3-primary: #e74c3c;
+    --sublim3-primary-dark: #c0392b;
+    --sublim3-primary-light: #f1948a;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #fdf0ef;
+    --sublim3-page-bg-bottom: #fff7f6;
+}
+
+/* Purple */
+body.sublim3-theme-purple {
+    --sublim3-primary: #9b59b6;
+    --sublim3-primary-dark: #7d3c98;
+    --sublim3-primary-light: #c39bd3;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #f5eef8;
+    --sublim3-page-bg-bottom: #fbf7fd;
+}
+
+/* Orange */
+body.sublim3-theme-orange {
+    --sublim3-primary: #f39c12;
+    --sublim3-primary-dark: #d68910;
+    --sublim3-primary-light: #f8c471;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #fef5e7;
+    --sublim3-page-bg-bottom: #fffaf2;
+}
+
+/* Cyan */
+body.sublim3-theme-cyan {
+    --sublim3-primary: #1abc9c;
+    --sublim3-primary-dark: #148f77;
+    --sublim3-primary-light: #76d7c4;
+    --sublim3-text-on-primary: #ffffff;
+    --sublim3-page-bg-top: #e8f8f5;
+    --sublim3-page-bg-bottom: #f4fcfa;
+}
+
+/* White */
+body.sublim3-theme-white {
+    --sublim3-primary: #ecf0f1;
+    --sublim3-primary-dark: #bdc3c7;
+    --sublim3-primary-light: #ffffff;
+    --sublim3-text-on-primary: #222222;
+    --sublim3-page-bg-top: #f4f6f7;
+    --sublim3-page-bg-bottom: #ffffff;
+}
+
 body {
     margin: 0;
     padding: 30px 15px;
     font-family: Arial, sans-serif;
-    background: linear-gradient(180deg, #eaf8ee 0%, #f6fbf7 100%);
+    background: linear-gradient(180deg, var(--sublim3-page-bg-top) 0%, var(--sublim3-page-bg-bottom) 100%);
     color: #1f2937;
 }
 
@@ -42,15 +130,15 @@ body {
 }
 
 .card {
-    background: #ffffff;
+    background: var(--sublim3-card-bg);
     border-radius: 16px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10);
+    box-shadow: 0 8px 28px var(--sublim3-card-shadow);
     overflow: hidden;
 }
 
 .card-header {
-    background: #32CD56;
-    color: #ffffff;
+    background: var(--sublim3-primary);
+    color: var(--sublim3-text-on-primary);
     text-align: center;
     padding: 24px 20px;
 }
@@ -85,7 +173,7 @@ body {
 
 .note {
     font-size: 16px;
-    color: #4b5563;
+    color: var(--sublim3-note-text);
     margin-bottom: 24px;
 }
 
@@ -96,8 +184,8 @@ body {
 }
 
 .ip-display {
-    background: #0f172a;
-    color: #e5e7eb;
+    background: var(--sublim3-ip-bg);
+    color: var(--sublim3-ip-text);
     border-radius: 12px;
     padding: 18px;
     font-family: Consolas, monospace;
@@ -106,9 +194,9 @@ body {
     margin-bottom: 24px;
 }
 
-/* NEW: clean clickable style */
+/* Clickable IP */
 .ip-display a {
-    color: #e5e7eb;
+    color: var(--sublim3-ip-text);
     text-decoration: none;
 }
 
@@ -121,20 +209,60 @@ body {
     margin-top: 24px;
 }
 
-.btn-sublim3 {
+.btn-sublim3,
+.btn-secondary {
+    display: inline-block;
     padding: 12px 20px;
-    background: #32CD56;
-    color: #fff;
     border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 8px;
+}
+
+.btn-sublim3 {
+    background: var(--sublim3-primary);
+    color: var(--sublim3-text-on-primary);
+}
+
+.btn-sublim3:hover {
+    background: var(--sublim3-primary-dark);
+    color: var(--sublim3-text-on-primary);
     text-decoration: none;
 }
 
 .btn-secondary {
-    padding: 12px 20px;
-    background: #4b5563;
-    color: #fff;
-    border-radius: 10px;
+    background: var(--sublim3-secondary-btn);
+    color: #ffffff;
+}
+
+.btn-secondary:hover {
+    background: var(--sublim3-secondary-btn-dark);
+    color: #ffffff;
     text-decoration: none;
+}
+
+@media (max-width: 640px) {
+    .card-header h1 {
+        font-size: 24px;
+    }
+
+    .status-banner {
+        font-size: 20px;
+    }
+
+    .card-body {
+        padding: 20px 16px 24px 16px;
+    }
+
+    .btn-sublim3,
+    .btn-secondary {
+        display: block;
+        margin: 10px 0;
+    }
+
+    .ip-display {
+        font-size: 24px;
+    }
 }
 </style>
 
