@@ -338,13 +338,15 @@ log "Newly imported files this run: $IMPORTED_COUNT"
 
 if [[ "$IMPORTED_COUNT" =~ ^[0-9]+$ ]] && [[ "$IMPORTED_COUNT" -gt 0 ]]; then
     log "Import completed successfully."
+    safe_unmount_and_eject "$DEVICE" "$MOUNTPOINT" "$PARENT_DISK"
+    log "USB safely unmounted/ejected."
     success_beep || log "Success sound failed to play."
 else
     log "No supported audio files found to import."
+    safe_unmount_and_eject "$DEVICE" "$MOUNTPOINT" "$PARENT_DISK"
+    log "USB safely unmounted/ejected."
     error_beep || log "Error sound failed to play."
 fi
-
-safe_unmount_and_eject "$DEVICE" "$MOUNTPOINT" "$PARENT_DISK"
 
 log "USB import workflow finished for $DEVICE"
 exit 0
