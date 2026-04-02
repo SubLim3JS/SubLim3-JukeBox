@@ -40,8 +40,8 @@ mkdir -p "$LOCK_DIR"
 touch "$LOG_FILE"
 chmod 664 "$LOG_FILE"
 
-log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+clear_status() {
+    rm -f "$STATUS_FILE"
 }
 
 write_status() {
@@ -62,11 +62,11 @@ EOF
     chmod 664 "$STATUS_FILE" 2>/dev/null || true
 }
 
-clear_status() {
-    rm -f "$STATUS_FILE"
-}
-
 trap 'clear_status' EXIT
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
 
 play_sound() {
     local sound_file="$1"
@@ -81,8 +81,8 @@ play_sound() {
     sudo -u "$AUDIO_USER" /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
 
     if command -v paplay >/dev/null 2>&1; then
-        sudo -u "$AUDIO_USER" paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
-        paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+        sudo -u "$AUDIO_USER" /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
+        /usr/bin/paplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
     fi
 
     /usr/bin/aplay "$sound_file" >> "$LOG_FILE" 2>&1 && return 0
@@ -153,8 +153,6 @@ import_audio() {
         if cp -p "$file" "$target_file" >> "$LOG_FILE" 2>&1; then
             imported=$((imported + 1))
             log "Imported: $rel_path"
-
-            write_status "running" "Importing files from USB..."
         else
             log "Failed to import: $rel_path"
         fi
@@ -200,15 +198,16 @@ fi
 
 if [[ -z "$DEVICE" ]]; then
     log "No block device argument supplied."
-    write_status "error" "No USB block device was supplied."
     error_beep
     exit 1
 fi
 
+# Accept either sda1 or /dev/sda1
 if [[ "$DEVICE" != /dev/* ]]; then
     DEVICE="/dev/$DEVICE"
 fi
 
+# Wait for block device to exist
 for _ in {1..10}; do
     if [[ -b "$DEVICE" ]]; then
         break
@@ -218,14 +217,12 @@ done
 
 if [[ ! -b "$DEVICE" ]]; then
     log "Block device not available: $DEVICE"
-    write_status "error" "USB block device was not available."
     error_beep
     exit 1
 fi
 
 log "============================================================"
 log "USB auto-import triggered for device: $DEVICE"
-write_status "running" "USB detected. Waiting for mountpoint..."
 
 MOUNTPOINT=""
 for _ in {1..30}; do
@@ -238,7 +235,6 @@ done
 
 if [[ -z "$MOUNTPOINT" || ! -d "$MOUNTPOINT" ]]; then
     log "Mountpoint not found for $DEVICE"
-    write_status "error" "USB mountpoint was not found."
     error_beep
     exit 1
 fi
@@ -257,12 +253,12 @@ log "Label: $LABEL"
 log "Destination: $DEST_DIR"
 log "Parent disk: $PARENT_DISK"
 
-write_status "running" "USB mounted. Preparing import..."
-
 BEFORE_COUNT=$(count_audio_files "$DEST_DIR")
 log "Existing audio files in destination: $BEFORE_COUNT"
 
+# Only show the banner once the mountpoint is ready and actual import is beginning
 write_status "running" "Copying audio files from USB..."
+
 IMPORTED_COUNT="$(import_audio "$MOUNTPOINT" "$DEST_DIR")"
 
 chown -R "$PI_USER:$PI_GROUP" "$DEST_DIR" >> "$LOG_FILE" 2>&1 || log "Warning: chown failed on $DEST_DIR"
@@ -275,11 +271,9 @@ log "Newly imported files this run: $IMPORTED_COUNT"
 
 if [[ "$IMPORTED_COUNT" =~ ^[0-9]+$ ]] && [[ "$IMPORTED_COUNT" -gt 0 ]]; then
     log "Import completed successfully."
-    write_status "success" "USB import completed successfully."
     success_beep || log "Success sound failed to play."
 else
     log "No supported audio files found to import."
-    write_status "error" "No supported audio files were found to import."
     error_beep || log "Error sound failed to play."
 fi
 
