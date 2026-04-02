@@ -81,7 +81,7 @@ function getRfidStatus() {
 }
 
 /**
- * USB import banner status
+ * USB import status
  */
 function getUsbImportStatus() {
     $statusFile = "/home/pi/RPi-Jukebox-RFID/shared/logs/usb-import-status.json";
@@ -101,6 +101,34 @@ function getUsbImportStatus() {
     }
 
     return $data;
+}
+
+/**
+ * Render USB import banner HTML
+ */
+function renderUsbImportBanner($usbImportStatus) {
+    if (empty($usbImportStatus) || !isset($usbImportStatus["state"]) || $usbImportStatus["state"] !== "running") {
+        return "";
+    }
+
+    $message = !empty($usbImportStatus["message"])
+        ? htmlspecialchars($usbImportStatus["message"], ENT_QUOTES, 'UTF-8')
+        : "Importing audio files from USB...";
+
+    $updated = !empty($usbImportStatus["updated"])
+        ? htmlspecialchars($usbImportStatus["updated"], ENT_QUOTES, 'UTF-8')
+        : "";
+
+    $html  = "<div class=\"alert\" style=\"background-color:#31708f; border-color:#2e6da4; color:#ffffff; margin-bottom:20px;\">";
+    $html .= "<strong><i class='mdi mdi-usb'></i> USB Import In Progress</strong><br>";
+    $html .= $message . "<br>";
+    if (!empty($updated)) {
+        $html .= "<small style=\"color:#d9edf7;\">Last updated: " . $updated . "</small><br>";
+    }
+    $html .= "Please do not remove the USB drive yet.";
+    $html .= "</div>";
+
+    return $html;
 }
 
 // get System Information and parse into variables
@@ -170,24 +198,11 @@ $rpi_throttle = checkRpiThrottle();
       </h4>
     </div><!-- /.panel-heading -->
 
-    <div class="panel-body">
+    <div class="panel-body" id="system-section-wrap">
 
-        <?php if (!empty($usbImportStatus) && isset($usbImportStatus["state"]) && $usbImportStatus["state"] === "running") { ?>
-        <div class="alert alert-info">
-          <strong><i class='mdi mdi-usb'></i> USB Import In Progress</strong><br>
-          <?php
-            if (!empty($usbImportStatus["message"])) {
-                echo htmlspecialchars($usbImportStatus["message"]);
-            } else {
-                echo "Importing audio files from USB...";
-            }
-          ?><br>
-          <?php if (!empty($usbImportStatus["updated"])) { ?>
-            <small>Last updated: <?php echo htmlspecialchars($usbImportStatus["updated"]); ?></small><br>
-          <?php } ?>
-          Please do not remove the USB drive yet.
+        <div id="usb-import-banner-wrap">
+          <?php echo renderUsbImportBanner($usbImportStatus); ?>
         </div>
-        <?php } ?>
 
         <div class="row">
           <label class="col-md-4 control-label" for=""><?php print $lang['infoOsDistrib']; ?></label>
@@ -207,25 +222,25 @@ $rpi_throttle = checkRpiThrottle();
         </div>
         <div class="row">
           <label class="col-md-4 control-label" for="">WiFi Interface</label>
-          <div class="col-md-6"><?php echo !empty($wifi_interface) ? htmlspecialchars($wifi_interface) : "Not found"; ?></div>
+          <div class="col-md-6"><?php echo !empty($wifi_interface) ? htmlspecialchars($wifi_interface, ENT_QUOTES, 'UTF-8') : "Not found"; ?></div>
         </div>
         <div class="row">
           <label class="col-md-4 control-label" for="">WiFi Status</label>
           <div class="col-md-6">
             <?php if ($wifi["connected"]) { ?>
-              <span class="label label-success"><?php echo htmlspecialchars($wifi_connected); ?></span>
+              <span class="label label-success"><?php echo htmlspecialchars($wifi_connected, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php } else { ?>
-              <span class="label label-danger"><?php echo htmlspecialchars($wifi_connected); ?></span>
+              <span class="label label-danger"><?php echo htmlspecialchars($wifi_connected, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php } ?>
           </div>
         </div>
         <div class="row">
           <label class="col-md-4 control-label" for="">WiFi SSID</label>
-          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ssid); ?></div>
+          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ssid, ENT_QUOTES, 'UTF-8'); ?></div>
         </div>
         <div class="row">
           <label class="col-md-4 control-label" for="">IP Address</label>
-          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ip); ?></div>
+          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ip, ENT_QUOTES, 'UTF-8'); ?></div>
         </div>
         <div class="row">
           <label class="col-md-4 control-label" for="">RFID Status</label>
@@ -423,13 +438,18 @@ include("inc.addSystemInfo.php");
 
 </div><!-- /.container -->
 
- <script>
+<script>
 $(document).ready(function() {
     setInterval(function() {
-        window.location.reload();
+        $.get('systemInfo.php?_system_poll=' + new Date().getTime(), function(response) {
+            var newSection = $('<div>').html(response).find('#system-section-wrap').html();
+            if (typeof newSection !== 'undefined') {
+                $('#system-section-wrap').html(newSection);
+            }
+        });
     }, 5000);
 });
 </script>
-            
+
 </body>
 </html>
