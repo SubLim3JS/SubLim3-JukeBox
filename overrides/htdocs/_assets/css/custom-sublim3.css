@@ -1,46 +1,127 @@
-/* SubLim3 Green Theme Override */
-/* Theme color: #32CD56 */
+/* =========================================================
+   SubLim3 JukeBox Theme Override
+   Supports:
+   green, blue, red, purple, orange, cyan, white
+   Applied via body class:
+   body.sublim3-theme-green
+   body.sublim3-theme-blue
+   etc.
+   ========================================================= */
 
+/* DEFAULT FALLBACK THEME */
 :root {
-  --primary-green: #32CD56;
-  --primary-green-dark: #28a745;
-  --primary-green-light: #7dff9a;
+  --sublim3-primary: #32CD56;
+  --sublim3-primary-dark: #28a745;
+  --sublim3-primary-light: #7dff9a;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #eafff1;
+}
+
+/* GREEN */
+body.sublim3-theme-green {
+  --sublim3-primary: #32CD56;
+  --sublim3-primary-dark: #28a745;
+  --sublim3-primary-light: #7dff9a;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #eafff1;
+}
+
+/* BLUE */
+body.sublim3-theme-blue {
+  --sublim3-primary: #3498db;
+  --sublim3-primary-dark: #217dbb;
+  --sublim3-primary-light: #85c1e9;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #eaf6ff;
+}
+
+/* RED */
+body.sublim3-theme-red {
+  --sublim3-primary: #e74c3c;
+  --sublim3-primary-dark: #c0392b;
+  --sublim3-primary-light: #f1948a;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #ffeceb;
+}
+
+/* PURPLE */
+body.sublim3-theme-purple {
+  --sublim3-primary: #9b59b6;
+  --sublim3-primary-dark: #7d3c98;
+  --sublim3-primary-light: #c39bd3;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #f4ebfb;
+}
+
+/* ORANGE */
+body.sublim3-theme-orange {
+  --sublim3-primary: #f39c12;
+  --sublim3-primary-dark: #d68910;
+  --sublim3-primary-light: #f8c471;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #fff4e5;
+}
+
+/* CYAN */
+body.sublim3-theme-cyan {
+  --sublim3-primary: #1abc9c;
+  --sublim3-primary-dark: #148f77;
+  --sublim3-primary-light: #76d7c4;
+  --sublim3-text-on-primary: #ffffff;
+  --sublim3-hover-text: #ffffff;
+  --sublim3-alert-link: #e9fffb;
+}
+
+/* WHITE */
+body.sublim3-theme-white {
+  --sublim3-primary: #ecf0f1;
+  --sublim3-primary-dark: #bdc3c7;
+  --sublim3-primary-light: #ffffff;
+  --sublim3-text-on-primary: #222222;
+  --sublim3-hover-text: #222222;
+  --sublim3-alert-link: #222222;
 }
 
 /* LINKS */
 a {
-  color: var(--primary-green);
+  color: var(--sublim3-primary);
 }
 
 a:hover,
 a:focus {
-  color: var(--primary-green-light) !important;
+  color: var(--sublim3-primary-light) !important;
   text-decoration: none;
 }
 
 /* PRIMARY BUTTONS */
 .btn-primary {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .btn-primary:hover,
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary.active {
-  background-color: var(--primary-green-dark) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  border-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* SUCCESS / INFO / DEFAULT BUTTONS */
 .btn-success,
 .btn-info,
 .btn-default {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .btn-success:hover,
@@ -55,25 +136,25 @@ a:focus {
 .btn-default:focus,
 .btn-default:active,
 .btn-default.active {
-  background-color: var(--primary-green-dark) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  border-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* CIRCULAR PLAYER BUTTONS */
 .btn-circle {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .btn-circle:hover,
 .btn-circle:focus,
 .btn-circle:active,
 .btn-circle.active {
-  background-color: var(--primary-green-dark) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  border-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* INDEX.PHP PLAYER CONTROL BUTTONS */
@@ -85,7 +166,7 @@ a:focus {
 .btn-group .btn-default {
   background-color: transparent !important;
   border: none !important;
-  color: var(--primary-green) !important;
+  color: var(--sublim3-primary) !important;
   box-shadow: none !important;
 }
 
@@ -94,7 +175,7 @@ a:focus {
 .playerControls .btn i,
 .btn-group .btn i,
 .btn-group .btn .glyphicon {
-  color: var(--primary-green) !important;
+  color: var(--sublim3-primary) !important;
 }
 
 /* Hover behavior */
@@ -103,8 +184,8 @@ a:focus {
 .btn-group .btn:hover,
 .btn-group .btn:focus,
 .btn-group .btn.active {
-  background-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 #playerControls .btn:hover i,
@@ -112,19 +193,19 @@ a:focus {
 .btn-group .btn:hover i,
 .btn-group .btn:focus i,
 .btn-group .btn.active i {
-  color: #ffffff !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* NAVBAR */
 .navbar-default {
-  background-color: var(--primary-green) !important;
+  background-color: var(--sublim3-primary) !important;
   border-color: transparent !important;
 }
 
 .navbar-default .navbar-brand,
 .navbar-default .navbar-nav > li > a,
 .navbar-default .navbar-text {
-  color: #ffffff !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .navbar-default .navbar-nav > li > a:hover,
@@ -134,44 +215,45 @@ a:focus {
 .navbar-default .navbar-nav > .active > a:focus,
 .navbar-default .navbar-brand:hover,
 .navbar-default .navbar-brand:focus {
-  background-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* LABELS */
 .label-primary {
-  background-color: var(--primary-green) !important;
+  background-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* LIST GROUPS */
 .list-group-item.active,
 .list-group-item.active:hover,
 .list-group-item.active:focus {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .list-group-item:hover {
-  background-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* PANELS */
 .panel-primary {
-  border-color: var(--primary-green) !important;
+  border-color: var(--sublim3-primary) !important;
 }
 
 .panel-primary > .panel-heading {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* PROGRESS BARS */
 .progress-bar,
 .progress-bar-info {
-  background-color: var(--primary-green) !important;
+  background-color: var(--sublim3-primary) !important;
 }
 
 /* SETTINGS GAUGES */
@@ -179,71 +261,71 @@ a:focus {
 .meter > span,
 .gauge,
 .gauge .value {
-  background-color: var(--primary-green) !important;
+  background-color: var(--sublim3-primary) !important;
 }
 
 /* CIRCULAR GAUGES */
 .c100 .bar,
 .c100 .fill {
-  border-color: var(--primary-green) !important;
+  border-color: var(--sublim3-primary) !important;
 }
 
 .c100:hover .bar,
 .c100:hover .fill {
-  border-color: var(--primary-green-dark) !important;
+  border-color: var(--sublim3-primary-dark) !important;
 }
 
 .c100 > span {
-  color: var(--primary-green) !important;
+  color: var(--sublim3-primary) !important;
 }
 
 .c100:hover > span {
-  color: var(--primary-green-light) !important;
+  color: var(--sublim3-primary-light) !important;
 }
 
 /* VOLUME SLIDER */
 input[type=range]::-webkit-slider-thumb {
-  background: var(--primary-green);
+  background: var(--sublim3-primary);
 }
 
 input[type=range]::-moz-range-thumb {
-  background: var(--primary-green);
+  background: var(--sublim3-primary);
 }
 
 input[type=range]::-ms-thumb {
-  background: var(--primary-green);
+  background: var(--sublim3-primary);
 }
 
-/* WIFI SSID BANNER */
+/* WIFI SSID BANNER / INFO ALERTS */
 .alert-info {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .alert-info a {
-  color: #ffffff !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .alert-info a:hover {
-  color: #eafff1 !important;
+  color: var(--sublim3-alert-link) !important;
 }
 
 /* AVAILABLE AUDIO TABS */
 .nav-tabs > li > a,
 .nav-pills > li > a,
 .filterbtn {
-  background-color: var(--primary-green) !important;
-  border-color: var(--primary-green) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary) !important;
+  border-color: var(--sublim3-primary) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .nav-tabs > li > a:hover,
 .nav-pills > li > a:hover,
 .filterbtn:hover {
-  background-color: var(--primary-green-dark) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  border-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 .nav-tabs > li.active > a,
@@ -253,15 +335,15 @@ input[type=range]::-ms-thumb {
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus,
 .filterbtn.active {
-  background-color: var(--primary-green-dark) !important;
-  border-color: var(--primary-green-dark) !important;
-  color: #ffffff !important;
+  background-color: var(--sublim3-primary-dark) !important;
+  border-color: var(--sublim3-primary-dark) !important;
+  color: var(--sublim3-text-on-primary) !important;
 }
 
 /* HOVER TEXT VISIBILITY */
 .btn:hover,
 a:hover {
-  color: #ffffff !important;
+  color: var(--sublim3-hover-text) !important;
 }
 
 /* HIDE ADMIN NAV LINKS */
