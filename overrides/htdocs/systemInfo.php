@@ -423,5 +423,13 @@ include("inc.addSystemInfo.php");
 
 </div><!-- /.container -->
 
+ <script>
+$(document).ready(function() {
+    setInterval(function() {
+        window.location.reload();
+    }, 5000);
+});
+</script>
+            
 </body>
 </html>
