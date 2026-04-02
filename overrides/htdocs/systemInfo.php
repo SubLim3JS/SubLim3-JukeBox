@@ -15,122 +15,6 @@ html_bootstrap3_createHeader("en","System Info | SubLim3 JukeBox",$conf['base_ur
 <?php
 include("inc.navigation.php");
 
-/**
- * Get wireless interface name
- */
-function getWirelessInterface() {
-    $preferred = "wlan0";
-
-    if (is_dir("/sys/class/net/" . $preferred . "/wireless")) {
-        return $preferred;
-    }
-
-    $interfaces = @scandir("/sys/class/net/");
-    if ($interfaces !== false) {
-        foreach ($interfaces as $iface) {
-            if ($iface === "." || $iface === "..") {
-                continue;
-            }
-            if (is_dir("/sys/class/net/" . $iface . "/wireless")) {
-                return $iface;
-            }
-        }
-    }
-
-    return "";
-}
-
-/**
- * Get WiFi connection details
- */
-function getWifiDetails() {
-    $iface = getWirelessInterface();
-
-    $result = array(
-        "interface" => $iface,
-        "connected" => false,
-        "ip" => "Not connected",
-        "ssid" => "Unknown"
-    );
-
-    if (empty($iface)) {
-        $result["ip"] = "No wireless interface found";
-        $result["ssid"] = "No wireless interface found";
-        return $result;
-    }
-
-    $operstate = trim(@file_get_contents("/sys/class/net/" . $iface . "/operstate"));
-    $ip = trim(shell_exec("ip -4 addr show " . escapeshellarg($iface) . " | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}' | head -n 1"));
-    $ssid = trim(shell_exec("iwgetid -r " . escapeshellarg($iface) . " 2>/dev/null"));
-
-    if (!empty($ip) && ($operstate === "up" || !empty($ssid))) {
-        $result["connected"] = true;
-        $result["ip"] = $ip;
-        $result["ssid"] = !empty($ssid) ? $ssid : "Connected";
-    } else {
-        $result["connected"] = false;
-        $result["ip"] = "Not connected";
-        $result["ssid"] = "Not connected";
-    }
-
-    return $result;
-}
-
-function getRfidStatus() {
-    return file_exists("/dev/spidev0.0");
-}
-
-/**
- * USB import status
- */
-function getUsbImportStatus() {
-    $statusFile = "/home/pi/RPi-Jukebox-RFID/shared/logs/usb-import-status.json";
-
-    if (!file_exists($statusFile) || !is_readable($statusFile)) {
-        return null;
-    }
-
-    $json = @file_get_contents($statusFile);
-    if ($json === false || trim($json) === "") {
-        return null;
-    }
-
-    $data = json_decode($json, true);
-    if (!is_array($data)) {
-        return null;
-    }
-
-    return $data;
-}
-
-/**
- * Render USB import banner HTML
- */
-function renderUsbImportBanner($usbImportStatus) {
-    if (empty($usbImportStatus) || !isset($usbImportStatus["state"]) || $usbImportStatus["state"] !== "running") {
-        return "";
-    }
-
-    $message = !empty($usbImportStatus["message"])
-        ? htmlspecialchars($usbImportStatus["message"], ENT_QUOTES, 'UTF-8')
-        : "Importing audio files from USB...";
-
-    $updated = !empty($usbImportStatus["updated"])
-        ? htmlspecialchars($usbImportStatus["updated"], ENT_QUOTES, 'UTF-8')
-        : "";
-
-    $html  = "<div class=\"alert\" style=\"background-color:#31708f; border-color:#2e6da4; color:#ffffff; margin-bottom:20px;\">";
-    $html .= "<strong><i class='mdi mdi-usb'></i> USB Import In Progress</strong><br>";
-    $html .= $message . "<br>";
-    if (!empty($updated)) {
-        $html .= "<small style=\"color:#d9edf7;\">Last updated: " . $updated . "</small><br>";
-    }
-    $html .= "Please do not remove the USB drive yet.";
-    $html .= "</div>";
-
-    return $html;
-}
-
 // get System Information and parse into variables
 $exec = "lsb_release -a";
 if($debug == "true") {
@@ -142,19 +26,6 @@ $description = substr($res[1], strpos($res[1], ":") + 1, strlen($res[1]) - strpo
 $release = substr($res[2], strpos($res[2], ":") + 1, strlen($res[2]) - strpos($res[2], ":"));
 $codename = substr($res[3], strpos($res[3], ":") + 1, strlen($res[3]) - strpos($res[3], ":"));
 $rpi_temperature = explode("=", exec("sudo vcgencmd measure_temp"))[1];
-
-// WiFi details
-$wifi = getWifiDetails();
-$wifi_interface = $wifi["interface"];
-$wifi_connected = $wifi["connected"] ? "Connected" : "Disconnected";
-$wifi_ip = $wifi["ip"];
-$wifi_ssid = $wifi["ssid"];
-
-// RFID detection
-$rfid_detected = getRfidStatus();
-
-// USB import status
-$usbImportStatus = getUsbImportStatus();
 
 // check RPis throttling state
 function checkRpiThrottle() {
@@ -198,67 +69,32 @@ $rpi_throttle = checkRpiThrottle();
       </h4>
     </div><!-- /.panel-heading -->
 
-    <div class="panel-body" id="system-section-wrap">
-
-        <div id="usb-import-banner-wrap">
-          <?php echo renderUsbImportBanner($usbImportStatus); ?>
-        </div>
-
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsDistrib']; ?></label>
-          <div class="col-md-6"><?php echo trim($distributor); ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalDescription']; ?></label>
-          <div class="col-md-6"><?php echo trim($description); ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['globalRelease']; ?></label>
-          <div class="col-md-6"><?php echo trim($release); ?></div>
-        </div><!-- / row -->
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsCodename']; ?></label>
-          <div class="col-md-6"><?php echo trim($codename); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi Interface</label>
-          <div class="col-md-6"><?php echo !empty($wifi_interface) ? htmlspecialchars($wifi_interface, ENT_QUOTES, 'UTF-8') : "Not found"; ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi Status</label>
-          <div class="col-md-6">
-            <?php if ($wifi["connected"]) { ?>
-              <span class="label label-success"><?php echo htmlspecialchars($wifi_connected, ENT_QUOTES, 'UTF-8'); ?></span>
-            <?php } else { ?>
-              <span class="label label-danger"><?php echo htmlspecialchars($wifi_connected, ENT_QUOTES, 'UTF-8'); ?></span>
-            <?php } ?>
-          </div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">WiFi SSID</label>
-          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ssid, ENT_QUOTES, 'UTF-8'); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">IP Address</label>
-          <div class="col-md-6"><?php echo htmlspecialchars($wifi_ip, ENT_QUOTES, 'UTF-8'); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for="">RFID Status</label>
-          <div class="col-md-6">
-            <?php if ($rfid_detected) { ?>
-              <span class="label label-success">Detected</span>
-            <?php } else { ?>
-              <span class="label label-danger">Not Detected</span>
-            <?php } ?>
-          </div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsThrottle']; ?></label>
-          <div class="col-md-6"><?php echo trim($rpi_throttle); ?></div>
-        </div>
-        <div class="row">
-          <label class="col-md-4 control-label" for=""><?php print $lang['infoOsTemperature']; ?></label>
-          <div class="col-md-6"><?php echo trim($rpi_temperature); ?></div>
+    <div class="panel-body">
+        <div id="system-live">
+            <div class="row">
+              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsDistrib']; ?></label>
+              <div class="col-md-6"><?php echo trim($distributor); ?></div>
+            </div><!-- / row -->
+            <div class="row">
+              <label class="col-md-4 control-label" for=""><?php print $lang['globalDescription']; ?></label>
+              <div class="col-md-6"><?php echo trim($description); ?></div>
+            </div><!-- / row -->
+            <div class="row">
+              <label class="col-md-4 control-label" for=""><?php print $lang['globalRelease']; ?></label>
+              <div class="col-md-6"><?php echo trim($release); ?></div>
+            </div><!-- / row -->
+            <div class="row">
+              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsCodename']; ?></label>
+              <div class="col-md-6"><?php echo trim($codename); ?></div>
+            </div>
+            <div class="row">
+              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsThrottle']; ?></label>
+              <div class="col-md-6"><?php echo trim($rpi_throttle); ?></div>
+            </div>
+            <div class="row">
+              <label class="col-md-4 control-label" for=""><?php print $lang['infoOsTemperature']; ?></label>
+              <div class="col-md-6"><?php echo trim($rpi_temperature); ?></div>
+            </div>
         </div>
     </div><!-- /.panel-body -->
   </div><!-- /.panel panel-default-->
@@ -330,7 +166,7 @@ $(document).ready(function() {
     $('#mpdstatus').load('ajax.loadMPDStatus.php');
     var refreshId = setInterval(function() {
         $('#mpdstatus').load('ajax.loadMPDStatus.php?' + 1*new Date());
-    }, 1000);
+    }, 5000);
 });
 
 </script>";
@@ -419,7 +255,7 @@ include("inc.addSystemInfo.php");
           <?php print $lang['infoDebugLogClear']; ?>
         </a>
         <a href="update.php" class="btn btn-success" style="margin-left:10px;">
-          <i class='mdi mdi-cloud-download'></i> 
+          <i class='mdi mdi-cloud-download'></i>
         </a>
       </div>
       <div style="clear:both;"></div>
@@ -440,14 +276,13 @@ include("inc.addSystemInfo.php");
 
 <script>
 $(document).ready(function() {
-    setInterval(function() {
-        $.get('systemInfo.php?_system_poll=' + new Date().getTime(), function(response) {
-            var newSection = $('<div>').html(response).find('#system-section-wrap').html();
-            if (typeof newSection !== 'undefined') {
-                $('#system-section-wrap').html(newSection);
-            }
+    function refreshSystem() {
+        $("#system-live").load("ajax.systemStatus.php", function() {
+            setTimeout(refreshSystem, 1000);
         });
-    }, 5000);
+    }
+
+    refreshSystem();
 });
 </script>
 
