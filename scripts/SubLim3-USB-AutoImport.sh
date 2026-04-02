@@ -34,6 +34,10 @@ LOCK_FILE="$LOCK_DIR/sublim3-usb-auto-import.lock"
 SUCCESS_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/success.wav"
 ERROR_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/error.wav"
 
+TEMP_MOUNT_BASE="/mnt"
+TEMP_MOUNTPOINT=""
+SCRIPT_MOUNTED_DEVICE=0
+
 mkdir -p "$LOG_DIR"
 mkdir -p "$DEST_ROOT"
 mkdir -p "$LOCK_DIR"
@@ -62,7 +66,18 @@ EOF
     chmod 664 "$STATUS_FILE" 2>/dev/null || true
 }
 
-trap 'clear_status' EXIT
+cleanup() {
+    clear_status
+
+    if [[ "$SCRIPT_MOUNTED_DEVICE" -eq 1 && -n "${TEMP_MOUNTPOINT:-}" ]]; then
+        if mountpoint -q "$TEMP_MOUNTPOINT"; then
+            umount "$TEMP_MOUNTPOINT" >> "$LOG_FILE" 2>&1 || true
+        fi
+        rmdir "$TEMP_MOUNTPOINT" >> "$LOG_FILE" 2>&1 || true
+    fi
+}
+
+trap cleanup EXIT
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -170,18 +185,69 @@ import_audio() {
     printf '%s\n' "$imported"
 }
 
+attempt_mount() {
+    local device="$1"
+    local fs_type
+    local mount_dir
+    local mount_opts
+
+    fs_type="$(blkid -o value -s TYPE "$device" 2>/dev/null | head -n 1)"
+    mount_dir="$TEMP_MOUNT_BASE/sublim3-$(basename "$device")"
+
+    mkdir -p "$mount_dir"
+
+    log "No existing mountpoint found. Attempting manual mount of $device"
+    log "Detected filesystem type: ${fs_type:-unknown}"
+
+    case "$fs_type" in
+        vfat|fat|msdos)
+            mount_opts="uid=$(id -u "$PI_USER"),gid=$(getent group "$PI_GROUP" | cut -d: -f3),utf8=1,umask=002"
+            mount -t vfat -o "$mount_opts" "$device" "$mount_dir" >> "$LOG_FILE" 2>&1
+            ;;
+        exfat)
+            mount_opts="uid=$(id -u "$PI_USER"),gid=$(getent group "$PI_GROUP" | cut -d: -f3),umask=002"
+            mount -t exfat -o "$mount_opts" "$device" "$mount_dir" >> "$LOG_FILE" 2>&1
+            ;;
+        ntfs|ntfs3)
+            mount_opts="uid=$(id -u "$PI_USER"),gid=$(getent group "$PI_GROUP" | cut -d: -f3),umask=002"
+            mount -t ntfs3 -o "$mount_opts" "$device" "$mount_dir" >> "$LOG_FILE" 2>&1 \
+              || mount -t ntfs -o "$mount_opts" "$device" "$mount_dir" >> "$LOG_FILE" 2>&1
+            ;;
+        ext2|ext3|ext4)
+            mount "$device" "$mount_dir" >> "$LOG_FILE" 2>&1
+            ;;
+        *)
+            mount "$device" "$mount_dir" >> "$LOG_FILE" 2>&1
+            ;;
+    esac
+
+    if mountpoint -q "$mount_dir"; then
+        TEMP_MOUNTPOINT="$mount_dir"
+        SCRIPT_MOUNTED_DEVICE=1
+        echo "$mount_dir"
+        return 0
+    fi
+
+    rmdir "$mount_dir" >> "$LOG_FILE" 2>&1 || true
+    return 1
+}
+
 safe_unmount_and_eject() {
     local device="$1"
-    local mountpoint="$2"
+    local mountpoint_path="$2"
     local base_disk="$3"
 
     sync
     sleep 1
 
-    if mountpoint -q "$mountpoint"; then
-        log "Unmounting $mountpoint"
-        umount "$mountpoint" >> "$LOG_FILE" 2>&1 || log "Warning: failed to unmount $mountpoint"
+    if mountpoint -q "$mountpoint_path"; then
+        log "Unmounting $mountpoint_path"
+        umount "$mountpoint_path" >> "$LOG_FILE" 2>&1 || log "Warning: failed to unmount $mountpoint_path"
         sleep 1
+    fi
+
+    if [[ "$SCRIPT_MOUNTED_DEVICE" -eq 1 && -n "${TEMP_MOUNTPOINT:-}" ]]; then
+        rmdir "$TEMP_MOUNTPOINT" >> "$LOG_FILE" 2>&1 || true
     fi
 
     log "Powering off/ejecting $base_disk"
@@ -202,12 +268,10 @@ if [[ -z "$DEVICE" ]]; then
     exit 1
 fi
 
-# Accept either sda1 or /dev/sda1
 if [[ "$DEVICE" != /dev/* ]]; then
     DEVICE="/dev/$DEVICE"
 fi
 
-# Wait for block device to exist
 for _ in {1..10}; do
     if [[ -b "$DEVICE" ]]; then
         break
@@ -225,7 +289,7 @@ log "============================================================"
 log "USB auto-import triggered for device: $DEVICE"
 
 MOUNTPOINT=""
-for _ in {1..30}; do
+for _ in {1..8}; do
     MOUNTPOINT=$(get_mountpoint "$DEVICE")
     if [[ -n "$MOUNTPOINT" && -d "$MOUNTPOINT" ]]; then
         break
@@ -234,7 +298,11 @@ for _ in {1..30}; do
 done
 
 if [[ -z "$MOUNTPOINT" || ! -d "$MOUNTPOINT" ]]; then
-    log "Mountpoint not found for $DEVICE"
+    MOUNTPOINT="$(attempt_mount "$DEVICE" || true)"
+fi
+
+if [[ -z "$MOUNTPOINT" || ! -d "$MOUNTPOINT" ]]; then
+    log "Mountpoint not found and manual mount failed for $DEVICE"
     error_beep
     exit 1
 fi
@@ -256,7 +324,6 @@ log "Parent disk: $PARENT_DISK"
 BEFORE_COUNT=$(count_audio_files "$DEST_DIR")
 log "Existing audio files in destination: $BEFORE_COUNT"
 
-# Only show the banner once the mountpoint is ready and actual import is beginning
 write_status "running" "Copying audio files from USB..."
 
 IMPORTED_COUNT="$(import_audio "$MOUNTPOINT" "$DEST_DIR")"
