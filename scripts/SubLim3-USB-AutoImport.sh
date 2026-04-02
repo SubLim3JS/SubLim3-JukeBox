@@ -30,6 +30,7 @@ STATUS_FILE="$LOG_DIR/usb-import-status.json"
 
 LOCK_DIR="/tmp"
 LOCK_FILE="$LOCK_DIR/sublim3-usb-auto-import.lock"
+LOCK_ACQUIRED=0
 
 SUCCESS_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/success.wav"
 ERROR_SOUND="/home/pi/RPi-Jukebox-RFID/shared/sounds/error.wav"
@@ -67,7 +68,9 @@ EOF
 }
 
 cleanup() {
-    clear_status
+    if [[ "$LOCK_ACQUIRED" -eq 1 ]]; then
+        clear_status
+    fi
 
     if [[ "$SCRIPT_MOUNTED_DEVICE" -eq 1 && -n "${TEMP_MOUNTPOINT:-}" ]]; then
         if mountpoint -q "$TEMP_MOUNTPOINT"; then
@@ -243,7 +246,8 @@ safe_unmount_and_eject() {
     if mountpoint -q "$mountpoint_path"; then
         log "Unmounting $mountpoint_path"
         umount "$mountpoint_path" >> "$LOG_FILE" 2>&1 || log "Warning: failed to unmount $mountpoint_path"
-        sleep 1
+        sync
+        sleep 3
     fi
 
     if [[ "$SCRIPT_MOUNTED_DEVICE" -eq 1 && -n "${TEMP_MOUNTPOINT:-}" ]]; then
@@ -251,9 +255,13 @@ safe_unmount_and_eject() {
     fi
 
     log "Powering off/ejecting $base_disk"
-    udisksctl power-off -b "$base_disk" >> "$LOG_FILE" 2>&1 \
-        || eject "$base_disk" >> "$LOG_FILE" 2>&1 \
-        || log "Warning: failed to power off/eject $base_disk"
+    if udisksctl power-off -b "$base_disk" >> "$LOG_FILE" 2>&1; then
+        :
+    elif eject "$base_disk" >> "$LOG_FILE" 2>&1; then
+        :
+    else
+        log "Warning: failed to power off/eject $base_disk"
+    fi
 }
 
 exec 9>"$LOCK_FILE"
@@ -261,6 +269,7 @@ if ! flock -n 9; then
     log "Another USB import is already running. Exiting."
     exit 0
 fi
+LOCK_ACQUIRED=1
 
 if [[ -z "$DEVICE" ]]; then
     log "No block device argument supplied."
@@ -272,7 +281,7 @@ if [[ "$DEVICE" != /dev/* ]]; then
     DEVICE="/dev/$DEVICE"
 fi
 
-for _ in {1..10}; do
+for _ in {1..8}; do
     if [[ -b "$DEVICE" ]]; then
         break
     fi
@@ -289,7 +298,7 @@ log "============================================================"
 log "USB auto-import triggered for device: $DEVICE"
 
 MOUNTPOINT=""
-for _ in {1..8}; do
+for _ in {1..4}; do
     MOUNTPOINT=$(get_mountpoint "$DEVICE")
     if [[ -n "$MOUNTPOINT" && -d "$MOUNTPOINT" ]]; then
         break
