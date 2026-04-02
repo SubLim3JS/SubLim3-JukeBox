@@ -139,7 +139,7 @@ if($_POST['ACTION'] == "fileUpload") {
 html_bootstrap3_createHeader("en","SubLim3 JukeBox",$conf['base_url']);
 
 ?>
-<body>
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
   <div class="container">
       
 <?php
