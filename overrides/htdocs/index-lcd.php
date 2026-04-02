@@ -31,7 +31,7 @@ html_bootstrap3_createHeader("en","SubLim3 JukeBox",$conf['base_url']);
     margin-left: -105px;
   }
 </style>
-<body>
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
   <div class="container">
 
 
