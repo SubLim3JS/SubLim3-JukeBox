@@ -330,7 +330,7 @@ $(document).ready(function() {
     $('#mpdstatus').load('ajax.loadMPDStatus.php');
     var refreshId = setInterval(function() {
         $('#mpdstatus').load('ajax.loadMPDStatus.php?' + 1*new Date());
-    }, 2000);
+    }, 1000);
 });
 
 </script>";
