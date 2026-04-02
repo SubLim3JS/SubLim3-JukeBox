@@ -20,13 +20,17 @@ $sublim3ThemeMessage = '';
 
 if (isset($_POST['theme_color'])) {
     $newTheme = trim(strtolower($_POST['theme_color']));
+
     if (array_key_exists($newTheme, $sublim3AllowedThemes)) {
-        if (file_put_contents($sublim3ThemeFile, $newTheme . PHP_EOL) !== false) {
+        $writeOk = @file_put_contents($sublim3ThemeFile, $newTheme . PHP_EOL);
+
+        if ($writeOk !== false) {
             $sublim3Theme = $newTheme;
             $sublim3ThemeClass = 'sublim3-theme-' . $sublim3Theme;
+            $currentTheme = $newTheme;
             $sublim3ThemeMessage = '<div class="alert alert-success"><i class="mdi mdi-check-circle"></i> Web UI color scheme saved.</div>';
         } else {
-            $sublim3ThemeMessage = '<div class="alert alert-danger"><i class="mdi mdi-alert-circle"></i> Failed to save Web UI color scheme.</div>';
+            $sublim3ThemeMessage = '<div class="alert alert-danger"><i class="mdi mdi-alert-circle"></i> Failed to save Web UI color scheme. Check write permissions on '.$sublim3ThemeFile.'.</div>';
         }
     } else {
         $sublim3ThemeMessage = '<div class="alert alert-danger"><i class="mdi mdi-alert-circle"></i> Invalid color scheme selected.</div>';
@@ -67,14 +71,14 @@ if($debug == "true") {
 <div class="row">
   <div class="col-lg-12">
     <strong><?php print $lang['globalJumpTo']; ?>:</strong>
+    <a href="#theme" class="xbtn xbtn-default ">
+      <i class='mdi mdi-palette'></i> Web UI Theme
+    </a> |
     <a href="#RFID" class="xbtn xbtn-default ">
       <i class='mdi mdi-cards-outline'></i> <?php print $lang['globalRFIDCards']; ?>
     </a> |
     <a href="#language" class="xbtn xbtn-default ">
       <i class='mdi mdi-emoticon'></i> <?php print $lang['globalLanguageSettings']; ?>
-    </a> |
-    <a href="#theme" class="xbtn xbtn-default ">
-      <i class='mdi mdi-palette'></i> Web UI Theme
     </a> |
     <a href="#volume" class="xbtn xbtn-default ">
       <i class='mdi mdi-volume-high'></i> <?php print $lang['globalVolumeSettings']; ?>
@@ -85,18 +89,15 @@ if($debug == "true") {
     <a href="#wifi" class="xbtn xbtn-default ">
       <i class='mdi mdi-wifi'></i> <?php print $lang['globalWifiSettings']; ?>
     </a> |
-    <!--a href="#wlanIpEmail" class="xbtn xbtn-default ">
-      <i class='mdi mdi-wifi'></i> <?php print $lang['settingsWlanSendNav']; ?>
-    </a>  |-->
     <a href="#wlanIpRead" class="xbtn xbtn-default ">
       <i class='mdi mdi-wifi'></i> <?php print $lang['settingsWlanReadNav']; ?>
-    </a>  |
+    </a> |
     <a href="#webInterface" class="xbtn xbtn-default ">
       <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsWebInterface']; ?>
-    </a>  |
+    </a> |
     <a href="#externalInterfaces" class="xbtn xbtn-default ">
       <i class='mdi mdi-usb'></i> <?php print $lang['globalExternalInterfaces']; ?>
-    </a>  |
+    </a> |
     <a href="#secondSwipe" class="xbtn xbtn-default ">
       <i class='mdi mdi-cards-outline'></i> <?php print $lang['settingsSecondSwipe']; ?>
     </a> |
@@ -107,6 +108,39 @@ if($debug == "true") {
 </div>
 
 <br/>
+
+<div class="panel-group">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title"><a name="theme"></a>
+        <i class='mdi mdi-palette'></i> SubLim3 Web UI Theme
+      </h4>
+    </div><!-- /.panel-heading -->
+
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <?php print $sublim3ThemeMessage; ?>
+          <form method="post" action="">
+            <div class="form-group">
+              <label for="theme_color">Color Scheme</label>
+              <select name="theme_color" id="theme_color" class="form-control">
+<?php foreach ($sublim3AllowedThemes as $themeValue => $themeLabel) { ?>
+                <option value="<?php print htmlspecialchars($themeValue); ?>" <?php if ($currentTheme === $themeValue) { print 'selected="selected"'; } ?>>
+                  <?php print htmlspecialchars($themeLabel); ?>
+                </option>
+<?php } ?>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class='mdi mdi-content-save'></i> Save Theme
+            </button>
+          </form>
+        </div>
+      </div><!-- /.row -->
+    </div><!-- /.panel-body -->
+  </div><!-- /.panel -->
+</div><!-- /.panel-group -->
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -161,39 +195,6 @@ include("inc.setLanguage.php");
 include("inc.setPlayerBehaviourRFID.php");
 ?>
       </div><!-- / .row -->
-    </div><!-- /.panel-body -->
-  </div><!-- /.panel -->
-</div><!-- /.panel-group -->
-
-<div class="panel-group">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title"><a name="theme"></a>
-        <i class='mdi mdi-palette'></i> SubLim3 Web UI Theme
-      </h4>
-    </div><!-- /.panel-heading -->
-
-    <div class="panel-body">
-      <div class="row">
-        <div class="col-lg-12">
-          <?php print $sublim3ThemeMessage; ?>
-          <form method="post" action="">
-            <div class="form-group">
-              <label for="theme_color">Color Scheme</label>
-              <select name="theme_color" id="theme_color" class="form-control">
-<?php foreach ($sublim3AllowedThemes as $themeValue => $themeLabel) { ?>
-                <option value="<?php print htmlspecialchars($themeValue); ?>" <?php if ($currentTheme === $themeValue) { print 'selected="selected"'; } ?>>
-                  <?php print htmlspecialchars($themeLabel); ?>
-                </option>
-<?php } ?>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary">
-              <i class='mdi mdi-content-save'></i> Save Theme
-            </button>
-          </form>
-        </div>
-      </div><!-- /.row -->
     </div><!-- /.panel-body -->
   </div><!-- /.panel -->
 </div><!-- /.panel-group -->
@@ -268,13 +269,6 @@ include("inc.setWifi.php");
 </div><!-- /.panel-group -->
 
 <?php
-/*
-* This is work in progress.
-* If you were to have a local mailserver installed,
-* SubLim3 JukeBox could send you the IP address over email.
-* Useful if you move your SubLim3 JukeBox into a new Wifi which
-* assigns a dynmamic IP.
-*/
 include("inc.setWlanIpRead.php");
 ?>
 
