@@ -113,7 +113,7 @@ if($debug == "true") {
   <div class="panel panel-default">
     <div class="panel-heading">
       <h4 class="panel-title"><a name="theme"></a>
-        <i class='mdi mdi-palette'></i> SubLim3 Web UI Theme
+        <i class='mdi mdi-palette'></i> SubLim3 Themes
       </h4>
     </div><!-- /.panel-heading -->
 
