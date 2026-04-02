@@ -189,7 +189,7 @@ $statusClass = $isSuccess ? "success" : "error";
         }
     </style>
 </head>
-<body>
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
     <div class="wrapper">
         <div class="card">
             <div class="card-header">
