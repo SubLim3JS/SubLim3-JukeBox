@@ -6,13 +6,14 @@ SubLim3 JukeBox Files - This will create a folder with SubLim3's custom configs.
 
 ## SubLim3 Custom Updates
 
-- Applies the **SubLim3 green theme (#32CD56)** to replace the default Phoniebox blue UI.
-- Installs custom styling files `custom-sublim3.css` into the Phoniebox CSS directory.
-- Converts **player control buttons to transparent with green icons** and green hover highlight.
-- Updates **navigation tabs, progress bars, WiFi SSID banner, sliders, and buttons** to match the SubLim3 theme.
-- Adds a **SubLim3 Update button** to the System Info page for one-click updates from the web interface.
+- Applies the SubLim3 green theme to replace the default blue UI.
+- Adds a settings option to change the color theme.
+- Installs custom styling files into the CSS directory.
+- Converts **player control buttons to transparent with theme icons** and theme hover highlight.
+- Updates **navigation tabs, progress bars, WiFi SSID banner, sliders, and buttons** to match the theme.
+- Adds a **Update** button to the System Info page for one-click updates from the web interface.
 - Enables **GitHub-based updates** using `git pull` to retrieve the latest SubLim3 repository changes.
-- Automatically **backs up existing Phoniebox files** before replacing them (`filename-BACKUP`).
+- Automatically **backs up existing system files** before replacing them (`filename-BACKUP`).
 - Updates core UI files including `func.php`, `index.php`, `search.php`, `settings.php`, and `systemInfo.php`.
 - Adds a GPIO Buttons script for Volume and Track Control.
 - Allows for **USB Import** features to allow users to add audio to the system.
