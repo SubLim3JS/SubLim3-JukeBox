@@ -373,8 +373,8 @@ if (!empty($_FILES['importFileUpload'])) {
     <a href="#RFIDimport" class="btn xbtn-info ">
       <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
     </a> |
-    <a href="#wlanIpRead" class="xbtn xbtn-default ">
-      <i class='mdi mdi-wifi'></i> <?php print $lang['settingsWlanReadNav']; ?>
+    <a href="#manageFilesFolders" class="xbtn xbtn-default ">
+      <i class='mdi mdi-folder-multiple'></i> <?php print $lang['settingsWlanReadNav']; ?>
     </a> |
   </div>
 </div>
