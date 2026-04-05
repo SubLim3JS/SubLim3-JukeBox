@@ -206,20 +206,6 @@ if (!$cardRegisterAccessEnabled && !$adminOverrideActive) {
 
 // check stuff to be done
 include("inc.processCheckCardEditRegister.php");
-
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#FFFFFF !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Read IP Address
-        </a>
-      </div>
-    </div>
         
 /*
 * FILE UPLOAD
@@ -341,6 +327,20 @@ if (!empty($_FILES['importFileUpload'])) {
     }
 }
 ?>
+
+    <div class="row" style="margin-top:15px;">
+      <div class="col-sm-4">
+        <a href="manageFilesFolders.php"
+           class="btn btn-lg btn-block"
+           style="
+             background:#FFFFFF00 !important;
+             border-color:#FFFFFF !important;
+             color:#FFFFFF !important;
+           ">
+          <i class="mdi mdi-folder-multiple"></i> Read IP Address
+        </a>
+      </div>
+    </div>
 
 <?php if ($adminOverrideActive) { ?>
 <div class="row">
