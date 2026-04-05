@@ -177,6 +177,26 @@ include("inc.navigation.php");
 $conf['shared_abs'] = realpath(getcwd() . '/../shared/');
 
 /*******************************************
+* QUICK ACTION: UPLOAD FILES BUTTON
+*******************************************/
+?>
+<div class="row" style="margin-top:15px;">
+  <div class="col-sm-4">
+    <a href="manageFilesFolders.php"
+       class="btn btn-lg btn-block"
+       style="
+         background:#FFFFFF00 !important;
+         border:2px solid #FFFFFF !important;
+         color:#ffffff !important;
+         font-weight:bold;
+       ">
+      <i class="mdi mdi-folder-multiple"></i> Upload Files
+    </a>
+  </div>
+</div>
+<?php
+
+/*******************************************
 * ACCESS DENIED VIEW
 *******************************************/
 if (!$cardRegisterAccessEnabled && !$adminOverrideActive) {
