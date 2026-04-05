@@ -373,7 +373,7 @@ if (!empty($_FILES['importFileUpload'])) {
     <a href="#RFIDimport" class="btn xbtn-info ">
       <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
     </a> |
-    <a href="manageFilesFolders.php" class="btn btn-primary">
+    <a href="manageFilesFolders.php" style="display:inline-block; padding:8px 14px; border-radius:4px; background:#ffffff; color:#222222; text-decoration:none; font-weight:bold; border:1px solid #cccccc;">
       <i class='mdi mdi-folder-multiple'></i> Manage Audio Files
     </a>
   </div>
@@ -387,7 +387,7 @@ if (!empty($_FILES['importFileUpload'])) {
         <strong>Need to upload or organize audio before assigning a card?</strong>
       </div>
       <div>
-        <a href="manageFilesFolders.php" class="btn btn-default">
+        <a href="manageFilesFolders.php" style="display:inline-block; padding:10px 16px; border-radius:4px; background:#ffffff; color:#222222; text-decoration:none; font-weight:bold; border:1px solid #cccccc;">
           <i class='mdi mdi-folder-multiple'></i> Upload / Manage Audio
         </a>
       </div>
