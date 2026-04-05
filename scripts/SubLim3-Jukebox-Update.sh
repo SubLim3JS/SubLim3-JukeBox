@@ -7,7 +7,6 @@ TARGET_DIR="/home/pi/RPi-Jukebox-RFID"
 BACKUP_SUFFIX="-BACKUP"
 ERRORS=0
 
-RFID_TRIGGER_TARGET="$TARGET_DIR/scripts/rfid_trigger_play.sh"
 FEEDBACK_SCRIPT="$TARGET_DIR/scripts/sublim3-feedback.sh"
 
 UDEV_SOURCE_DIR="$SOURCE_DIR/overrides/udev"
@@ -75,14 +74,18 @@ update_repo() {
   current_branch="$(git branch --show-current 2>/dev/null)"
   echo "[INFO] Current branch: ${current_branch:-unknown}"
 
-  if ! git rev-parse --verify origin/main >/dev/null 2>&1; then
-    echo "[INFO] Fetching origin/main..."
-    git fetch origin main >/dev/null 2>&1
+  echo "[INFO] Fetching latest updates..."
+  if git fetch origin main >/dev/null 2>&1; then
+    echo "[OK] Fetch complete"
+  else
+    echo "[ERROR] Git fetch failed"
+    ERRORS=$((ERRORS + 1))
+    return 1
   fi
 
-  if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo "[WARN] Local changes detected in repo."
-    echo "[INFO] Stashing local changes before pull..."
+  if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+    echo "[WARN] Local changes detected in repo"
+    echo "[INFO] Stashing local changes before reset..."
     if git stash push -u -m "SubLim3 auto-stash before update" >/dev/null 2>&1; then
       echo "[OK] Local changes stashed"
     else
@@ -92,15 +95,6 @@ update_repo() {
     fi
   else
     echo "[OK] Repo clean"
-  fi
-
-  echo "[INFO] Fetching latest updates..."
-  if git fetch origin main >/dev/null 2>&1; then
-    echo "[OK] Fetch complete"
-  else
-    echo "[ERROR] Git fetch failed"
-    ERRORS=$((ERRORS + 1))
-    return 1
   fi
 
   echo "[INFO] Resetting local repo to origin/main..."
@@ -128,14 +122,14 @@ copy_with_backup() {
   mkdir -p "$(dirname "$dst")"
 
   if [ -f "$dst" ]; then
-    cp -f "$dst" "${dst}${BACKUP_SUFFIX}"
+    cp -f "$dst" "${dst}${BACKUP_SUFFIX}" 2>/dev/null
   fi
 
   if cp -f "$src" "$dst"; then
     echo "[OK] $(basename "$src") -> $dst"
     return 0
   else
-    echo "[ERROR] Failed to copy $(basename "$src")"
+    echo "[ERROR] Failed to copy $(basename "$src") -> $dst"
     ERRORS=$((ERRORS + 1))
     return 1
   fi
@@ -181,14 +175,14 @@ copy_with_backup_sudo() {
   sudo mkdir -p "$(dirname "$dst")"
 
   if sudo test -f "$dst"; then
-    sudo cp -f "$dst" "${dst}${BACKUP_SUFFIX}"
+    sudo cp -f "$dst" "${dst}${BACKUP_SUFFIX}" 2>/dev/null
   fi
 
   if sudo cp -f "$src" "$dst"; then
     echo "[OK] $(basename "$src") -> $dst"
     return 0
   else
-    echo "[ERROR] Failed to copy $(basename "$src") to $dst"
+    echo "[ERROR] Failed to copy $(basename "$src") -> $dst"
     ERRORS=$((ERRORS + 1))
     return 1
   fi
@@ -208,9 +202,11 @@ deploy_directory() {
 
     case "$rel" in
       theme-color)
+        # Preserve user's currently selected UI color
         copy_if_missing "$file" "$dst_dir/$rel"
         ;;
       *)
+        # cardRegisterAccess and all other settings ALWAYS overwrite from GitHub
         copy_with_backup "$file" "$dst_dir/$rel"
         ;;
     esac
@@ -230,6 +226,39 @@ deploy_directory_sudo() {
     local rel="${file#$src_dir/}"
     copy_with_backup_sudo "$file" "$dst_dir/$rel"
   done < <(find "$src_dir" -type f | sort)
+}
+
+deploy_repo_scripts() {
+  print_section "Deploying scripts"
+
+  local script_src_dir="$SOURCE_DIR/scripts"
+  local script_dst_dir="$TARGET_DIR/scripts"
+
+  if [ ! -d "$script_src_dir" ]; then
+    echo "[WARN] Missing scripts directory: $script_src_dir"
+    ERRORS=$((ERRORS + 1))
+    return 1
+  fi
+
+  while IFS= read -r file; do
+    local name
+    name="$(basename "$file")"
+
+    case "$name" in
+      SubLim3-Jukebox-Update.sh)
+        echo "[OK] Skipping repo-maintenance script: $name"
+        ;;
+      SubLim3-Generate-Overrides.sh)
+        echo "[OK] Skipping repo-maintenance script: $name"
+        ;;
+      gpio-buttons.py)
+        echo "[OK] Skipping $name here (managed via overrides/settings if needed)"
+        ;;
+      *)
+        copy_with_backup "$file" "$script_dst_dir/$name"
+        ;;
+    esac
+  done < <(find "$script_src_dir" -maxdepth 1 -type f | sort)
 }
 
 deploy_system_files() {
@@ -257,38 +286,12 @@ deploy_system_files() {
   fi
 }
 
-patch_rfid_trigger() {
-  print_section "Patching RFID script"
-
-  if [ ! -f "$RFID_TRIGGER_TARGET" ]; then
-    echo "[WARN] RFID trigger script not found"
-    return 0
-  fi
-
-  if grep -q 'sublim3-feedback.sh" rfid' "$RFID_TRIGGER_TARGET"; then
-    echo "[OK] RFID patch already applied"
-    return 0
-  fi
-
-  cp "$RFID_TRIGGER_TARGET" "${RFID_TRIGGER_TARGET}${BACKUP_SUFFIX}"
-
-  sed -i '/if \[ "\$CARDID" \]; then/a\    bash "/home/pi/RPi-Jukebox-RFID/scripts/sublim3-feedback.sh" rfid >/dev/null 2>&1 &' "$RFID_TRIGGER_TARGET"
-
-  if grep -q 'sublim3-feedback.sh" rfid' "$RFID_TRIGGER_TARGET"; then
-    echo "[OK] RFID feedback hook added"
-  else
-    echo "[ERROR] Failed to patch RFID trigger script"
-    ERRORS=$((ERRORS + 1))
-  fi
-}
-
 fix_permissions() {
   print_section "Fixing permissions"
 
   chmod +x "$SOURCE_DIR/scripts/"*.sh 2>/dev/null
   chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null
   chmod +x "$TARGET_DIR/settings/"*.py 2>/dev/null
-  chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
 
   chgrp -R www-data "$TARGET_DIR/settings" 2>/dev/null
   chmod 775 "$TARGET_DIR/settings" 2>/dev/null
@@ -299,7 +302,8 @@ fix_permissions() {
   fi
 
   if [ -f "$TARGET_DIR/settings/cardRegisterAccess" ]; then
-    chmod +x "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
+    chgrp www-data "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
+    chmod 664 "$TARGET_DIR/settings/cardRegisterAccess" 2>/dev/null
   fi
 
   if [ -d "$SYSTEMD_SOURCE_DIR" ]; then
@@ -353,19 +357,17 @@ show_system_file_check() {
 main() {
   print_header
 
-  update_repo
+  update_repo || true
 
   print_section "Deploying overrides"
   deploy_directory "$SOURCE_DIR/overrides/htdocs" "$TARGET_DIR/htdocs"
   deploy_directory "$SOURCE_DIR/overrides/settings" "$TARGET_DIR/settings"
   deploy_directory "$SOURCE_DIR/overrides/icons" "$TARGET_DIR/htdocs/_assets/icons"
 
-  print_section "Deploying scripts"
-  copy_with_backup "$SOURCE_DIR/scripts/sublim3-feedback.sh" "$TARGET_DIR/scripts/sublim3-feedback.sh"
+  deploy_repo_scripts
 
   play_feedback_bg update
 
-  patch_rfid_trigger
   fix_permissions
   deploy_system_files
   show_version_check
