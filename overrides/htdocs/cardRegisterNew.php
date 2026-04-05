@@ -670,5 +670,53 @@ $(document).ready(function() {
 })();
 </script>
 
+<script>
+(function() {
+    function textContainsYoutube(el) {
+        if (!el) return false;
+        var txt = (el.textContent || el.innerText || '').toLowerCase();
+        return txt.indexOf('youtube') !== -1 || txt.indexOf('you tube') !== -1;
+    }
+
+    function hideClosestYoutubeGroup(el) {
+        if (!el) return;
+
+        var targets = [
+            el.closest('.form-group'),
+            el.closest('.panel'),
+            el.closest('fieldset'),
+            el.closest('.row')
+        ];
+
+        for (var i = 0; i < targets.length; i++) {
+            if (targets[i]) {
+                targets[i].style.display = 'none';
+                return;
+            }
+        }
+
+        el.style.display = 'none';
+    }
+
+    function hideYoutubeBits() {
+        var candidates = document.querySelectorAll('label, span, small, p, a, button, option, h1, h2, h3, h4, h5, h6, div');
+        Array.prototype.forEach.call(candidates, function(el) {
+            if (textContainsYoutube(el)) {
+                hideClosestYoutubeGroup(el);
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideYoutubeBits);
+    } else {
+        hideYoutubeBits();
+    }
+
+    setTimeout(hideYoutubeBits, 250);
+    setTimeout(hideYoutubeBits, 1000);
+})();
+</script>
+
 </body>
 </html>
