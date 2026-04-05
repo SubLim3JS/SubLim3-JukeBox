@@ -328,6 +328,20 @@ if (!empty($_FILES['importFileUpload'])) {
 }
 ?>
 
+    <div class="row" style="margin-top:15px;">
+      <div class="col-sm-4">
+        <a href="readIP.php"
+           class="btn btn-lg btn-block"
+           style="
+             background:#2196F3 !important;
+             border-color:#2196F3 !important;
+             color:#ffffff !important;
+           ">
+          <i class="mdi mdi-wifi"></i> Read IP Address
+        </a>
+      </div>
+    </div>
+
 <?php if ($adminOverrideActive) { ?>
 <div class="row">
   <div class="col-lg-12">
