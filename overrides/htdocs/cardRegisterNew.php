@@ -373,6 +373,9 @@ if (!empty($_FILES['importFileUpload'])) {
     <a href="#RFIDimport" class="btn xbtn-info ">
       <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
     </a>
+    <a href="#wlanIpRead" class="xbtn xbtn-default ">
+      <i class='mdi mdi-wifi'></i> <?php print $lang['settingsWlanReadNav']; ?>
+    </a> |
   </div>
 </div>
 <br/>
@@ -464,6 +467,20 @@ include("inc.formCardEdit.php");
       <h4 class="panel-title"><a name="RFIDimport"></a>
         <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
       </h4>
+    </div>
+
+    <div class="row" style="margin-top:15px;">
+      <div class="col-sm-4">
+        <a href="manageFilesFolders.php"
+           class="btn btn-lg btn-block"
+           style="
+             background:#FFFFFF00 !important;
+             border-color:#FFFFFF !important;
+             color:#FFFFFF !important;
+           ">
+          <i class="mdi mdi-wifi"></i> Read IP Address
+        </a>
+      </div>
     </div>
 
     <div class="panel-body">
