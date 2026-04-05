@@ -380,6 +380,20 @@ if (!empty($_FILES['importFileUpload'])) {
 </div>
 <br/>
 
+    <div class="row" style="margin-top:15px;">
+      <div class="col-sm-4">
+        <a href="manageFilesFolders.php"
+           class="btn btn-lg btn-block"
+           style="
+             background:#FFFFFF00 !important;
+             border-color:#FFFFFF !important;
+             color:#FFFFFF !important;
+           ">
+          <i class="mdi mdi-folder-multiple"></i> Read IP Address
+        </a>
+      </div>
+    </div>
+
 <div class="panel-group">
   <div class="panel panel-default">
     <div class="panel-heading">
