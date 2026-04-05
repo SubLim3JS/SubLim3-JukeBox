@@ -363,22 +363,33 @@ if (!empty($_FILES['importFileUpload'])) {
 
 <div class="row">
   <div class="col-lg-12">
-<strong><?php print $lang['globalJumpTo']; ?>:</strong>
-<a href="#RFIDinteractive" class="btn xbtn-info ">
-  <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
-</a> |
-<a href="#RFIDexport" class="btn xbtn-info ">
-  <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
-</a> |
-<a href="#RFIDimport" class="btn xbtn-info ">
-  <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
-</a> |
-<a href="manageFilesFolders.php" class="btn xbtn-info ">
-  <i class='mdi mdi-folder-multiple'></i> Manage Audio Files
-</a>
+    <strong><?php print $lang['globalJumpTo']; ?>:</strong>
+    <a href="#RFIDinteractive" class="btn xbtn-info ">
+      <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+    </a> |
+    <a href="#RFIDexport" class="btn xbtn-info ">
+      <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
+    </a> |
+    <a href="#RFIDimport" class="btn xbtn-info ">
+      <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
+    </a> |
+    <a href="manageFilesFolders.php" class="btn btn-primary">
+      <i class='mdi mdi-folder-multiple'></i> Manage Audio Files
+    </a>
   </div>
 </div>
 <br/>
+
+<div class="row">
+  <div class="col-lg-12">
+    <div class="alert alert-info">
+      Need to upload or organize audio before assigning a card?
+      <a href="manageFilesFolders.php" class="btn btn-primary btn-sm" style="margin-left:10px;">
+        <i class='mdi mdi-folder-multiple'></i> Upload / Manage Audio
+      </a>
+    </div>
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
