@@ -382,7 +382,7 @@ if (!empty($_FILES['importFileUpload'])) {
 
     <div class="row" style="margin-top:15px;">
       <div class="col-sm-4">
-        <a href="managerFilesFolders.php"
+        <a href="manageFilesFolders.php"
            class="btn btn-lg btn-block"
            style="
              background:#FFFFFF00 !important;
