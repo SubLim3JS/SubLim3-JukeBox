@@ -374,7 +374,7 @@ if (!empty($_FILES['importFileUpload'])) {
       <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
     </a> |
     <a href="manageFilesFolders.php" style="display:inline-block; padding:8px 14px; border-radius:4px; background:#ffffff; color:#222222; text-decoration:none; font-weight:bold; border:1px solid #cccccc;">
-      <i class='mdi mdi-folder-multiple'></i> Manage Audio Files
+      <i class='mdi mdi-folder-multiple'></i> Upload Audio Files
     </a>
   </div>
 </div>
@@ -389,7 +389,7 @@ if (!empty($_FILES['importFileUpload'])) {
              border-color:#FFFFFF !important;
              color:#ffffff !important;
            ">
-          <i class="mdi mdi-folder-multiple"></i> Upload Files Here
+          <i class="mdi mdi-folder-multiple"></i> Upload Audio Files
         </a>
       </div>
     </div>
