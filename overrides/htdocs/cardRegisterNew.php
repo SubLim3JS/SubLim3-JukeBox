@@ -389,7 +389,7 @@ if (!empty($_FILES['importFileUpload'])) {
              border-color:#FFFFFF !important;
              color:#ffffff !important;
            ">
-          <i class="mdi mdi-wifi"></i> Upload Files Here
+          <i class="mdi mdi-folder-multiple"></i> Upload Files Here
         </a>
       </div>
     </div>
