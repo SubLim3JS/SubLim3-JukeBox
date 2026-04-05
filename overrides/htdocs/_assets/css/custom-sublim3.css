@@ -345,3 +345,8 @@ input[type=range]::-ms-thumb {
 a:hover {
   color: var(--sublim3-hover-text) !important;
 }
+
+/* HIDE ADMIN NAV LINKS */
+a[href="manageFilesFolders.php"] {
+  display: none !important;
+}
