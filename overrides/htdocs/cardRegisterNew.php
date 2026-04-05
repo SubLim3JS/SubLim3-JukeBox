@@ -385,8 +385,8 @@ if (!empty($_FILES['importFileUpload'])) {
         <a href="managerFilesFolders.php"
            class="btn btn-lg btn-block"
            style="
-             background:#2196F3 !important;
-             border-color:#2196F3 !important;
+             background:#FFFFFF00 !important;
+             border-color:#FFFFFF !important;
              color:#ffffff !important;
            ">
           <i class="mdi mdi-wifi"></i> Upload Files Here
