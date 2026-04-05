@@ -161,6 +161,59 @@ if ($adminOverrideActive) {
 }
 
 /*******************************************
+* FILE/FOLDER URL PARAMETERS
+*******************************************/
+if (!isset($post) || !is_array($post)) {
+    $post = array();
+}
+
+if (isset($_GET['folder']) && trim($_GET['folder']) != "") {
+    $post['folder'] = trim($_GET['folder']);
+} else {
+    if (isset($_POST['folder']) && trim($_POST['folder']) != "") {
+        $post['folder'] = trim($_POST['folder']);
+    }
+}
+
+if (isset($_GET['folderNew']) && trim($_GET['folderNew']) != "") {
+    $post['folderNew'] = trim($_GET['folderNew']);
+} else {
+    if (isset($_POST['folderNew']) && trim($_POST['folderNew']) != "") {
+        $post['folderNew'] = trim($_POST['folderNew']);
+    }
+}
+
+if (isset($_GET['filename']) && $_GET['filename'] != "") {
+    $post['filename'] = $_GET['filename'];
+} else {
+    if (isset($_POST['filename']) && $_POST['filename'] != "") {
+        $post['filename'] = $_POST['filename'];
+    }
+}
+
+if (isset($_GET['folderCreateNew']) && trim($_GET['folderCreateNew']) != "") {
+    $post['folderCreateNew'] = trim($_GET['folderCreateNew']);
+} else {
+    if (isset($_POST['folderCreateNew']) && trim($_POST['folderCreateNew']) != "") {
+        $post['folderCreateNew'] = trim($_POST['folderCreateNew']);
+    }
+}
+
+if (isset($_GET['folderParent']) && trim($_GET['folderParent']) != "") {
+    $post['folderParent'] = trim($_GET['folderParent']);
+} else {
+    if (isset($_POST['folderParent']) && trim($_POST['folderParent']) != "") {
+        $post['folderParent'] = trim($_POST['folderParent']);
+    }
+}
+
+if (!isset($post['folder'])) { $post['folder'] = ''; }
+if (!isset($post['folderNew'])) { $post['folderNew'] = ''; }
+if (!isset($post['filename'])) { $post['filename'] = ''; }
+if (!isset($post['folderCreateNew'])) { $post['folderCreateNew'] = ''; }
+if (!isset($post['folderParent'])) { $post['folderParent'] = ''; }
+
+/*******************************************
 * START HTML
 *******************************************/
 
@@ -206,9 +259,115 @@ if (!$cardRegisterAccessEnabled && !$adminOverrideActive) {
 
 // check stuff to be done
 include("inc.processCheckCardEditRegister.php");
-        
+
+/*******************************************
+* FILE/FOLDER ACTIONS (MERGED FROM manageFilesFolders.php)
+*******************************************/
+if (!isset($messageAction)) { $messageAction = ""; }
+if (!isset($messageSuccess)) { $messageSuccess = ""; }
+if (!isset($messageWarning)) { $messageWarning = ""; }
+if (!isset($messageError)) { $messageError = ""; }
+
 /*
-* FILE UPLOAD
+* Move uploaded file(s) to audio folder
+*/
+if (isset($_POST['ACTION']) && $_POST['ACTION'] == "fileUpload") {
+    $uFiles = getFiles();
+
+    foreach ($uFiles['ufile'] as $key => $values) {
+        if (trim($values['name']) == "") {
+            unset($uFiles['ufile'][$key]);
+        }
+    }
+
+    if (count($uFiles['ufile']) == 0) {
+        $messageWarning .= "<p>No files were uploaded.</p>";
+    }
+
+    if (
+        isset($post['folder']) &&
+        $post['folder'] != "" &&
+        file_exists($post['folder']) &&
+        is_dir($post['folder'])
+    ) {
+        $moveFolder = $post['folder'];
+    } else {
+        $moveFolder = $Audio_Folders_Path;
+    }
+
+    if (
+        isset($post['folderNew']) &&
+        $post['folderNew'] != ""
+    ) {
+        $moveFolder = $moveFolder . "/" . $post['folderNew'];
+
+        if (!file_exists($moveFolder)) {
+            $exec = 'mkdir "' . $moveFolder . '"; chown -R pi:www-data "' . $moveFolder . '"; sudo chmod -R 777 "' . $moveFolder . '"';
+            exec($exec);
+            $messageAction .= "<p>Will create new folder and move files to: '" . htmlspecialchars($moveFolder) . "'</p>";
+        } else {
+            $messageWarning .= $lang['manageFilesFoldersErrorNewFolderExists'] . " (" . htmlspecialchars($moveFolder) . ")";
+        }
+    }
+
+    if (realpath($moveFolder) == realpath($Audio_Folders_Path)) {
+        $messageWarning .= $lang['manageFilesFoldersErrorNoNewFolder'];
+    }
+
+    if ($messageWarning == "") {
+        foreach ($uFiles['ufile'] as $key => $values) {
+            $targetName = $moveFolder . '/' . $values['name'];
+            $exec = 'mv "' . $values['tmp_name'] . '" "' . $targetName . '"; chown -R pi:www-data "' . $targetName . '"; sudo chmod -R 777 "' . $targetName . '"';
+            exec($exec);
+        }
+        $messageSuccess .= "<p>Files were successfully uploaded.</p>";
+    }
+}
+
+/*
+* Create new folder
+*/
+if (isset($_POST['ACTION']) && $_POST['ACTION'] == "folderCreateNew") {
+    if ($post['folderParent'] != "") {
+        $newDirPathRel = $post['folderParent'] . "/" . $post['folderCreateNew'];
+    } else {
+        $newDirPathRel = $post['folderCreateNew'];
+    }
+
+    if ($post['folderCreateNew'] == "") {
+        $messageWarning .= $lang['manageFilesFoldersErrorNewFolderName'];
+    } else {
+        if (file_exists($Audio_Folders_Path . "/" . $newDirPathRel)) {
+            $messageWarning .= $lang['manageFilesFoldersErrorNewFolderExists'];
+        }
+        if ($post['folderParent'] != "" && !file_exists($Audio_Folders_Path . "/" . $post['folderParent'])) {
+            $messageWarning .= $lang['manageFilesFoldersErrorNewFolderNotParent'];
+        }
+    }
+
+    if ($messageWarning == "") {
+        $exec = 'mkdir "' . $Audio_Folders_Path . '/' . $newDirPathRel . '"; sudo chmod -R 777 "' . $Audio_Folders_Path . '/' . $newDirPathRel . '"; chown -R pi:www-data "' . $Audio_Folders_Path . '/' . $newDirPathRel . '"';
+        exec($exec);
+        $messageSuccess .= "<p>" . $lang['manageFilesFoldersSuccessNewFolder'] . " '" . htmlspecialchars($newDirPathRel) . "'</p>";
+    }
+}
+
+/*
+* Build audio folder list for merged upload/folder panel
+*/
+$audiofolders_abs = dir_list_recursively($Audio_Folders_Path);
+usort($audiofolders_abs, 'strcasecmp');
+
+$audiofolders = array();
+foreach ($audiofolders_abs as $audiofolder) {
+    $relpath = substr($audiofolder, strlen($Audio_Folders_Path) + 1, strlen($audiofolder));
+    if ($relpath != "") {
+        $audiofolders[$audiofolder] = $relpath;
+    }
+}
+
+/*
+* RFID CSV IMPORT
 */
 if (!empty($_FILES['importFileUpload'])) {
     $conf['upload_abs'] = realpath(getcwd() . '/../temp/');
@@ -350,8 +509,7 @@ if (!empty($_FILES['importFileUpload'])) {
     <div id="cardRegisterCountdownBanner" class="alert <?php print $cardRegisterBannerClass; ?>">
       <strong>Temporary Access Active</strong><br>
       Card registration access expires in
-      <span id="cardRegisterCountdown"
-            data-expire-ts="<?php print $cardRegisterExpiresTs; ?>">
+      <span id="cardRegisterCountdown" data-expire-ts="<?php print $cardRegisterExpiresTs; ?>">
         <?php print htmlspecialchars($cardRegisterCountdownText); ?>
       </span>
       <br>
@@ -364,11 +522,11 @@ if (!empty($_FILES['importFileUpload'])) {
 <div class="row">
   <div class="col-lg-12">
     <strong><?php print $lang['globalJumpTo']; ?>:</strong>
+    <a href="#RFIDinteractive" class="btn xbtn-info ">
+      <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+    </a> |
     <a href="#RFIDuploadfiles" class="btn xbtn-info ">
       <i class='mdi mdi-folder-multiple'></i> Upload Files
-    </a> |
-      <a href="#RFIDinteractive" class="btn xbtn-info ">
-      <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
     </a> |
     <a href="#RFIDexport" class="btn xbtn-info ">
       <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
@@ -379,34 +537,6 @@ if (!empty($_FILES['importFileUpload'])) {
   </div>
 </div>
 <br/>
-
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#FFFFFF !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Read IP Address
-        </a>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#FFFFFF !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Read IP Address
-        </a>
-      </div>
-    </div>
 
 <div class="panel-group">
   <div class="panel panel-default">
@@ -420,13 +550,16 @@ if (!empty($_FILES['importFileUpload'])) {
       <div class="row ">
         <div class="col-lg-12">
 <?php
-if ($messageAction == "" && $messageError == "") {
+if ($messageAction == "" && $messageError == "" && $messageWarning == "") {
     $messageAction = $lang['cardRegisterMessageDefault'] . $lang['cardRegisterManualLinks'];
 }
 if (isset($messageSuccess) && $messageSuccess != "") {
     print '<div class="alert alert-success">' . $messageSuccess . '<p>' . $lang['cardRegisterMessageSwipeNew'] . '</p></div>';
     unset($post);
 } else {
+    if (isset($messageWarning) && $messageWarning != "") {
+        print '<div class="alert alert-warning">' . $messageWarning . '</div>';
+    }
     if (isset($warning)) {
         print '<div class="alert alert-warning">WARNING: ' . $warning . '</div>';
     }
@@ -452,21 +585,6 @@ if ($debug == "true") {
         </div>
       </div>
 
-      <div class="row" style="margin-top:15px; margin-bottom:20px;">
-        <div class="col-lg-12">
-          <a name="RFIDuploadfiles"></a>
-          <a href="manageFilesFolders.php"
-             class="btn btn-lg btn-block"
-             style="
-               background:transparent !important;
-               border:1px solid #ffffff !important;
-               color:#ffffff !important;
-             ">
-            <i class="mdi mdi-folder-multiple"></i> Upload Files
-          </a>
-        </div>
-      </div>
-
       <div class="row">
         <div class="col-lg-12">
 <?php
@@ -484,19 +602,154 @@ include("inc.formCardEdit.php");
   </div>
 </div>
 
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#FFFFFF !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Read IP Address
-        </a>
+<div class="panel-group">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title"><a name="RFIDuploadfiles"></a>
+        <i class='mdi mdi-folder-multiple'></i> Upload Files and Folders
+      </h4>
+    </div>
+
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="alert alert-info">
+            Upload audio files into an existing folder, create a new folder while uploading, or create a new folder by itself.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-12">
+          <form class="form-horizontal" name="fileUpload" enctype="multipart/form-data" method="post" action="<?php print $_SERVER['PHP_SELF']; ?>">
+            <input type="hidden" name="folder" value="<?php print htmlspecialchars($post['folder']); ?>">
+            <input type="hidden" name="filename" value="<?php print htmlspecialchars($post['filename']); ?>">
+            <input type="hidden" name="ACTION" value="fileUpload">
+
+            <fieldset>
+              <legend><i class='mdi mdi-upload-multiple'></i> <?php print $lang['manageFilesFoldersUploadLegend']; ?></legend>
+
+              <div class="form-group">
+                <label class="col-md-3 control-label" for="ufile"><?php print $lang['manageFilesFoldersUploadFilesLabel']; ?></label>
+                <div class="col-md-7">
+                  <input class="form-control" name="ufile[]" type="file" multiple accept="audio/*" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-md-3 control-label" for="folder"><?php print $lang['manageFilesFoldersUploadLabel']; ?></label>
+                <div class="col-md-7">
+                  <select id="folder" name="folder" class="form-control">
+                    <option value="false"><?php print $lang['manageFilesFoldersSelectDefault']; ?></option>
+                    <?php
+                    foreach ($audiofolders as $keyfolder => $audiofolder) {
+                        print "<option value='" . htmlspecialchars($keyfolder, ENT_QUOTES) . "'";
+                        if ($keyfolder == $post['folder']) {
+                            print " selected=selected";
+                        }
+                        print ">" . htmlspecialchars($audiofolder) . "</option>\n";
+                    }
+                    ?>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-md-3 control-label" for="folderNew"></label>
+                <div class="col-md-7">
+                  <input
+                    value="<?php print htmlspecialchars($post['folderNew']); ?>"
+                    id="folderNew"
+                    name="folderNew"
+                    placeholder="<?php print htmlspecialchars($lang['cardFormYTFolderPlaceholder']); ?>"
+                    class="form-control input-md"
+                    type="text">
+                  <span class="help-block"><?php print $lang['manageFilesFoldersUploadFolderHelp']; ?></span>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="form-group">
+              <label class="col-md-3 control-label" for="submit"></label>
+              <div class="col-md-9">
+                <button id="submit" name="submit" class="btn btn-success" value="fileUpload">
+                  <i class="mdi mdi-upload"></i> <?php print $lang['globalUpload']; ?>
+                </button>
+                <br clear="all"><br>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <hr>
+
+      <div class="row">
+        <div class="col-lg-12">
+          <form class="form-horizontal" name="folderCreate" enctype="multipart/form-data" method="post" action="<?php print $_SERVER['PHP_SELF']; ?>">
+            <input type="hidden" name="folder" value="<?php print htmlspecialchars($post['folder']); ?>">
+            <input type="hidden" name="ACTION" value="folderCreateNew">
+
+            <fieldset>
+              <legend><i class='mdi mdi-folder-plus'></i> <?php print $lang['manageFilesFoldersNewFolderTitle']; ?></legend>
+
+              <div class="form-group">
+                <label class="col-md-3 control-label" for="folderCreateNew"><?php print $lang['globalFolderName']; ?></label>
+                <div class="col-md-7">
+                  <input
+                    value="<?php print htmlspecialchars($post['folderCreateNew']); ?>"
+                    id="folderCreateNew"
+                    name="folderCreateNew"
+                    placeholder="<?php print htmlspecialchars($lang['cardFormYTFolderPlaceholder']); ?>"
+                    class="form-control input-md"
+                    type="text">
+                  <span class="help-block"><?php print $lang['folderCreateNew']; ?></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="col-md-3 control-label" for="folderParent"><?php print $lang['manageFilesFoldersNewFolderPositionLegend']; ?></label>
+                <div class="col-md-7">
+                  <select id="folderParent" name="folderParent" class="form-control">
+                    <option value=""><?php print $lang['manageFilesFoldersNewFolderPositionDefault']; ?></option>
+                    <?php
+                    foreach ($audiofolders as $keyfolder => $audiofolder) {
+                        print "<option value='" . htmlspecialchars($audiofolder, ENT_QUOTES) . "'";
+                        if ($audiofolder == $post['folderParent']) {
+                            print " selected=selected";
+                        }
+                        print ">" . htmlspecialchars($audiofolder) . "</option>\n";
+                    }
+                    ?>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="form-group">
+              <label class="col-md-3 control-label" for="submit"></label>
+              <div class="col-md-7">
+                <button id="submit" name="submit" class="btn btn-success" value="folderCreateNew">
+                  <i class="mdi mdi-folder-plus"></i> <?php print $lang['globalCreate']; ?>
+                </button>
+                <br clear="all"><br>
+              </div>
+            </div>
+          </form>
+
+          <?php
+          if ($edition == "plusSpotify") {
+              print "
+              <legend><i class='mdi mdi-autorenew'></i> " . $lang['manageFilesFoldersRenewDB'] . "</legend>
+              <h4>" . $lang['manageFilesFoldersRenewDBinfo'] . "</h4>
+              <a href='" . $_SERVER['PHP_SELF'] . "?scan=true' class='btn btn-success'> " . $lang['manageFilesFoldersLocalScan'] . "</a>";
+          }
+          ?>
+        </div>
       </div>
     </div>
+  </div>
+</div>
 
 <div class="panel-group">
   <div class="panel panel-default">
