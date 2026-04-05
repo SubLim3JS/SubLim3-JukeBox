@@ -670,57 +670,5 @@ $(document).ready(function() {
 })();
 </script>
 
-<script>
-(function() {
-    function hideYoutubeSections() {
-        var selectors = [
-            '.panel',
-            '.form-group',
-            '.well',
-            '.alert',
-            '.row',
-            'fieldset',
-            'div'
-        ];
-
-        function textContainsYoutube(el) {
-            if (!el) return false;
-            var txt = (el.textContent || el.innerText || '').toLowerCase();
-            return txt.indexOf('youtube') !== -1 || txt.indexOf('you tube') !== -1;
-        }
-
-        selectors.forEach(function(selector) {
-            var nodes = document.querySelectorAll(selector);
-            Array.prototype.forEach.call(nodes, function(node) {
-                if (textContainsYoutube(node)) {
-                    node.style.display = 'none';
-                }
-            });
-        });
-
-        var links = document.querySelectorAll('a, button, label, h1, h2, h3, h4, h5, h6, span');
-        Array.prototype.forEach.call(links, function(el) {
-            if (textContainsYoutube(el)) {
-                var parent = el.closest('.panel, .form-group, .well, .alert, .row, fieldset, div');
-                if (parent) {
-                    parent.style.display = 'none';
-                } else {
-                    el.style.display = 'none';
-                }
-            }
-        });
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', hideYoutubeSections);
-    } else {
-        hideYoutubeSections();
-    }
-
-    window.setTimeout(hideYoutubeSections, 300);
-    window.setTimeout(hideYoutubeSections, 1000);
-})();
-</script>
-
 </body>
 </html>
