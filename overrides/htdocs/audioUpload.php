@@ -27,7 +27,6 @@ function sanitizeRelativePath($path) {
             continue;
         }
 
-        // Keep spaces, dashes, underscores, parentheses, apostrophes, ampersands
         $part = preg_replace('/[^A-Za-z0-9 _\-\(\)\&\'.]/', '', $part);
         $part = preg_replace('/\s+/', ' ', $part);
         $part = trim($part);
@@ -55,11 +54,7 @@ function sanitizeFileName($filename) {
         $name = 'audiofile';
     }
 
-    if ($ext !== '') {
-        return $name . '.' . $ext;
-    }
-
-    return $name;
+    return ($ext !== '') ? ($name . '.' . $ext) : $name;
 }
 
 function getAllAudioFolders($baseDir) {
@@ -101,11 +96,9 @@ function makeUniqueFilePath($dir, $filename) {
     $counter = 1;
 
     while (file_exists($candidate)) {
-        if ($ext !== '') {
-            $candidate = $dir . '/' . $name . ' (' . $counter . ').' . $ext;
-        } else {
-            $candidate = $dir . '/' . $name . ' (' . $counter . ')';
-        }
+        $candidate = ($ext !== '')
+            ? $dir . '/' . $name . ' (' . $counter . ').' . $ext
+            : $dir . '/' . $name . ' (' . $counter . ')';
         $counter++;
     }
 
@@ -241,114 +234,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container">
   <div class="row">
-    <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+    <div class="col-md-12">
       <div class="panel panel-primary">
         <div class="panel-heading">
-          <h3 class="panel-title">
-            <i class="mdi mdi-upload"></i> Audio Upload
-          </h3>
+          <h1 class="panel-title"><i class="mdi mdi-upload"></i> Audio Upload</h1>
         </div>
         <div class="panel-body">
 
           <div class="alert alert-info">
-            Upload audio files directly into your SubLim3 JukeBox library.
-            You can choose an existing folder or create a new one.
+            Upload audio files directly into your SubLim3 JukeBox library. Choose an existing folder or create a new one.
           </div>
 
-          <?php if (!empty($messages)) : ?>
+          <?php if (!empty($messages)) { ?>
             <div class="alert alert-success">
-              <?php foreach ($messages as $msg) : ?>
+              <?php foreach ($messages as $msg) { ?>
                 <div><?php echo $msg; ?></div>
-              <?php endforeach; ?>
+              <?php } ?>
             </div>
-          <?php endif; ?>
+          <?php } ?>
 
-          <?php if (!empty($errors)) : ?>
+          <?php if (!empty($errors)) { ?>
             <div class="alert alert-danger">
-              <?php foreach ($errors as $err) : ?>
+              <?php foreach ($errors as $err) { ?>
                 <div><?php echo $err; ?></div>
-              <?php endforeach; ?>
+              <?php } ?>
             </div>
-          <?php endif; ?>
+          <?php } ?>
 
-          <form action="" method="post" enctype="multipart/form-data" class="form-horizontal">
+          <form action="" method="post" enctype="multipart/form-data">
 
             <div class="form-group">
-              <label class="col-sm-3 control-label" for="existing_folder">Existing Folder</label>
-              <div class="col-sm-9">
-                <select class="form-control" name="existing_folder" id="existing_folder">
-                  <option value="." <?php echo ($selectedExistingFolder === '.') ? 'selected' : ''; ?>>/ (audiofolders root)</option>
-                  <?php foreach ($existingFolders as $folder) : ?>
-                    <?php if ($folder === '.') continue; ?>
-                    <option value="<?php echo htmlspecialchars($folder); ?>" <?php echo ($selectedExistingFolder === $folder) ? 'selected' : ''; ?>>
-                      <?php echo htmlspecialchars($folder); ?>
-                    </option>
-                  <?php endforeach; ?>
-                </select>
-                <p class="help-block">
-                  Pick an existing folder, or leave this and create a new folder below.
-                </p>
-              </div>
+              <label for="existing_folder">Existing Folder</label>
+              <select class="form-control" name="existing_folder" id="existing_folder">
+                <option value="." <?php echo ($selectedExistingFolder === '.') ? 'selected' : ''; ?>>/ (audiofolders root)</option>
+                <?php foreach ($existingFolders as $folder) {
+                    if ($folder === '.') { continue; } ?>
+                  <option value="<?php echo htmlspecialchars($folder); ?>" <?php echo ($selectedExistingFolder === $folder) ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($folder); ?>
+                  </option>
+                <?php } ?>
+              </select>
+              <p class="help-block">Pick an existing folder, or leave this and create a new folder below.</p>
             </div>
 
             <div class="form-group">
-              <label class="col-sm-3 control-label" for="new_folder">New Folder</label>
-              <div class="col-sm-9">
-                <input
-                  type="text"
-                  class="form-control"
-                  name="new_folder"
-                  id="new_folder"
-                  value="<?php echo htmlspecialchars($newFolderInput); ?>"
-                  placeholder="Example: Harry Potter/Book 1"
-                >
-                <p class="help-block">
-                  Optional. If filled in, this new folder path will be used instead of the existing folder selection.
-                </p>
-              </div>
+              <label for="new_folder">New Folder</label>
+              <input
+                type="text"
+                class="form-control"
+                name="new_folder"
+                id="new_folder"
+                value="<?php echo htmlspecialchars($newFolderInput); ?>"
+                placeholder="Example: Harry Potter/Book 1"
+              >
+              <p class="help-block">Optional. If filled in, this new folder path will be used instead of the existing folder selection.</p>
             </div>
 
             <div class="form-group">
-              <label class="col-sm-3 control-label" for="audio_files">Audio Files</label>
-              <div class="col-sm-9">
-                <input
-                  type="file"
-                  class="form-control"
-                  name="audio_files[]"
-                  id="audio_files"
-                  multiple
-                  accept=".mp3,.wav,.ogg,.m4a,.flac,.aac,.opus,audio/*"
-                >
-                <p class="help-block">
-                  Allowed: mp3, wav, ogg, m4a, flac, aac, opus
-                </p>
-              </div>
+              <label for="audio_files">Audio Files</label>
+              <input
+                type="file"
+                class="form-control"
+                name="audio_files[]"
+                id="audio_files"
+                multiple
+                accept=".mp3,.wav,.ogg,.m4a,.flac,.aac,.opus,audio/*"
+              >
+              <p class="help-block">Allowed: mp3, wav, ogg, m4a, flac, aac, opus</p>
             </div>
 
-            <div class="form-group">
-              <div class="col-sm-9 col-sm-offset-3">
-                <button type="submit" class="btn btn-primary">
-                  <i class="mdi mdi-upload"></i> Upload Audio
-                </button>
-              </div>
-            </div>
-
+            <button type="submit" class="btn btn-primary">
+              <i class="mdi mdi-upload"></i> Upload Audio
+            </button>
           </form>
         </div>
       </div>
 
       <div class="panel panel-default">
         <div class="panel-heading">
-          <h3 class="panel-title">
-            <i class="mdi mdi-information-outline"></i> Notes
-          </h3>
+          <h3 class="panel-title"><i class="mdi mdi-information-outline"></i> Notes</h3>
         </div>
         <div class="panel-body">
-          <ul style="margin-bottom:0;">
+          <ul>
             <li>Uploaded files are stored in <code>shared/audiofolders</code>.</li>
-            <li>If a filename already exists, this page will auto-rename the new file instead of overwriting it.</li>
+            <li>If a filename already exists, the new file will be renamed instead of overwriting it.</li>
             <li>If uploads fail, check permissions on <code>/home/pi/RPi-Jukebox-RFID/shared/audiofolders</code>.</li>
-            <li>Large uploads may also require PHP upload size limits to be increased.</li>
+            <li>Large uploads may require PHP upload size limits to be increased.</li>
           </ul>
         </div>
       </div>
