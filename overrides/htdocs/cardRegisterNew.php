@@ -361,25 +361,14 @@ if (!empty($_FILES['importFileUpload'])) {
 </div>
 <?php } ?>
 
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#FFFFFF !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Read IP Address
-        </a>
-      </div>
-    </div>
-
 <div class="row">
   <div class="col-lg-12">
     <strong><?php print $lang['globalJumpTo']; ?>:</strong>
     <a href="#RFIDinteractive" class="btn xbtn-info ">
       <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
+    </a> |
+    <a href="#RFIDuploadfiles" class="btn xbtn-info ">
+      <i class='mdi mdi-folder-multiple'></i> Upload Files
     </a> |
     <a href="#RFIDexport" class="btn xbtn-info ">
       <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
@@ -435,6 +424,21 @@ if ($debug == "true") {
         </div>
       </div>
 
+      <div class="row" style="margin-top:15px; margin-bottom:20px;">
+        <div class="col-lg-12">
+          <a name="RFIDuploadfiles"></a>
+          <a href="manageFilesFolders.php"
+             class="btn btn-lg btn-block"
+             style="
+               background:transparent !important;
+               border:1px solid #ffffff !important;
+               color:#ffffff !important;
+             ">
+            <i class="mdi mdi-folder-multiple"></i> Upload Files
+          </a>
+        </div>
+      </div>
+
       <div class="row">
         <div class="col-lg-12">
 <?php
@@ -471,20 +475,6 @@ include("inc.formCardEdit.php");
     </div>
   </div>
 </div>
-
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#FFFFFF !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Upload Files
-        </a>
-      </div>
-    </div>
 
 <div class="panel-group">
   <div class="panel panel-default">
