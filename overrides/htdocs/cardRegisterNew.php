@@ -372,27 +372,10 @@ if (!empty($_FILES['importFileUpload'])) {
     </a> |
     <a href="#RFIDimport" class="btn xbtn-info ">
       <i class='mdi mdi-plus-circle'></i> <?php print $lang['cardImportAnchorLink']; ?>
-    </a> |
-    <a href="manageFilesFolders.php" style="display:inline-block; padding:8px 14px; border-radius:4px; background:#ffffff; color:#222222; text-decoration:none; font-weight:bold; border:1px solid #cccccc;">
-      <i class='mdi mdi-folder-multiple'></i> Upload Audio Files
     </a>
   </div>
 </div>
 <br/>
-
-    <div class="row" style="margin-top:15px;">
-      <div class="col-sm-4">
-        <a href="manageFilesFolders.php"
-           class="btn btn-lg btn-block"
-           style="
-             background:#FFFFFF00 !important;
-             border-color:#FFFFFF !important;
-             color:#ffffff !important;
-           ">
-          <i class="mdi mdi-folder-multiple"></i> Upload Audio Files
-        </a>
-      </div>
-    </div>
 
 <div class="panel-group">
   <div class="panel panel-default">
