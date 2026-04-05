@@ -382,11 +382,15 @@ if (!empty($_FILES['importFileUpload'])) {
 
 <div class="row">
   <div class="col-lg-12">
-    <div class="alert alert-info">
-      Need to upload or organize audio before assigning a card?
-      <a href="manageFilesFolders.php" class="btn btn-primary btn-sm" style="margin-left:10px;">
-        <i class='mdi mdi-folder-multiple'></i> Upload / Manage Audio
-      </a>
+    <div class="alert alert-info" style="display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap;">
+      <div>
+        <strong>Need to upload or organize audio before assigning a card?</strong>
+      </div>
+      <div>
+        <a href="manageFilesFolders.php" class="btn btn-default">
+          <i class='mdi mdi-folder-multiple'></i> Upload / Manage Audio
+        </a>
+      </div>
     </div>
   </div>
 </div>
