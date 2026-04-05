@@ -364,11 +364,11 @@ if (!empty($_FILES['importFileUpload'])) {
 <div class="row">
   <div class="col-lg-12">
     <strong><?php print $lang['globalJumpTo']; ?>:</strong>
-    <a href="#RFIDinteractive" class="btn xbtn-info ">
-      <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
-    </a> |
     <a href="#RFIDuploadfiles" class="btn xbtn-info ">
       <i class='mdi mdi-folder-multiple'></i> Upload Files
+    </a> |
+      <a href="#RFIDinteractive" class="btn xbtn-info ">
+      <i class='mdi mdi-cards-outline'></i> <?php print $lang['cardRegisterTitle']; ?>
     </a> |
     <a href="#RFIDexport" class="btn xbtn-info ">
       <i class='mdi mdi-download'></i> <?php print $lang['cardExportAnchorLink']; ?>
