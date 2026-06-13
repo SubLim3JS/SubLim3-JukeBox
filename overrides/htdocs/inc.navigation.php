@@ -50,7 +50,7 @@
       
 <!-- sub menu -->
       <ul class="nav navbar-nav navbar-right">
-	    <li><a href='game.php' class='mainMenu'><i class='mdi mdi-settings'></i> <?php print $lang['navGame']; ?></a></li>
+	    <li><a href='game.php' class='mainMenu'><i class='mdi mdi-shield-sword'></i> <?php print $lang['navGame']; ?></a></li>
       </ul>
 	  <!-- sub menu -->
       <ul class="nav navbar-nav navbar-right">
