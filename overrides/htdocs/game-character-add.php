@@ -165,14 +165,14 @@ html_bootstrap3_createHeader(
                     <div class="col-sm-4">
                         <div class="form-group">
                             <label for="max_hp">Max HP</label>
-                            <input id="max_hp" class="form-control input-lg" type="number" name="max_hp" value="10" min="0">
+                            <input id="max_hp" class="form-control input-lg" type="number" name="max_hp" value="100" min="0">
                         </div>
                     </div>
 
                     <div class="col-sm-4">
                         <div class="form-group">
                             <label for="hp">Current HP</label>
-                            <input id="hp" class="form-control input-lg" type="number" name="hp" value="10" min="0">
+                            <input id="hp" class="form-control input-lg" type="number" name="hp" value="100" min="0">
                         </div>
                     </div>
 
