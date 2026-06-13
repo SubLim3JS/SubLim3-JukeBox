@@ -98,8 +98,52 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
                     $created = $game["created"] ?? "";
                     ?>
 
-                    <a class="list-group-item"
-                       href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>">
+                    <div class="list-group-item">
+
+    <div class="row">
+
+        <div class="col-xs-9">
+
+            <a href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>"
+               style="display:block;text-decoration:none;color:inherit;">
+
+                <h4 class="list-group-item-heading">
+                    <i class="glyphicon glyphicon-book"></i>
+                    <?= htmlspecialchars($gameName) ?>
+                </h4>
+
+                <p class="list-group-item-text">
+                    Created:
+                    <?= htmlspecialchars($created) ?>
+                </p>
+
+            </a>
+
+        </div>
+
+        <div class="col-xs-3 text-right">
+
+            <form method="post"
+                  style="display:inline;"
+                  onsubmit="return confirm('Delete campaign &quot;<?= htmlspecialchars(addslashes($gameName)) ?>&quot;?\n\nThis cannot be undone.');">
+
+                <input type="hidden"
+                       name="delete_game"
+                       value="<?= htmlspecialchars($gameId) ?>">
+
+                <button type="submit"
+                        class="btn btn-danger btn-sm">
+                    <i class="glyphicon glyphicon-trash"></i>
+                    Delete
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
 
                         <h4 class="list-group-item-heading">
                             <i class="glyphicon glyphicon-book"></i>
