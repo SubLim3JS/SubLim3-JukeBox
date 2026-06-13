@@ -113,7 +113,7 @@ html_bootstrap3_createHeader(
 
                 <a class="btn btn-primary btn-lg btn-block"
                    href="game-settings.php">
-                    <i class="glyphicon glyphicon-cog"></i>
+                    <i class="mdi mdi-settings"></i>
                     Campaign Settings
                 </a>
             </div>
@@ -127,7 +127,7 @@ html_bootstrap3_createHeader(
 
 <div class="text-center">
     <a class="btn btn-default btn-lg" href="index.php">
-        <i class="glyphicon glyphicon-music"></i>
+        <i class="mdi mdi-music"></i>
         Return to JukeBox Mode
     </a>
 </div>
