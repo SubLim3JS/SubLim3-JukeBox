@@ -91,7 +91,7 @@ html_bootstrap3_createHeader(
 
                 <a class="btn btn-primary btn-lg btn-block"
                    href="game-players.php">
-                    <i class="glyphicon glyphicon-user"></i>
+                    <i class="mdi mdi-account-edit"></i>
                     Manage Players
                 </a>
             </div>
