@@ -47,11 +47,16 @@
 		}
 		?>
       </ul>
-      
-<!-- sub menu -->
-      <ul class="nav navbar-nav navbar-right">
-	    <li><a href='game.php' class='mainMenu'><i class='mdi mdi-sword-cross'></i> <?php print $lang['navGame']; ?></a></li>
-      </ul>
+		
+      <!-- Game Mode -->
+<ul class="nav navbar-nav">
+    <li>
+        <a href="game.php" class="mainMenu">
+            <i class="mdi mdi-sword-cross"></i>
+            Game Mode
+        </a>
+    </li>
+</ul>
 	  <!-- sub menu -->
       <ul class="nav navbar-nav navbar-right">
         <li><a href='index.php?shutdown=true' class='mainMenu'><i class='mdi mdi-power'></i> <?php print $lang['navShutdown']; ?></a></li>
