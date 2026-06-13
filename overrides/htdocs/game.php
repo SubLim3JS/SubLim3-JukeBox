@@ -65,7 +65,7 @@ html_bootstrap3_createHeader(
 
                 <a class="btn btn-primary btn-lg btn-block"
                    href="game-load.php">
-                    <i class="glyphicon glyphicon-folder-open"></i>
+                    <i class="mdi mdi-bookshelf"></i>
                     Load Campaign
                 </a>
             </div>
@@ -91,7 +91,7 @@ html_bootstrap3_createHeader(
 
                 <a class="btn btn-primary btn-lg btn-block"
                    href="game-players.php">
-                    <i class="mdi mdi-account-edit"></i>
+                    <i class="mdi mdi-account-multiple"></i>
                     Manage Players
                 </a>
             </div>
