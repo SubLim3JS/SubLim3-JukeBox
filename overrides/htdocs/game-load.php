@@ -113,7 +113,7 @@ html_bootstrap3_createHeader(
 
                             <div class="col-xs-8 col-sm-9">
 
-                                <a href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>"
+                                <a href="game-dashboard.php?game_id=<?= urlencode($gameId) ?>"
                                    style="display:block;text-decoration:none;color:inherit;">
 
                                     <h4 class="list-group-item-heading">
