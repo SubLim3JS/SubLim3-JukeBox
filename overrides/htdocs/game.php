@@ -2,85 +2,93 @@
 include("inc.header.php");
 ?>
 
-<div class="container" style="max-width:1000px; margin-top:30px;">
+<style>
+.game-mode-wrap {
+    max-width: 760px;
+    margin: 35px auto;
+}
 
-    <div class="text-center" style="margin-bottom:40px;">
-        <h1>
-            <i class="fa fa-dice-d20"></i> Game Mode
-        </h1>
-        <p class="lead">
-            Launch a new adventure or continue an existing campaign.
-        </p>
-    </div>
+.game-mode-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    text-align: center;
+}
 
-    <div class="row">
+.game-mode-title {
+    font-size: 34px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
 
-        <!-- New Game -->
-        <div class="col-md-6">
-            <div class="panel panel-success text-center" style="min-height:320px;">
-                <div class="panel-heading">
-                    <h3 class="panel-title">
-                        <i class="fa fa-plus-circle"></i> New Game
-                    </h3>
-                </div>
+.game-mode-subtitle {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 28px;
+}
 
-                <div class="panel-body" style="padding:30px;">
-                    <div style="font-size:72px; color:#5cb85c; margin-bottom:20px;">
-                        <i class="fa fa-dragon"></i>
-                    </div>
+.game-mode-btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 18px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 10px;
+}
 
-                    <p>
-                        Create a new campaign and enter character information,
-                        stats, and party details.
-                    </p>
+.game-mode-btn small {
+    display: block;
+    font-size: 13px;
+    font-weight: normal;
+    margin-top: 5px;
+    opacity: 0.85;
+}
 
-                    <br>
+.game-mode-footer {
+    margin-top: 24px;
+}
+</style>
 
-                    <a class="btn btn-success btn-lg btn-block"
-                       href="game-new.php">
-                        <i class="fa fa-play"></i> Start New Game
-                    </a>
-                </div>
-            </div>
+<div class="container game-mode-wrap">
+
+    <div class="game-mode-card">
+
+        <div class="game-mode-title">
+            D&amp;D Game Mode
         </div>
 
-        <!-- Existing Game -->
-        <div class="col-md-6">
-            <div class="panel panel-primary text-center" style="min-height:320px;">
-                <div class="panel-heading">
-                    <h3 class="panel-title">
-                        <i class="fa fa-folder-open"></i> Existing Game
-                    </h3>
-                </div>
-
-                <div class="panel-body" style="padding:30px;">
-                    <div style="font-size:72px; color:#337ab7; margin-bottom:20px;">
-                        <i class="fa fa-users"></i>
-                    </div>
-
-                    <p>
-                        Load a saved campaign and register player cubes to
-                        reconnect characters.
-                    </p>
-
-                    <br>
-
-                    <a class="btn btn-primary btn-lg btn-block"
-                       href="game-load.php">
-                        <i class="fa fa-sign-in"></i> Load Existing Game
-                    </a>
-                </div>
-            </div>
+        <div class="game-mode-subtitle">
+            Choose how you want to begin your adventure.
         </div>
 
-    </div>
-
-    <hr>
-
-    <div class="text-center">
-        <a class="btn btn-default btn-lg" href="index.php">
-            <i class="fa fa-music"></i> Return to JukeBox Mode
+        <a class="btn btn-success btn-lg game-mode-btn" href="game-new.php">
+            Start New Campaign
+            <small>Create a new game and enter character stats.</small>
         </a>
+
+        <a class="btn btn-primary btn-lg game-mode-btn" href="game-load.php">
+            Load Campaign
+            <small>Continue a saved game and register player cubes.</small>
+        </a>
+
+        <a class="btn btn-warning btn-lg game-mode-btn" href="game-players.php">
+            Manage Players
+            <small>Add, edit, or reconnect player cubes.</small>
+        </a>
+
+        <a class="btn btn-info btn-lg game-mode-btn" href="game-settings.php">
+            Campaign Settings
+            <small>Adjust game details, defaults, and options.</small>
+        </a>
+
+        <div class="game-mode-footer">
+            <a class="btn btn-default btn-lg" href="index.php">
+                Return to JukeBox Mode
+            </a>
+        </div>
+
     </div>
 
 </div>
