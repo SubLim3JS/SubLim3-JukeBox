@@ -65,7 +65,7 @@ html_bootstrap3_createHeader(
 
                 <a class="btn btn-primary btn-lg btn-block"
                    href="game-load.php">
-                    <i class="mdi mdi-bookshelf"></i>
+                    <i class="mdi mdi-book-open-variant"></i>
                     Load Campaign
                 </a>
             </div>
