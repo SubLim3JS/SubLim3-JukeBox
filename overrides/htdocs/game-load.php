@@ -13,32 +13,30 @@ if (!is_dir($gameDir)) {
     mkdir($gameDir, 0775, true);
 }
 
-$games = glob($gameDir . "/*/game.json");
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
+function deleteDirectory($dir)
+{
+    if (!is_dir($dir)) {
+        return;
+    }
 
+    $items = array_diff(scandir($dir), ['.', '..']);
+
+    foreach ($items as $item) {
+        $path = $dir . DIRECTORY_SEPARATOR . $item;
+
+        if (is_dir($path)) {
+            deleteDirectory($path);
+        } else {
+            unlink($path);
+        }
+    }
+
+    rmdir($dir);
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
     $gameId = basename($_POST["delete_game"]);
     $gamePath = $gameDir . "/" . $gameId;
-
-    function deleteDirectory($dir)
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-
-        $items = array_diff(scandir($dir), ['.', '..']);
-
-        foreach ($items as $item) {
-            $path = $dir . DIRECTORY_SEPARATOR . $item;
-
-            if (is_dir($path)) {
-                deleteDirectory($path);
-            } else {
-                unlink($path);
-            }
-        }
-
-        rmdir($dir);
-    }
 
     if (is_dir($gamePath)) {
         deleteDirectory($gamePath);
@@ -47,6 +45,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
     header("Location: game-load.php");
     exit;
 }
+
+$games = glob($gameDir . "/*/game.json");
+
+usort($games, function($a, $b) {
+    return filemtime($b) - filemtime($a);
+});
 ?>
 
 <body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
@@ -96,66 +100,56 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
                     $gameId = $game["game_id"] ?? basename(dirname($gameFile));
                     $gameName = $game["game_name"] ?? $gameId;
                     $created = $game["created"] ?? "";
+                    $confirmText = "Delete campaign '" . $gameName . "'?\\n\\nThis cannot be undone.";
                     ?>
 
                     <div class="list-group-item">
 
-    <div class="row">
+                        <div class="row">
 
-        <div class="col-xs-9">
+                            <div class="col-xs-8 col-sm-9">
 
-            <a href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>"
-               style="display:block;text-decoration:none;color:inherit;">
+                                <a href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>"
+                                   style="display:block;text-decoration:none;color:inherit;">
 
-                <h4 class="list-group-item-heading">
-                    <i class="glyphicon glyphicon-book"></i>
-                    <?= htmlspecialchars($gameName) ?>
-                </h4>
+                                    <h4 class="list-group-item-heading">
+                                        <i class="glyphicon glyphicon-book"></i>
+                                        <?= htmlspecialchars($gameName) ?>
+                                    </h4>
 
-                <p class="list-group-item-text">
-                    Created:
-                    <?= htmlspecialchars($created) ?>
-                </p>
+                                    <p class="list-group-item-text">
+                                        Created:
+                                        <?= htmlspecialchars($created) ?>
+                                    </p>
 
-            </a>
+                                </a>
 
-        </div>
+                            </div>
 
-        <div class="col-xs-3 text-right">
+                            <div class="col-xs-4 col-sm-3 text-right">
 
-            <form method="post"
-                  style="display:inline;"
-                  onsubmit="return confirm('Delete campaign &quot;<?= htmlspecialchars(addslashes($gameName)) ?>&quot;?\n\nThis cannot be undone.');">
+                                <form method="post"
+                                      action="game-load.php"
+                                      style="display:inline-block;"
+                                      onsubmit="return confirm(<?= json_encode($confirmText) ?>);">
 
-                <input type="hidden"
-                       name="delete_game"
-                       value="<?= htmlspecialchars($gameId) ?>">
+                                    <input type="hidden"
+                                           name="delete_game"
+                                           value="<?= htmlspecialchars($gameId) ?>">
 
-                <button type="submit"
-                        class="btn btn-danger btn-sm">
-                    <i class="glyphicon glyphicon-trash"></i>
-                    Delete
-                </button>
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm">
+                                        <i class="glyphicon glyphicon-trash"></i>
+                                        Delete
+                                    </button>
 
-            </form>
+                                </form>
 
-        </div>
+                            </div>
 
-    </div>
+                        </div>
 
-</div>
-
-                        <h4 class="list-group-item-heading">
-                            <i class="glyphicon glyphicon-book"></i>
-                            <?= htmlspecialchars($gameName) ?>
-                        </h4>
-
-                        <p class="list-group-item-text">
-                            Created:
-                            <?= htmlspecialchars($created) ?>
-                        </p>
-
-                    </a>
+                    </div>
 
                 <?php endforeach; ?>
 
