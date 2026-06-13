@@ -1,6 +1,12 @@
 <?php
 include("inc.header.php");
 
+html_bootstrap3_createHeader(
+    "en",
+    "New Game | SubLim3 JukeBox",
+    $conf['base_url']
+);
+
 $gameDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game/games";
 
 if (!is_dir($gameDir)) {
@@ -37,23 +43,65 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
+
 <div class="container">
 
-    <h1>New Game</h1>
+<?php include("inc.navigation.php"); ?>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <h1>
+                <i class="glyphicon glyphicon-plus"></i>
+                New Game
+            </h1>
+
+            <p class="lead">
+                Create a new D&amp;D campaign.
+            </p>
+        </div>
+    </div>
 
     <?php if ($message !== ""): ?>
-        <div class="alert alert-warning"><?= htmlspecialchars($message) ?></div>
+        <div class="alert alert-warning">
+            <?= htmlspecialchars($message) ?>
+        </div>
     <?php endif; ?>
 
-    <form method="post">
-        <div class="form-group">
-            <label>Game Name</label>
-            <input class="form-control" type="text" name="game_name" placeholder="Example: Friday Night Campaign">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Campaign Details</strong>
         </div>
 
-        <button class="btn btn-success" type="submit">Create Game</button>
-        <a class="btn btn-default" href="game.php">Cancel</a>
-    </form>
+        <div class="panel-body">
+
+            <form method="post">
+
+                <div class="form-group">
+                    <label for="game_name">Game Name</label>
+                    <input
+                        id="game_name"
+                        class="form-control input-lg"
+                        type="text"
+                        name="game_name"
+                        placeholder="Example: Friday Night Campaign"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <button class="btn btn-primary btn-lg" type="submit">
+                    <i class="glyphicon glyphicon-ok"></i>
+                    Create Game
+                </button>
+
+                <a class="btn btn-default btn-lg" href="game.php">
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+    </div>
 
 </div>
 
