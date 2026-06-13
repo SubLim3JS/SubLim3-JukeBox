@@ -1,94 +1,103 @@
 <?php
 include("inc.header.php");
+html_bootstrap3_createHeader("en", "Game Mode | SubLim3 JukeBox", $conf['base_url']);
 ?>
 
 <style>
-.game-mode-wrap {
-    max-width: 760px;
-    margin: 35px auto;
-}
-
-.game-mode-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 28px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+.game-mode-hero {
     text-align: center;
+    margin: 25px 0 30px 0;
 }
 
-.game-mode-title {
-    font-size: 34px;
+.game-mode-hero h1 {
     font-weight: bold;
-    margin-bottom: 8px;
+    color: var(--sublim3-primary);
 }
 
-.game-mode-subtitle {
-    font-size: 18px;
-    color: #666;
-    margin-bottom: 28px;
+.game-mode-panel {
+    border-color: var(--sublim3-primary);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+}
+
+.game-mode-panel .panel-heading {
+    background: var(--sublim3-primary);
+    color: var(--sublim3-text-on-primary);
+    border-color: var(--sublim3-primary);
 }
 
 .game-mode-btn {
-    display: block;
-    width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 15px;
     padding: 18px;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 10px;
+    text-align: left;
+    border-radius: 8px;
 }
 
-.game-mode-btn small {
+.game-mode-btn strong {
+    display: block;
+    font-size: 20px;
+}
+
+.game-mode-btn span {
     display: block;
     font-size: 13px;
-    font-weight: normal;
-    margin-top: 5px;
-    opacity: 0.85;
+    opacity: 0.9;
 }
 
 .game-mode-footer {
-    margin-top: 24px;
+    text-align: center;
+    margin-top: 25px;
 }
 </style>
 
-<div class="container game-mode-wrap">
+<div class="container">
 
-    <div class="game-mode-card">
-
-        <div class="game-mode-title">
+    <div class="game-mode-hero">
+        <h1>
+            <i class="glyphicon glyphicon-tower"></i>
             D&amp;D Game Mode
+        </h1>
+        <p class="lead">
+            Start a campaign, load a saved game, or manage player cubes.
+        </p>
+    </div>
+
+    <div class="panel panel-primary game-mode-panel">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                Game Mode Menu
+            </h3>
         </div>
 
-        <div class="game-mode-subtitle">
-            Choose how you want to begin your adventure.
-        </div>
+        <div class="panel-body">
 
-        <a class="btn btn-success btn-lg game-mode-btn" href="game-new.php">
-            Start New Campaign
-            <small>Create a new game and enter character stats.</small>
-        </a>
-
-        <a class="btn btn-primary btn-lg game-mode-btn" href="game-load.php">
-            Load Campaign
-            <small>Continue a saved game and register player cubes.</small>
-        </a>
-
-        <a class="btn btn-warning btn-lg game-mode-btn" href="game-players.php">
-            Manage Players
-            <small>Add, edit, or reconnect player cubes.</small>
-        </a>
-
-        <a class="btn btn-info btn-lg game-mode-btn" href="game-settings.php">
-            Campaign Settings
-            <small>Adjust game details, defaults, and options.</small>
-        </a>
-
-        <div class="game-mode-footer">
-            <a class="btn btn-default btn-lg" href="index.php">
-                Return to JukeBox Mode
+            <a class="btn btn-primary btn-lg btn-block game-mode-btn" href="game-new.php">
+                <strong>Start New Campaign</strong>
+                <span>Create a new game and enter character stats.</span>
             </a>
-        </div>
 
+            <a class="btn btn-primary btn-lg btn-block game-mode-btn" href="game-load.php">
+                <strong>Load Campaign</strong>
+                <span>Continue a saved game and begin cube registration.</span>
+            </a>
+
+            <a class="btn btn-primary btn-lg btn-block game-mode-btn" href="game-players.php">
+                <strong>Manage Players</strong>
+                <span>Add, edit, or reconnect D&amp;D Player Cubes.</span>
+            </a>
+
+            <a class="btn btn-primary btn-lg btn-block game-mode-btn" href="game-settings.php">
+                <strong>Campaign Settings</strong>
+                <span>Adjust game defaults, campaign name, and options.</span>
+            </a>
+
+        </div>
+    </div>
+
+    <div class="game-mode-footer">
+        <a class="btn btn-default btn-lg" href="index.php">
+            <i class="glyphicon glyphicon-music"></i>
+            Return to JukeBox Mode
+        </a>
     </div>
 
 </div>
