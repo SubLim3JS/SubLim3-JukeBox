@@ -11,6 +11,8 @@ $sublim3ThemeClass = 'sublim3-theme-dnd-book';
 html_bootstrap3_createHeader("en", "Game Mode | SubLim3 JukeBox", $conf['base_url']);
 
 ?>
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
+  <div class="container">
 
 <style>
 body.sublim3-theme-dnd-book {
