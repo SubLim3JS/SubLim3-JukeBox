@@ -1,12 +1,6 @@
 <?php
 include("inc.header.php");
 
-html_bootstrap3_createHeader(
-    "en",
-    "Load Game | SubLim3 JukeBox",
-    $conf['base_url']
-);
-
 $gameDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game/games";
 
 if (!is_dir($gameDir)) {
@@ -48,9 +42,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
 
 $games = glob($gameDir . "/*/game.json");
 
+if ($games === false) {
+    $games = [];
+}
+
 usort($games, function($a, $b) {
     return filemtime($b) - filemtime($a);
 });
+
+html_bootstrap3_createHeader(
+    "en",
+    "Load Game | SubLim3 JukeBox",
+    $conf['base_url']
+);
 ?>
 
 <body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
@@ -59,18 +63,14 @@ usort($games, function($a, $b) {
 
 <?php include("inc.navigation.php"); ?>
 
-    <div class="row">
-        <div class="col-lg-12">
-            <h1>
-                <i class="glyphicon glyphicon-folder-open"></i>
-                Existing Games
-            </h1>
+    <h1>
+        <i class="mdi mdi-folder-open"></i>
+        Existing Games
+    </h1>
 
-            <p class="lead">
-                Select a campaign to continue.
-            </p>
-        </div>
-    </div>
+    <p class="lead">
+        Select a campaign to continue.
+    </p>
 
     <?php if (empty($games)): ?>
 
@@ -79,7 +79,7 @@ usort($games, function($a, $b) {
         </div>
 
         <a class="btn btn-primary btn-lg" href="game-new.php">
-            <i class="glyphicon glyphicon-plus"></i>
+            <i class="mdi mdi-book-plus"></i>
             Create New Game
         </a>
 
@@ -97,10 +97,14 @@ usort($games, function($a, $b) {
                     <?php
                     $game = json_decode(file_get_contents($gameFile), true);
 
+                    if (!is_array($game)) {
+                        $game = [];
+                    }
+
                     $gameId = $game["game_id"] ?? basename(dirname($gameFile));
                     $gameName = $game["game_name"] ?? $gameId;
-                    $created = $game["created"] ?? "";
-                    $confirmText = "Delete campaign '" . $gameName . "'?\\n\\nThis cannot be undone.";
+                    $created = $game["created"] ?? "Unknown";
+                    $confirmText = "Delete campaign \"" . $gameName . "\"?\n\nThis cannot be undone.";
                     ?>
 
                     <div class="list-group-item">
@@ -113,7 +117,7 @@ usort($games, function($a, $b) {
                                    style="display:block;text-decoration:none;color:inherit;">
 
                                     <h4 class="list-group-item-heading">
-                                        <i class="glyphicon glyphicon-book"></i>
+                                        <i class="mdi mdi-book-open-page-variant"></i>
                                         <?= htmlspecialchars($gameName) ?>
                                     </h4>
 
@@ -131,7 +135,7 @@ usort($games, function($a, $b) {
                                 <form method="post"
                                       action="game-load.php"
                                       style="display:inline-block;"
-                                      onsubmit="return confirm(<?= json_encode($confirmText) ?>);">
+                                      onsubmit='return confirm(<?= json_encode($confirmText) ?>);'>
 
                                     <input type="hidden"
                                            name="delete_game"
@@ -139,7 +143,7 @@ usort($games, function($a, $b) {
 
                                     <button type="submit"
                                             class="btn btn-danger btn-sm">
-                                        <i class="glyphicon glyphicon-trash"></i>
+                                        <i class="mdi mdi-trash-can"></i>
                                         Delete
                                     </button>
 
@@ -159,7 +163,7 @@ usort($games, function($a, $b) {
     <?php endif; ?>
 
     <a class="btn btn-default btn-lg" href="game.php">
-        <i class="glyphicon glyphicon-arrow-left"></i>
+        <i class="mdi mdi-arrow-left"></i>
         Back
     </a>
 
