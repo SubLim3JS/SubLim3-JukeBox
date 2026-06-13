@@ -14,6 +14,39 @@ if (!is_dir($gameDir)) {
 }
 
 $games = glob($gameDir . "/*/game.json");
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["delete_game"])) {
+
+    $gameId = basename($_POST["delete_game"]);
+    $gamePath = $gameDir . "/" . $gameId;
+
+    function deleteDirectory($dir)
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $items = array_diff(scandir($dir), ['.', '..']);
+
+        foreach ($items as $item) {
+            $path = $dir . DIRECTORY_SEPARATOR . $item;
+
+            if (is_dir($path)) {
+                deleteDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+
+        rmdir($dir);
+    }
+
+    if (is_dir($gamePath)) {
+        deleteDirectory($gamePath);
+    }
+
+    header("Location: game-load.php");
+    exit;
+}
 ?>
 
 <body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
