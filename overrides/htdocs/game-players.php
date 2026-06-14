@@ -224,9 +224,9 @@ html_bootstrap3_createHeader(
                     </a>
 
                     <a class="btn btn-default"
-                       href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>">
+                       href="game-cube-scan.php?game_id=<?= urlencode($gameId) ?>">
                         <i class="mdi mdi-cube-outline"></i>
-                        Register Cubes
+                        Scan Cubes
                     </a>
 
                 </div>
