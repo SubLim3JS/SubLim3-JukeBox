@@ -234,118 +234,285 @@ html_bootstrap3_createHeader(
 
         <div class="panel-body">
 
-            <form method="post" id="orderForm">
+            <form method="post" id="orderForm" style="display:none;">
                 <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
                 <input type="hidden" name="action" value="save_order">
                 <input type="hidden" name="battle_order_json" id="battle_order_json" value="">
+            </form>
 
-                <p class="text-muted">
-                    Drag and drop characters or enemies to change the attack order. Changes save automatically.
-                </p>
+            <p class="text-muted">
+                Drag and drop characters or enemies to change the attack order. Changes save automatically.
+            </p>
 
-                <ul id="battleOrderList" class="list-group">
+            <ul id="battleOrderList" class="list-group">
 
-                    <?php
-                    $displayed = [];
+                <?php
+                $displayed = [];
 
-                    foreach ($battle["order"] as $entry):
-                        $type = $entry["type"] ?? "";
-                        $id = $entry["id"] ?? "";
-                        $key = $type . ":" . $id;
+                foreach ($battle["order"] as $entry):
+                    $type = $entry["type"] ?? "";
+                    $id = $entry["id"] ?? "";
+                    $key = $type . ":" . $id;
 
-                        $displayName = "";
-                        $displaySub = "";
-                        $labelClass = "label-default";
+                    if ($type === "character" && isset($characterMap[$id])):
+                        $c = $characterMap[$id];
 
-                        if ($type === "character" && isset($characterMap[$id])) {
-                            $displayName = $characterMap[$id]["character_name"] ?? "Character";
-                            $displaySub = "Player: " . ($characterMap[$id]["player_name"] ?? "");
-                            $labelClass = "label-primary";
-                        }
-
-                        if ($type === "enemy" && isset($enemyMap[$id])) {
-                            $displayName = $enemyMap[$id]["name"] ?? "Enemy";
-                            $displaySub = "Enemy HP: " . ($enemyMap[$id]["hp"] ?? 0) . "/" . ($enemyMap[$id]["max_hp"] ?? 0);
-                            $labelClass = "label-danger";
-                        }
-
-                        if ($displayName === "") {
-                            continue;
-                        }
+                        $characterName = $c["character_name"] ?? "Character";
+                        $playerName = $c["player_name"] ?? "";
+                        $hp = $c["hp"] ?? 0;
+                        $maxHp = $c["max_hp"] ?? 0;
+                        $tempHp = $c["temp_hp"] ?? 0;
+                        $deathSuccess = $c["death_success"] ?? 0;
+                        $deathFail = $c["death_fail"] ?? 0;
+                        $cubeId = $c["cube_id"] ?? "";
 
                         $displayed[$key] = true;
+                ?>
+
+                    <li class="list-group-item"
+                        data-type="character"
+                        data-id="<?= htmlspecialchars($id) ?>"
+                        style="cursor:move;">
+                        <span class="label label-primary">CHARACTER</span>
+
+                        <strong style="margin-left:10px;">
+                            <?= htmlspecialchars($characterName) ?>
+                        </strong>
+
+                        <div class="row" style="margin-top:10px;">
+                            <div class="col-sm-2">
+                                <strong>Player</strong><br>
+                                <?= htmlspecialchars($playerName) ?>
+                            </div>
+
+                            <div class="col-sm-2">
+                                <strong>HP</strong><br>
+                                <?= htmlspecialchars($hp) ?>/<?= htmlspecialchars($maxHp) ?>
+                            </div>
+
+                            <div class="col-sm-2">
+                                <strong>Temp HP</strong><br>
+                                <?= htmlspecialchars($tempHp) ?>
+                            </div>
+
+                            <div class="col-sm-3">
+                                <strong>Death Saves</strong><br>
+                                Success <?= htmlspecialchars($deathSuccess) ?>/3<br>
+                                Fail <?= htmlspecialchars($deathFail) ?>/3
+                            </div>
+
+                            <div class="col-sm-3">
+                                <strong>Cube</strong><br>
+                                <?php if ($cubeId !== ""): ?>
+                                    <span class="label label-success">
+                                        <?= htmlspecialchars($cubeId) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="label label-default">
+                                        Not assigned
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </li>
+
+                <?php
+                    endif;
+
+                    if ($type === "enemy" && isset($enemyMap[$id])):
+                        $enemy = $enemyMap[$id];
+
+                        $enemyName = $enemy["name"] ?? "Enemy";
+                        $enemyHp = $enemy["hp"] ?? 0;
+                        $enemyMaxHp = $enemy["max_hp"] ?? 0;
+
+                        $displayed[$key] = true;
+                ?>
+
+                    <li class="list-group-item"
+                        data-type="enemy"
+                        data-id="<?= htmlspecialchars($id) ?>"
+                        style="cursor:move;">
+                        <span class="label label-danger">ENEMY</span>
+
+                        <strong style="margin-left:10px;">
+                            <?= htmlspecialchars($enemyName) ?>
+                        </strong>
+
+                        <div class="row" style="margin-top:10px;">
+                            <div class="col-sm-3">
+                                <strong>HP</strong><br>
+                                <?= htmlspecialchars($enemyHp) ?>/<?= htmlspecialchars($enemyMaxHp) ?>
+                            </div>
+
+                            <div class="col-sm-9">
+                                <strong>Adjust HP</strong><br>
+
+                                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
+                                    <form method="post" style="display:inline;">
+                                        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                        <input type="hidden" name="action" value="adjust_enemy_hp">
+                                        <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($id) ?>">
+                                        <input type="hidden" name="change" value="<?= htmlspecialchars($amount) ?>">
+
+                                        <button type="submit" class="btn btn-default btn-sm">
+                                            <?= htmlspecialchars(($amount > 0 ? "+" : "") . $amount) ?>
+                                        </button>
+                                    </form>
+                                <?php endforeach; ?>
+
+                                <form method="post"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Remove this temporary enemy?');">
+                                    <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                    <input type="hidden" name="action" value="delete_enemy">
+                                    <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($id) ?>">
+
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="mdi mdi-delete"></i>
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+
+                <?php
+                    endif;
+                endforeach;
+                ?>
+
+                <?php foreach ($characters as $index => $c): ?>
+                    <?php
+                    $characterId = $c["character_id"] ?? ("character_" . $index);
+                    $key = "character:" . $characterId;
+
+                    if (isset($displayed[$key])) {
+                        continue;
+                    }
+
+                    $characterName = $c["character_name"] ?? "Character";
+                    $playerName = $c["player_name"] ?? "";
+                    $hp = $c["hp"] ?? 0;
+                    $maxHp = $c["max_hp"] ?? 0;
+                    $tempHp = $c["temp_hp"] ?? 0;
+                    $deathSuccess = $c["death_success"] ?? 0;
+                    $deathFail = $c["death_fail"] ?? 0;
+                    $cubeId = $c["cube_id"] ?? "";
                     ?>
 
-                        <li class="list-group-item"
-                            data-type="<?= htmlspecialchars($type) ?>"
-                            data-id="<?= htmlspecialchars($id) ?>"
-                            style="cursor:move;">
-                            <span class="label <?= htmlspecialchars($labelClass) ?>">
-                                <?= htmlspecialchars(strtoupper($type)) ?>
-                            </span>
-                            <strong style="margin-left:10px;">
-                                <?= htmlspecialchars($displayName) ?>
-                            </strong>
-                            <br>
-                            <small style="margin-left:85px;">
-                                <?= htmlspecialchars($displaySub) ?>
-                            </small>
-                        </li>
+                    <li class="list-group-item"
+                        data-type="character"
+                        data-id="<?= htmlspecialchars($characterId) ?>"
+                        style="cursor:move;">
+                        <span class="label label-primary">CHARACTER</span>
 
-                    <?php endforeach; ?>
+                        <strong style="margin-left:10px;">
+                            <?= htmlspecialchars($characterName) ?>
+                        </strong>
 
-                    <?php foreach ($characters as $index => $character): ?>
-                        <?php
-                        $characterId = $character["character_id"] ?? ("character_" . $index);
-                        $key = "character:" . $characterId;
+                        <div class="row" style="margin-top:10px;">
+                            <div class="col-sm-2">
+                                <strong>Player</strong><br>
+                                <?= htmlspecialchars($playerName) ?>
+                            </div>
 
-                        if (isset($displayed[$key])) {
-                            continue;
-                        }
-                        ?>
+                            <div class="col-sm-2">
+                                <strong>HP</strong><br>
+                                <?= htmlspecialchars($hp) ?>/<?= htmlspecialchars($maxHp) ?>
+                            </div>
 
-                        <li class="list-group-item"
-                            data-type="character"
-                            data-id="<?= htmlspecialchars($characterId) ?>"
-                            style="cursor:move;">
-                            <span class="label label-primary">CHARACTER</span>
-                            <strong style="margin-left:10px;">
-                                <?= htmlspecialchars($character["character_name"] ?? "Character") ?>
-                            </strong>
-                            <br>
-                            <small style="margin-left:85px;">
-                                Player: <?= htmlspecialchars($character["player_name"] ?? "") ?>
-                            </small>
-                        </li>
-                    <?php endforeach; ?>
+                            <div class="col-sm-2">
+                                <strong>Temp HP</strong><br>
+                                <?= htmlspecialchars($tempHp) ?>
+                            </div>
 
-                    <?php foreach ($battle["enemies"] as $enemy): ?>
-                        <?php
-                        $enemyId = $enemy["enemy_id"] ?? "";
-                        $key = "enemy:" . $enemyId;
+                            <div class="col-sm-3">
+                                <strong>Death Saves</strong><br>
+                                Success <?= htmlspecialchars($deathSuccess) ?>/3<br>
+                                Fail <?= htmlspecialchars($deathFail) ?>/3
+                            </div>
 
-                        if ($enemyId === "" || isset($displayed[$key])) {
-                            continue;
-                        }
-                        ?>
+                            <div class="col-sm-3">
+                                <strong>Cube</strong><br>
+                                <?php if ($cubeId !== ""): ?>
+                                    <span class="label label-success">
+                                        <?= htmlspecialchars($cubeId) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="label label-default">
+                                        Not assigned
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
 
-                        <li class="list-group-item"
-                            data-type="enemy"
-                            data-id="<?= htmlspecialchars($enemyId) ?>"
-                            style="cursor:move;">
-                            <span class="label label-danger">ENEMY</span>
-                            <strong style="margin-left:10px;">
-                                <?= htmlspecialchars($enemy["name"] ?? "Enemy") ?>
-                            </strong>
-                            <br>
-                            <small style="margin-left:85px;">
-                                Enemy HP: <?= htmlspecialchars(($enemy["hp"] ?? 0) . "/" . ($enemy["max_hp"] ?? 0)) ?>
-                            </small>
-                        </li>
-                    <?php endforeach; ?>
+                <?php foreach ($battle["enemies"] as $enemy): ?>
+                    <?php
+                    $enemyId = $enemy["enemy_id"] ?? "";
+                    $key = "enemy:" . $enemyId;
 
-                </ul>
-            </form>
+                    if ($enemyId === "" || isset($displayed[$key])) {
+                        continue;
+                    }
+
+                    $enemyName = $enemy["name"] ?? "Enemy";
+                    $enemyHp = $enemy["hp"] ?? 0;
+                    $enemyMaxHp = $enemy["max_hp"] ?? 0;
+                    ?>
+
+                    <li class="list-group-item"
+                        data-type="enemy"
+                        data-id="<?= htmlspecialchars($enemyId) ?>"
+                        style="cursor:move;">
+                        <span class="label label-danger">ENEMY</span>
+
+                        <strong style="margin-left:10px;">
+                            <?= htmlspecialchars($enemyName) ?>
+                        </strong>
+
+                        <div class="row" style="margin-top:10px;">
+                            <div class="col-sm-3">
+                                <strong>HP</strong><br>
+                                <?= htmlspecialchars($enemyHp) ?>/<?= htmlspecialchars($enemyMaxHp) ?>
+                            </div>
+
+                            <div class="col-sm-9">
+                                <strong>Adjust HP</strong><br>
+
+                                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
+                                    <form method="post" style="display:inline;">
+                                        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                        <input type="hidden" name="action" value="adjust_enemy_hp">
+                                        <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($enemyId) ?>">
+                                        <input type="hidden" name="change" value="<?= htmlspecialchars($amount) ?>">
+
+                                        <button type="submit" class="btn btn-default btn-sm">
+                                            <?= htmlspecialchars(($amount > 0 ? "+" : "") . $amount) ?>
+                                        </button>
+                                    </form>
+                                <?php endforeach; ?>
+
+                                <form method="post"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Remove this temporary enemy?');">
+                                    <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                    <input type="hidden" name="action" value="delete_enemy">
+                                    <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($enemyId) ?>">
+
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="mdi mdi-delete"></i>
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+
+            </ul>
 
             <form method="post" style="display:inline;">
                 <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
@@ -356,85 +523,6 @@ html_bootstrap3_createHeader(
                     Next
                 </button>
             </form>
-
-        </div>
-    </div>
-
-    <div class="panel panel-danger">
-        <div class="panel-heading">
-            <strong>
-                <i class="mdi mdi-skull"></i>
-                Temporary Enemies
-            </strong>
-        </div>
-
-        <div class="panel-body">
-
-            <?php if (empty($battle["enemies"])): ?>
-
-                <div class="alert alert-info">
-                    No temporary enemies added.
-                </div>
-
-            <?php else: ?>
-
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>Enemy</th>
-                                <th>HP</th>
-                                <th>Adjust HP</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <?php foreach ($battle["enemies"] as $enemy): ?>
-                                <tr>
-                                    <td>
-                                        <strong><?= htmlspecialchars($enemy["name"] ?? "Enemy") ?></strong>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars(($enemy["hp"] ?? 0) . "/" . ($enemy["max_hp"] ?? 0)) ?>
-                                    </td>
-
-                                    <td>
-                                        <?php foreach ([-5, -1, 1, 5] as $amount): ?>
-                                            <form method="post" style="display:inline;">
-                                                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                                                <input type="hidden" name="action" value="adjust_enemy_hp">
-                                                <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($enemy["enemy_id"] ?? "") ?>">
-                                                <input type="hidden" name="change" value="<?= htmlspecialchars($amount) ?>">
-                                                <button type="submit" class="btn btn-default btn-sm">
-                                                    <?= htmlspecialchars(($amount > 0 ? "+" : "") . $amount) ?>
-                                                </button>
-                                            </form>
-                                        <?php endforeach; ?>
-                                    </td>
-
-                                    <td>
-                                        <form method="post"
-                                              style="display:inline;"
-                                              onsubmit="return confirm('Remove this temporary enemy?');">
-                                            <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                                            <input type="hidden" name="action" value="delete_enemy">
-                                            <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($enemy["enemy_id"] ?? "") ?>">
-
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="mdi mdi-delete"></i>
-                                                Remove
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-            <?php endif; ?>
 
         </div>
     </div>
@@ -519,6 +607,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (list) {
         Sortable.create(list, {
             animation: 150,
+            filter: "button, input, form",
+            preventOnFilter: false,
             onEnd: function () {
                 saveBattleOrder();
             }
