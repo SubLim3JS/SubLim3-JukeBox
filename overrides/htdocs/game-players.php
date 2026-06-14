@@ -108,19 +108,22 @@ html_bootstrap3_createHeader(
                                         <th>Character</th>
                                         <th>HP</th>
                                         <th>Temp HP</th>
+                                        <th>Death Saves</th>
                                         <th>Cube</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
-                                    <?php foreach ($characters as $character): ?>
+                                    <?php foreach ($characters as $characterIndex => $character): ?>
 
                                         <?php
                                         $playerName = $character["player_name"] ?? "";
-                                        $characterName = $character["character_name"] ?? "";
+                                        $characterName = $character["character_name"] ?? ($character["name"] ?? "Character " . ($characterIndex + 1));
                                         $hp = $character["hp"] ?? 0;
                                         $maxHp = $character["max_hp"] ?? 0;
                                         $tempHp = $character["temp_hp"] ?? 0;
+                                        $deathSuccess = $character["death_success"] ?? 0;
+                                        $deathFail = $character["death_fail"] ?? 0;
                                         $cubeId = $character["cube_id"] ?? "";
                                         ?>
 
@@ -128,9 +131,11 @@ html_bootstrap3_createHeader(
                                             <td><?= htmlspecialchars($playerName) ?></td>
 
                                             <td>
-                                                <strong>
+                                                <a class="btn btn-primary btn-sm"
+                                                   href="dnd-player.php?game_id=<?= urlencode($gameId) ?>&character=<?= urlencode($characterIndex) ?>&dm=1">
+                                                    <i class="mdi mdi-account-edit"></i>
                                                     <?= htmlspecialchars($characterName) ?>
-                                                </strong>
+                                                </a>
                                             </td>
 
                                             <td>
@@ -139,6 +144,12 @@ html_bootstrap3_createHeader(
 
                                             <td>
                                                 <?= htmlspecialchars($tempHp) ?>
+                                            </td>
+
+                                            <td>
+                                                Success <?= htmlspecialchars($deathSuccess) ?>/3
+                                                <br>
+                                                Fail <?= htmlspecialchars($deathFail) ?>/3
                                             </td>
 
                                             <td>
