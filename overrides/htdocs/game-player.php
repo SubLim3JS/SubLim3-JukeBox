@@ -264,6 +264,14 @@ html_bootstrap3_createHeader(
     </div>
 
 </div>
+    
+<?php if (!$isDm): ?>
+<script>
+setInterval(function () {
+    location.reload();
+}, 5000);
+</script>
+<?php endif; ?>
 
 <?php
 include("inc.footer.php");
