@@ -132,7 +132,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         saveCharactersData($charactersFile, $charactersData, $characters, $usesWrapper);
     }
 
-    header("Location: dnd-player.php?character=" . urlencode($selectedIndex));
+    header("Location: game-player.php?character=" . urlencode($selectedIndex));
     exit;
 }
 
@@ -168,7 +168,7 @@ html_bootstrap3_createHeader(
         </div>
     </div>
 
-    <form method="get" action="dnd-player.php" class="form-horizontal">
+    <form method="get" action="game-player.php" class="form-horizontal">
         <div class="form-group">
             <label class="col-sm-2 control-label">Character</label>
             <div class="col-sm-6">
