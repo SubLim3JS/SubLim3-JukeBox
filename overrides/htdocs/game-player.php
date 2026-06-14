@@ -21,7 +21,6 @@ if ($gameId === "") {
 }
 
 $gamePath = $gamesDir . "/" . $gameId;
-$gameFile = $gamePath . "/game.json";
 $charactersFile = $gamePath . "/characters.json";
 
 if (!is_dir($gamePath) || !file_exists($charactersFile)) {
@@ -29,6 +28,7 @@ if (!is_dir($gamePath) || !file_exists($charactersFile)) {
 }
 
 $characters = json_decode(file_get_contents($charactersFile), true);
+
 if (!is_array($characters)) {
     $characters = [];
 }
@@ -72,8 +72,6 @@ if ($selectedIndex === null && count($characters) > 0) {
 if ($selectedIndex === null) {
     die("No characters found.");
 }
-
-$message = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $action = $_POST["action"] ?? "";
@@ -264,14 +262,26 @@ html_bootstrap3_createHeader(
     </div>
 
 </div>
-    
-<?php if (!$isDm): ?>
+
 <script>
-setInterval(function () {
-    location.reload();
+let isEditing = false;
+
+document.querySelectorAll("input, select, textarea").forEach(function(el) {
+    el.addEventListener("focus", function() {
+        isEditing = true;
+    });
+
+    el.addEventListener("blur", function() {
+        isEditing = false;
+    });
+});
+
+setInterval(function() {
+    if (!isEditing) {
+        location.reload();
+    }
 }, 5000);
 </script>
-<?php endif; ?>
 
 <?php
 include("inc.footer.php");
