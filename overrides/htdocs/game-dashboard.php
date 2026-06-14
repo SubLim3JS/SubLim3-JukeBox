@@ -69,6 +69,11 @@ html_bootstrap3_createHeader(
 
     <p class="lead">Campaign Dashboard</p>
 
+    <a class="btn btn-danger btn-lg" href="game-battle.php?game_id=<?= urlencode($gameId) ?>" style="margin-bottom:20px;">
+    <i class="mdi mdi-sword-cross"></i>
+    Battle Mode
+    </a>
+
     <div class="panel panel-primary">
         <div class="panel-heading">
             <strong>
