@@ -2,201 +2,147 @@
 include("inc.header.php");
 
 $baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game";
+$gamesDir = $baseDir . "/games";
 $activeGameFile = $baseDir . "/active-game";
 
-function cleanInt($value, $default = 0) {
-    return is_numeric($value) ? intval($value) : $default;
-}
+$gameId = $_GET["game_id"] ?? $_POST["game_id"] ?? "";
+$characterId = $_GET["character_id"] ?? $_POST["character_id"] ?? "";
+$isDm = (($_GET["dm"] ?? $_POST["dm"] ?? "") === "1");
 
-function getCharacterName($character, $index) {
-    return $character["character_name"] ?? $character["name"] ?? ("Character " . ($index + 1));
-}
-
-function normalizeCharactersData($data) {
-    if (isset($data["characters"]) && is_array($data["characters"])) {
-        return [$data, $data["characters"], true];
-    }
-
-    if (is_array($data)) {
-        return [$data, $data, false];
-    }
-
-    return [[], [], false];
-}
-
-function saveCharactersData($charactersFile, $originalData, $characters, $usesWrapper) {
-    if ($usesWrapper) {
-        $originalData["characters"] = $characters;
-        $saveData = $originalData;
-    } else {
-        $saveData = $characters;
-    }
-
-    file_put_contents(
-        $charactersFile,
-        json_encode($saveData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
-    );
-}
-
-function findCharacterIndex($characters, $characterId, $fallbackIndex = 0) {
-    if ($characterId !== "") {
-        foreach ($characters as $index => $character) {
-            if (($character["character_id"] ?? "") === $characterId) {
-                return $index;
-            }
-        }
-    }
-
-    if ($fallbackIndex >= 0 && $fallbackIndex < count($characters)) {
-        return $fallbackIndex;
-    }
-
-    return 0;
-}
-
-$gameId = basename($_GET["game_id"] ?? $_POST["game_id"] ?? "");
-
-if ($gameId === "") {
-    if (!file_exists($activeGameFile)) {
-        die("No active game selected.");
-    }
-
+if ($gameId === "" && file_exists($activeGameFile)) {
     $gameId = trim(file_get_contents($activeGameFile));
 }
 
 $gameId = basename($gameId);
-$gameDir = $baseDir . "/games/" . $gameId;
+$characterId = trim($characterId);
 
-$gameFile = $gameDir . "/game.json";
-$charactersFile = $gameDir . "/characters.json";
-
-if ($gameId === "" || !file_exists($gameFile) || !file_exists($charactersFile)) {
-    die("Game not found or missing character data.");
+if ($gameId === "") {
+    die("No active game selected.");
 }
 
-$gameData = json_decode(file_get_contents($gameFile), true);
-$charactersDataRaw = json_decode(file_get_contents($charactersFile), true);
+$gamePath = $gamesDir . "/" . $gameId;
+$gameFile = $gamePath . "/game.json";
+$charactersFile = $gamePath . "/characters.json";
 
-list($charactersData, $characters, $usesWrapper) = normalizeCharactersData($charactersDataRaw);
-
-if (!is_array($characters) || count($characters) === 0) {
-    die("No characters found for this game.");
+if (!is_dir($gamePath) || !file_exists($charactersFile)) {
+    die("Game not found.");
 }
 
-$characterId = $_GET["character_id"] ?? $_POST["character_id"] ?? "";
-$fallbackIndex = cleanInt($_GET["character"] ?? $_POST["character"] ?? 0, 0);
-$selectedIndex = findCharacterIndex($characters, $characterId, $fallbackIndex);
-
-if (!isset($characters[$selectedIndex]["character_id"]) || $characters[$selectedIndex]["character_id"] === "") {
-    $characters[$selectedIndex]["character_id"] = "char_" . time() . "_" . $selectedIndex;
-    saveCharactersData($charactersFile, $charactersData, $characters, $usesWrapper);
+$characters = json_decode(file_get_contents($charactersFile), true);
+if (!is_array($characters)) {
+    $characters = [];
 }
 
-$characterId = $characters[$selectedIndex]["character_id"];
+function getCharacterId($character) {
+    return $character["id"]
+        ?? $character["code"]
+        ?? $character["character_id"]
+        ?? "";
+}
+
+function getCharacterName($character) {
+    return $character["name"]
+        ?? $character["character_name"]
+        ?? $character["player_name"]
+        ?? $character["code"]
+        ?? "Unknown";
+}
+
+function saveCharacters($charactersFile, $characters) {
+    file_put_contents(
+        $charactersFile,
+        json_encode($characters, JSON_PRETTY_PRINT)
+    );
+}
+
+$selectedIndex = null;
+
+foreach ($characters as $index => $character) {
+    if ($characterId !== "" && getCharacterId($character) === $characterId) {
+        $selectedIndex = $index;
+        break;
+    }
+}
+
+if ($selectedIndex === null && count($characters) > 0) {
+    $selectedIndex = 0;
+    $characterId = getCharacterId($characters[0]);
+}
+
+if ($selectedIndex === null) {
+    die("No characters found.");
+}
+
+$message = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $field = $_POST["field"] ?? "";
-    $change = cleanInt($_POST["change"] ?? 0, 0);
+    $action = $_POST["action"] ?? "";
 
-    if (!isset($characters[$selectedIndex]["hp"])) {
-        $characters[$selectedIndex]["hp"] = 0;
+    $hp = intval($_POST["hp"] ?? 0);
+    $tempHp = intval($_POST["temp_hp"] ?? 0);
+    $deathSuccess = intval($_POST["death_success"] ?? 0);
+    $deathFail = intval($_POST["death_fail"] ?? 0);
+
+    $maxHp = intval($characters[$selectedIndex]["max_hp"] ?? 0);
+
+    if ($action === "long_rest") {
+        $hp = $maxHp;
+        $tempHp = 0;
+        $deathSuccess = 0;
+        $deathFail = 0;
     }
 
-    if (!isset($characters[$selectedIndex]["max_hp"])) {
-        $characters[$selectedIndex]["max_hp"] = $characters[$selectedIndex]["hp"];
+    if ($maxHp > 0) {
+        $hp = max(0, min($hp, $maxHp));
+    } else {
+        $hp = max(0, $hp);
     }
 
-    if (!isset($characters[$selectedIndex]["temp_hp"])) {
-        $characters[$selectedIndex]["temp_hp"] = 0;
+    $tempHp = max(0, $tempHp);
+    $deathSuccess = max(0, min($deathSuccess, 3));
+    $deathFail = max(0, min($deathFail, 3));
+
+    $characters[$selectedIndex]["hp"] = $hp;
+    $characters[$selectedIndex]["current_hp"] = $hp;
+    $characters[$selectedIndex]["temp_hp"] = $tempHp;
+    $characters[$selectedIndex]["death_success"] = $deathSuccess;
+    $characters[$selectedIndex]["death_saves_success"] = $deathSuccess;
+    $characters[$selectedIndex]["death_fail"] = $deathFail;
+    $characters[$selectedIndex]["death_saves_fail"] = $deathFail;
+    $characters[$selectedIndex]["updated"] = date("Y-m-d H:i:s");
+
+    saveCharacters($charactersFile, $characters);
+
+    $redirectUrl = "game-player.php?game_id=" . urlencode($gameId) .
+        "&character_id=" . urlencode($characterId);
+
+    if ($isDm) {
+        $redirectUrl .= "&dm=1";
     }
 
-    if (!isset($characters[$selectedIndex]["death_success"])) {
-        $characters[$selectedIndex]["death_success"] = 0;
-    }
-
-    if (!isset($characters[$selectedIndex]["death_fail"])) {
-        $characters[$selectedIndex]["death_fail"] = 0;
-    }
-
-    switch ($field) {
-        case "hp":
-            $characters[$selectedIndex]["hp"] = cleanInt($characters[$selectedIndex]["hp"]) + $change;
-
-            if ($characters[$selectedIndex]["hp"] < 0) {
-                $characters[$selectedIndex]["hp"] = 0;
-            }
-
-            if ($characters[$selectedIndex]["hp"] > cleanInt($characters[$selectedIndex]["max_hp"])) {
-                $characters[$selectedIndex]["hp"] = cleanInt($characters[$selectedIndex]["max_hp"]);
-            }
-            break;
-
-        case "max_hp":
-            $characters[$selectedIndex]["max_hp"] = cleanInt($characters[$selectedIndex]["max_hp"]) + $change;
-
-            if ($characters[$selectedIndex]["max_hp"] < 1) {
-                $characters[$selectedIndex]["max_hp"] = 1;
-            }
-
-            if (cleanInt($characters[$selectedIndex]["hp"]) > cleanInt($characters[$selectedIndex]["max_hp"])) {
-                $characters[$selectedIndex]["hp"] = cleanInt($characters[$selectedIndex]["max_hp"]);
-            }
-            break;
-
-        case "temp_hp":
-            $characters[$selectedIndex]["temp_hp"] = cleanInt($characters[$selectedIndex]["temp_hp"]) + $change;
-
-            if ($characters[$selectedIndex]["temp_hp"] < 0) {
-                $characters[$selectedIndex]["temp_hp"] = 0;
-            }
-            break;
-
-        case "death_success":
-            $characters[$selectedIndex]["death_success"] = cleanInt($characters[$selectedIndex]["death_success"]) + $change;
-
-            if ($characters[$selectedIndex]["death_success"] < 0) {
-                $characters[$selectedIndex]["death_success"] = 0;
-            }
-
-            if ($characters[$selectedIndex]["death_success"] > 3) {
-                $characters[$selectedIndex]["death_success"] = 3;
-            }
-            break;
-
-        case "death_fail":
-            $characters[$selectedIndex]["death_fail"] = cleanInt($characters[$selectedIndex]["death_fail"]) + $change;
-
-            if ($characters[$selectedIndex]["death_fail"] < 0) {
-                $characters[$selectedIndex]["death_fail"] = 0;
-            }
-
-            if ($characters[$selectedIndex]["death_fail"] > 3) {
-                $characters[$selectedIndex]["death_fail"] = 3;
-            }
-            break;
-    }
-
-    saveCharactersData($charactersFile, $charactersData, $characters, $usesWrapper);
-
-    header("Location: game-player.php?game_id=" . urlencode($gameId) . "&character_id=" . urlencode($characterId));
+    header("Location: " . $redirectUrl);
     exit;
 }
 
 $character = $characters[$selectedIndex];
 
-$name = getCharacterName($character, $selectedIndex);
-$playerName = $character["player_name"] ?? "";
-$gameName = $gameData["name"] ?? $gameData["game_name"] ?? $gameId;
+$name = getCharacterName($character);
+$hp = intval($character["hp"] ?? $character["current_hp"] ?? 0);
+$maxHp = intval($character["max_hp"] ?? 0);
+$tempHp = intval($character["temp_hp"] ?? 0);
+$deathSuccess = intval($character["death_success"] ?? $character["death_saves_success"] ?? 0);
+$deathFail = intval($character["death_fail"] ?? $character["death_saves_fail"] ?? 0);
 
-$hp = cleanInt($character["hp"] ?? 0);
-$maxHp = cleanInt($character["max_hp"] ?? $hp);
-$tempHp = cleanInt($character["temp_hp"] ?? 0);
-$deathSuccess = cleanInt($character["death_success"] ?? 0);
-$deathFail = cleanInt($character["death_fail"] ?? 0);
+$formAction = "game-player.php?game_id=" . urlencode($gameId) .
+    "&character_id=" . urlencode($characterId);
+
+if ($isDm) {
+    $formAction .= "&dm=1";
+}
 
 html_bootstrap3_createHeader(
     "en",
-    "DnD Player Tracker",
+    "Player Tracker | SubLim3 JukeBox",
     $conf['base_url']
 );
 ?>
@@ -205,175 +151,120 @@ html_bootstrap3_createHeader(
 
 <div class="container">
 
-    <div class="row">
-        <div class="col-lg-12">
-            <h1>DnD Player Tracker</h1>
-            <p class="lead">
-                Active Game:
-                <strong><?php print htmlspecialchars($gameName); ?></strong>
-            </p>
-        </div>
-    </div>
+<?php if ($isDm): ?>
+    <?php include("inc.navigation.php"); ?>
+<?php endif; ?>
 
-    <form method="get" action="game-player.php" class="form-horizontal">
-        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
+    <h1>
+        <i class="mdi mdi-account-heart"></i>
+        <?= htmlspecialchars($name) ?>
+    </h1>
 
-        <div class="form-group">
-            <label class="col-sm-2 control-label">Character</label>
-            <div class="col-sm-6">
-                <select name="character_id" class="form-control" onchange="this.form.submit()">
-                    <?php foreach ($characters as $index => $char): ?>
-                        <?php
-                        $optionCharacterId = $char["character_id"] ?? "";
-                        if ($optionCharacterId === "") {
-                            $optionCharacterId = "index_" . $index;
-                        }
-                        ?>
-                        <option value="<?php print htmlspecialchars($optionCharacterId); ?>" <?php if ($index === $selectedIndex) print "selected"; ?>>
-                            <?php print htmlspecialchars(getCharacterName($char, $index)); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </div>
-    </form>
+    <p class="lead">
+        Player Tracker
+    </p>
 
-    <hr>
-
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title">
-                <?php print htmlspecialchars($name); ?>
-                <?php if ($playerName !== ""): ?>
-                    <small style="color:#fff;"> — <?php print htmlspecialchars($playerName); ?></small>
-                <?php endif; ?>
-            </h3>
-        </div>
-
-        <div class="panel-body">
-
-            <h2>
-                HP:
-                <?php print htmlspecialchars($hp); ?>
-                /
-                <?php print htmlspecialchars($maxHp); ?>
-            </h2>
-
-            <div class="btn-group" style="margin-bottom: 20px;">
-                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="hp">
-                        <input type="hidden" name="change" value="<?php print $amount; ?>">
-                        <button class="btn btn-default btn-lg" type="submit">
-                            <?php print ($amount > 0 ? "+" : "") . $amount; ?>
-                        </button>
-                    </form>
-                <?php endforeach; ?>
-            </div>
-
-            <h3>Max HP: <?php print htmlspecialchars($maxHp); ?></h3>
-
-            <div class="btn-group" style="margin-bottom: 20px;">
-                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="max_hp">
-                        <input type="hidden" name="change" value="<?php print $amount; ?>">
-                        <button class="btn btn-default btn-lg" type="submit">
-                            <?php print ($amount > 0 ? "+" : "") . $amount; ?>
-                        </button>
-                    </form>
-                <?php endforeach; ?>
-            </div>
-
-            <h3>Temp HP: <?php print htmlspecialchars($tempHp); ?></h3>
-
-            <div class="btn-group" style="margin-bottom: 20px;">
-                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="temp_hp">
-                        <input type="hidden" name="change" value="<?php print $amount; ?>">
-                        <button class="btn btn-default btn-lg" type="submit">
-                            <?php print ($amount > 0 ? "+" : "") . $amount; ?>
-                        </button>
-                    </form>
-                <?php endforeach; ?>
-            </div>
-
-            <hr>
-
-            <h3>Death Saves</h3>
-
-            <div class="row">
-                <div class="col-sm-6">
-                    <h4>Success: <?php print htmlspecialchars($deathSuccess); ?> / 3</h4>
-
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="death_success">
-                        <input type="hidden" name="change" value="-1">
-                        <button class="btn btn-warning btn-lg" type="submit">-</button>
-                    </form>
-
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="death_success">
-                        <input type="hidden" name="change" value="1">
-                        <button class="btn btn-success btn-lg" type="submit">+</button>
-                    </form>
-                </div>
-
-                <div class="col-sm-6">
-                    <h4>Failure: <?php print htmlspecialchars($deathFail); ?> / 3</h4>
-
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="death_fail">
-                        <input type="hidden" name="change" value="-1">
-                        <button class="btn btn-warning btn-lg" type="submit">-</button>
-                    </form>
-
-                    <form method="post" style="display:inline;">
-                        <input type="hidden" name="game_id" value="<?php print htmlspecialchars($gameId); ?>">
-                        <input type="hidden" name="character_id" value="<?php print htmlspecialchars($characterId); ?>">
-                        <input type="hidden" name="field" value="death_fail">
-                        <input type="hidden" name="change" value="1">
-                        <button class="btn btn-danger btn-lg" type="submit">+</button>
-                    </form>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <?php if (isset($_GET["dm"])): ?>
+    <?php if ($isDm): ?>
         <p>
-            <a href="game-dashboard.php?game_id=<?php print urlencode($gameId); ?>" class="btn btn-primary">
-                Back to DM Dashboard
+            <a class="btn btn-default" href="game-dashboard.php?game_id=<?= urlencode($gameId) ?>">
+                <i class="mdi mdi-arrow-left"></i>
+                Back to Dashboard
             </a>
 
-            <a href="game-players.php" class="btn btn-default">
+            <a class="btn btn-default" href="game-players.php?game_id=<?= urlencode($gameId) ?>">
+                <i class="mdi mdi-account-group"></i>
                 Back to Manage Players
             </a>
         </p>
     <?php endif; ?>
 
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <strong>Stats</strong>
+        </div>
+
+        <div class="panel-body">
+
+            <form method="post" action="<?= htmlspecialchars($formAction) ?>">
+
+                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                <input type="hidden" name="character_id" value="<?= htmlspecialchars($characterId) ?>">
+
+                <?php if ($isDm): ?>
+                    <input type="hidden" name="dm" value="1">
+                <?php endif; ?>
+
+                <div class="form-group">
+                    <label for="hp">HP</label>
+                    <input
+                        id="hp"
+                        class="form-control input-lg"
+                        type="number"
+                        name="hp"
+                        value="<?= htmlspecialchars($hp) ?>"
+                        min="0"
+                        max="<?= htmlspecialchars($maxHp) ?>"
+                    >
+                    <p class="help-block">
+                        Max HP: <?= htmlspecialchars($maxHp) ?>
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label for="temp_hp">Temp HP</label>
+                    <input
+                        id="temp_hp"
+                        class="form-control input-lg"
+                        type="number"
+                        name="temp_hp"
+                        value="<?= htmlspecialchars($tempHp) ?>"
+                        min="0"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="death_success">Death Saves - Success</label>
+                    <input
+                        id="death_success"
+                        class="form-control input-lg"
+                        type="number"
+                        name="death_success"
+                        value="<?= htmlspecialchars($deathSuccess) ?>"
+                        min="0"
+                        max="3"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="death_fail">Death Saves - Fail</label>
+                    <input
+                        id="death_fail"
+                        class="form-control input-lg"
+                        type="number"
+                        name="death_fail"
+                        value="<?= htmlspecialchars($deathFail) ?>"
+                        min="0"
+                        max="3"
+                    >
+                </div>
+
+                <button class="btn btn-primary btn-lg" type="submit" name="action" value="save">
+                    <i class="mdi mdi-content-save"></i>
+                    Save Stats
+                </button>
+
+                <button class="btn btn-success btn-lg" type="submit" name="action" value="long_rest">
+                    <i class="mdi mdi-weather-night"></i>
+                    Long Rest
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+
 </div>
 
-        <script>
-setTimeout(function () {
-    window.location.reload();
-}, 5000);
-</script>
-    
 <?php
 include("inc.footer.php");
 ?>
