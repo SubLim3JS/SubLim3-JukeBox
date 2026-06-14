@@ -69,52 +69,6 @@ html_bootstrap3_createHeader(
 
     <p class="lead">Campaign Dashboard</p>
 
-    <div class="row">
-
-        <div class="col-sm-4">
-            <div class="panel panel-primary text-center">
-                <div class="panel-heading">
-                    <strong>Characters</strong>
-                </div>
-                <div class="panel-body">
-                    <div style="font-size:42px;font-weight:bold;">
-                        <?= htmlspecialchars($totalCharacters) ?>
-                    </div>
-                    <div>Total Players</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-sm-4">
-            <div class="panel panel-primary text-center">
-                <div class="panel-heading">
-                    <strong>Cubes</strong>
-                </div>
-                <div class="panel-body">
-                    <div style="font-size:42px;font-weight:bold;">
-                        <?= htmlspecialchars($assignedCubes) ?>/<?= htmlspecialchars($totalCharacters) ?>
-                    </div>
-                    <div>Assigned</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-sm-4">
-            <div class="panel panel-primary text-center">
-                <div class="panel-heading">
-                    <strong>Created</strong>
-                </div>
-                <div class="panel-body">
-                    <div style="font-size:18px;font-weight:bold;margin-top:12px;">
-                        <?= htmlspecialchars($created) ?>
-                    </div>
-                    <div>Campaign Date</div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
     <div class="panel panel-primary">
         <div class="panel-heading">
             <strong>
@@ -171,8 +125,9 @@ html_bootstrap3_createHeader(
                                     </td>
 
                                     <td>
-                                        <?= htmlspecialchars($deathSuccess) ?>/3 |
-                                        <?= htmlspecialchars($deathFail) ?>/3
+                                        Success <?= htmlspecialchars($deathSuccess) ?>/3
+                                        <br>
+                                        Fail <?= htmlspecialchars($deathFail) ?>/3
                                     </td>
 
                                     <td>
@@ -200,6 +155,52 @@ html_bootstrap3_createHeader(
             </a>
 
         </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-sm-4">
+            <div class="panel panel-primary text-center">
+                <div class="panel-heading">
+                    <strong>Characters</strong>
+                </div>
+                <div class="panel-body">
+                    <div style="font-size:42px;font-weight:bold;">
+                        <?= htmlspecialchars($totalCharacters) ?>
+                    </div>
+                    <div>Total Players</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4">
+            <div class="panel panel-primary text-center">
+                <div class="panel-heading">
+                    <strong>Cubes</strong>
+                </div>
+                <div class="panel-body">
+                    <div style="font-size:42px;font-weight:bold;">
+                        <?= htmlspecialchars($assignedCubes) ?>/<?= htmlspecialchars($totalCharacters) ?>
+                    </div>
+                    <div>Assigned</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-4">
+            <div class="panel panel-primary text-center">
+                <div class="panel-heading">
+                    <strong>Created</strong>
+                </div>
+                <div class="panel-body">
+                    <div style="font-size:18px;font-weight:bold;margin-top:12px;">
+                        <?= htmlspecialchars($created) ?>
+                    </div>
+                    <div>Campaign Date</div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div class="panel panel-primary">
