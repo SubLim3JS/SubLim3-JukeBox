@@ -132,7 +132,7 @@ html_bootstrap3_createHeader(
 
                                             <td>
                                                 <a class="btn btn-primary btn-sm"
-                                                   href="dnd-player.php?game_id=<?= urlencode($gameId) ?>&character=<?= urlencode($characterIndex) ?>&dm=1">
+                                                   href="game-player.php?game_id=<?= urlencode($gameId) ?>&character=<?= urlencode($characterIndex) ?>&dm=1">
                                                     <i class="mdi mdi-account-edit"></i>
                                                     <?= htmlspecialchars($characterName) ?>
                                                 </a>
