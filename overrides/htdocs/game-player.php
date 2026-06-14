@@ -276,7 +276,7 @@ html_bootstrap3_createHeader(
     </div>
 
     <p>
-        <a href="dnd-dashboard.php?game_id=<?php print urlencode($gameId); ?>" class="btn btn-primary">
+        <a href="game-dashboard.php?game_id=<?php print urlencode($gameId); ?>" class="btn btn-primary">
             Back to DM Dashboard
         </a>
     </p>
