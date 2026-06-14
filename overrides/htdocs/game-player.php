@@ -132,7 +132,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         saveCharactersData($charactersFile, $charactersData, $characters, $usesWrapper);
     }
 
-    header("Location: game-player.php?character=" . urlencode($selectedIndex));
+    header("Location: game-player.php?game_id=" . urlencode($gameId) . "&character=" . urlencode($selectedIndex));
     exit;
 }
 
@@ -277,8 +277,8 @@ html_bootstrap3_createHeader(
 
     <p>
         <a href="game-dashboard.php?game_id=<?php print urlencode($gameId); ?>" class="btn btn-primary">
-            Back to DM Dashboard
-        </a>
+    Back to DM Dashboard
+</a>
     </p>
 
 </div>
