@@ -87,6 +87,13 @@ if (!isset($battle["order"]) || !is_array($battle["order"])) {
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $action = $_POST["action"] ?? "";
 
+    if ($action === "next_turn") {
+        if (count($battle["order"]) > 1) {
+            $first = array_shift($battle["order"]);
+            $battle["order"][] = $first;
+        }
+    }
+
     if ($action === "add_enemy") {
         $enemyName = trim($_POST["enemy_name"] ?? "");
         $enemyHp = cleanInt($_POST["enemy_hp"] ?? 1, 1);
@@ -217,37 +224,6 @@ html_bootstrap3_createHeader(
         <strong><?= htmlspecialchars($gameName) ?></strong>
     </p>
 
-    <div class="panel panel-danger">
-        <div class="panel-heading">
-            <strong>
-                <i class="mdi mdi-plus-circle"></i>
-                Add Temporary Enemy
-            </strong>
-        </div>
-
-        <div class="panel-body">
-            <form method="post" class="form-inline">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                <input type="hidden" name="action" value="add_enemy">
-
-                <div class="form-group">
-                    <label>Enemy Name</label>
-                    <input type="text" name="enemy_name" class="form-control" placeholder="Goblin" required>
-                </div>
-
-                <div class="form-group">
-                    <label>HP</label>
-                    <input type="number" name="enemy_hp" class="form-control" value="10" min="1" required>
-                </div>
-
-                <button type="submit" class="btn btn-danger">
-                    <i class="mdi mdi-plus"></i>
-                    Add Enemy
-                </button>
-            </form>
-        </div>
-    </div>
-
     <div class="panel panel-primary">
         <div class="panel-heading">
             <strong>
@@ -264,7 +240,7 @@ html_bootstrap3_createHeader(
                 <input type="hidden" name="battle_order_json" id="battle_order_json" value="">
 
                 <p class="text-muted">
-                    Drag and drop characters or enemies to set the attack order.
+                    Drag and drop characters or enemies to change the attack order. Changes save automatically.
                 </p>
 
                 <ul id="battleOrderList" class="list-group">
@@ -369,10 +345,15 @@ html_bootstrap3_createHeader(
                     <?php endforeach; ?>
 
                 </ul>
+            </form>
 
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="mdi mdi-content-save"></i>
-                    Save Attack Order
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                <input type="hidden" name="action" value="next_turn">
+
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="mdi mdi-skip-next"></i>
+                    Next
                 </button>
             </form>
 
@@ -458,6 +439,37 @@ html_bootstrap3_createHeader(
         </div>
     </div>
 
+    <div class="panel panel-danger">
+        <div class="panel-heading">
+            <strong>
+                <i class="mdi mdi-plus-circle"></i>
+                Add Temporary Enemy
+            </strong>
+        </div>
+
+        <div class="panel-body">
+            <form method="post" class="form-inline">
+                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                <input type="hidden" name="action" value="add_enemy">
+
+                <div class="form-group">
+                    <label>Enemy Name</label>
+                    <input type="text" name="enemy_name" class="form-control" placeholder="Goblin" required>
+                </div>
+
+                <div class="form-group">
+                    <label>HP</label>
+                    <input type="number" name="enemy_hp" class="form-control" value="10" min="1" required>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="mdi mdi-plus"></i>
+                    Add Enemy
+                </button>
+            </form>
+        </div>
+    </div>
+
     <form method="post"
           onsubmit="return confirm('Clear battle mode? This removes all temporary enemies and attack order.');"
           style="display:inline;">
@@ -485,25 +497,31 @@ document.addEventListener("DOMContentLoaded", function () {
     var form = document.getElementById("orderForm");
     var hiddenInput = document.getElementById("battle_order_json");
 
-    if (list) {
-        Sortable.create(list, {
-            animation: 150
+    function saveBattleOrder() {
+        if (!list || !form || !hiddenInput) {
+            return;
+        }
+
+        var order = [];
+        var items = list.querySelectorAll("li");
+
+        items.forEach(function (item) {
+            order.push({
+                type: item.getAttribute("data-type"),
+                id: item.getAttribute("data-id")
+            });
         });
+
+        hiddenInput.value = JSON.stringify(order);
+        form.submit();
     }
 
-    if (form && hiddenInput && list) {
-        form.addEventListener("submit", function () {
-            var order = [];
-            var items = list.querySelectorAll("li");
-
-            items.forEach(function (item) {
-                order.push({
-                    type: item.getAttribute("data-type"),
-                    id: item.getAttribute("data-id")
-                });
-            });
-
-            hiddenInput.value = JSON.stringify(order);
+    if (list) {
+        Sortable.create(list, {
+            animation: 150,
+            onEnd: function () {
+                saveBattleOrder();
+            }
         });
     }
 });
