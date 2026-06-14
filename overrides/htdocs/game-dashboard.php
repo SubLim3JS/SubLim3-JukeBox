@@ -143,6 +143,7 @@ html_bootstrap3_createHeader(
                                 <th>Character</th>
                                 <th>HP</th>
                                 <th>Temp HP</th>
+                                <th>Death Saves</th>
                                 <th>Cube</th>
                             </tr>
                         </thead>
