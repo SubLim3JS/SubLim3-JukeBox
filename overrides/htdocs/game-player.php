@@ -368,6 +368,12 @@ html_bootstrap3_createHeader(
 
 </div>
 
+        <script>
+setTimeout(function () {
+    window.location.reload();
+}, 5000);
+</script>
+    
 <?php
 include("inc.footer.php");
 ?>
