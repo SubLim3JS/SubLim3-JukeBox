@@ -67,9 +67,7 @@ html_bootstrap3_createHeader(
         <?= htmlspecialchars($gameName) ?>
     </h1>
 
-    <p class="lead">
-        Campaign Dashboard
-    </p>
+    <p class="lead">Campaign Dashboard</p>
 
     <div class="row">
 
@@ -153,14 +151,30 @@ html_bootstrap3_createHeader(
                                 <?php
                                 $cubeId = $c["cube_id"] ?? "";
                                 $cubeText = $cubeId !== "" ? $cubeId : "Not assigned";
+                                $deathSuccess = $c["death_success"] ?? 0;
+                                $deathFail = $c["death_fail"] ?? 0;
                                 ?>
+
                                 <tr>
                                     <td><?= htmlspecialchars($c["player_name"] ?? "") ?></td>
+
                                     <td>
                                         <strong><?= htmlspecialchars($c["character_name"] ?? "") ?></strong>
                                     </td>
-                                    <td><?= htmlspecialchars(($c["hp"] ?? 0) . "/" . ($c["max_hp"] ?? 0)) ?></td>
-                                    <td><?= htmlspecialchars($c["temp_hp"] ?? 0) ?></td>
+
+                                    <td>
+                                        <?= htmlspecialchars(($c["hp"] ?? 0) . "/" . ($c["max_hp"] ?? 0)) ?>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars($c["temp_hp"] ?? 0) ?>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars($deathSuccess) ?>/3 |
+                                        <?= htmlspecialchars($deathFail) ?>/3
+                                    </td>
+
                                     <td>
                                         <?php if ($cubeId !== ""): ?>
                                             <span class="label label-success">
