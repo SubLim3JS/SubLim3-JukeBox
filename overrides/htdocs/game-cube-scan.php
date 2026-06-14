@@ -228,7 +228,13 @@ html_bootstrap3_createHeader(
                         <tbody>
                             <?php foreach ($characters as $character): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($character["name"] ?? "Unknown") ?></td>
+                                    <?= htmlspecialchars(
+    $character["name"] ??
+    $character["character_name"] ??
+    $character["player_name"] ??
+    $character["code"] ??
+    "Unknown"
+) ?>
                                     <td><?= htmlspecialchars($character["rfid_id"] ?? "Not Registered") ?></td>
                                     <td><?= htmlspecialchars($character["cube_id"] ?? "Not Assigned") ?></td>
                                     <td>
