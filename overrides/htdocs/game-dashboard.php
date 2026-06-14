@@ -221,9 +221,9 @@ html_bootstrap3_createHeader(
                 Assign D&amp;D Player Cubes to characters in this campaign.
             </p>
 
-            <a class="btn btn-primary btn-lg" href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>">
+            <a class="btn btn-primary btn-lg" href="game-cube-scan.php?game_id=<?= urlencode($gameId) ?>">
                 <i class="mdi mdi-cube-send"></i>
-                Register Cubes
+                Scan Cubes
             </a>
         </div>
     </div>
