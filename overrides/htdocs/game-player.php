@@ -190,8 +190,6 @@ html_bootstrap3_createHeader(
 
 <div class="container">
 
-<?php include("inc.navigation.php"); ?>
-
     <div class="row">
         <div class="col-lg-12">
             <h1>DnD Player Tracker</h1>
