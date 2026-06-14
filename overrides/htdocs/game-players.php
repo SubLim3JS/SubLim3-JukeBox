@@ -7,6 +7,28 @@ if (!is_dir($gameDir)) {
     mkdir($gameDir, 0775, true);
 }
 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "delete_character") {
+    $deleteGameId = basename($_POST["game_id"] ?? "");
+    $deleteIndex = intval($_POST["character_index"] ?? -1);
+
+    $charactersFile = $gameDir . "/" . $deleteGameId . "/characters.json";
+
+    if ($deleteGameId !== "" && file_exists($charactersFile)) {
+        $characters = json_decode(file_get_contents($charactersFile), true);
+
+        if (is_array($characters) && isset($characters[$deleteIndex])) {
+            array_splice($characters, $deleteIndex, 1);
+            file_put_contents(
+                $charactersFile,
+                json_encode($characters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            );
+        }
+    }
+
+    header("Location: game-players.php");
+    exit;
+}
+
 $games = glob($gameDir . "/*/game.json");
 
 if ($games === false) {
@@ -110,6 +132,7 @@ html_bootstrap3_createHeader(
                                         <th>Temp HP</th>
                                         <th>Death Saves</th>
                                         <th>Cube</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
 
@@ -132,7 +155,7 @@ html_bootstrap3_createHeader(
 
                                             <td>
                                                 <a class="btn btn-primary btn-sm"
-                                                   href="game-player.php?game_id=<?= urlencode($gameId) ?>&character=<?= urlencode($characterIndex) ?>&dm=1">
+                                                   href="dnd-player.php?game_id=<?= urlencode($gameId) ?>&character=<?= urlencode($characterIndex) ?>&dm=1">
                                                     <i class="mdi mdi-account-edit"></i>
                                                     <?= htmlspecialchars($characterName) ?>
                                                 </a>
@@ -162,6 +185,22 @@ html_bootstrap3_createHeader(
                                                         Not assigned
                                                     </span>
                                                 <?php endif; ?>
+                                            </td>
+
+                                            <td>
+                                                <form method="post"
+                                                      action="game-players.php"
+                                                      onsubmit="return confirm('Delete this character? This cannot be undone.');"
+                                                      style="display:inline;">
+                                                    <input type="hidden" name="action" value="delete_character">
+                                                    <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                                    <input type="hidden" name="character_index" value="<?= htmlspecialchars($characterIndex) ?>">
+
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="mdi mdi-delete"></i>
+                                                        Delete
+                                                    </button>
+                                                </form>
                                             </td>
                                         </tr>
 
