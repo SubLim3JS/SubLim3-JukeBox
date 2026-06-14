@@ -151,7 +151,12 @@ html_bootstrap3_createHeader(
                         <?php foreach ($characters as $character): ?>
                             <?php
                                 $id = $character["id"] ?? "";
-                                $name = $character["name"] ?? "Unknown";
+                                $name =
+    $character["name"] ??
+    $character["character_name"] ??
+    $character["player_name"] ??
+    $character["code"] ??
+    "Unknown";
                                 $rfid = $character["rfid_id"] ?? "";
                                 $cube = $character["cube_id"] ?? "";
                             ?>
