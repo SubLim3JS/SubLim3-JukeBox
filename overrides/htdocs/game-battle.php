@@ -617,6 +617,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<script>
+setTimeout(function () {
+    window.location.reload();
+}, 5000);
+</script>
+
 <?php
 include("inc.footer.php");
 ?>
