@@ -78,7 +78,7 @@ html_bootstrap3_createHeader(
                     ?>
 
                     <a class="list-group-item"
-                       href="game-cube-register.php?game_id=<?= urlencode($gameId) ?>">
+                       href="game-dashboard.php?game_id=<?= urlencode($gameId) ?>">
 
                         <h4 class="list-group-item-heading">
                             <i class="mdi mdi-book-open-page-variant"></i>
