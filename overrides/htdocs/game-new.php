@@ -1,7 +1,8 @@
 <?php
 include("inc.header.php");
 
-$gameDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game/games";
+$baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game";
+$gameDir = $baseDir . "/games";
 
 if (!is_dir($gameDir)) {
     mkdir($gameDir, 0775, true);
@@ -38,6 +39,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $gamePath . "/game.json",
                 json_encode($gameData, JSON_PRETTY_PRINT)
             );
+
+            if (!file_exists($gamePath . "/characters.json")) {
+                file_put_contents(
+                    $gamePath . "/characters.json",
+                    json_encode([], JSON_PRETTY_PRINT)
+                );
+            }
+
+            // Automatically set the new campaign as Active and Last Game
+            file_put_contents($baseDir . "/active-game", $safeGameId);
+            file_put_contents($baseDir . "/last-game", $safeGameId);
 
             header("Location: game-dashboard.php?game_id=" . urlencode($safeGameId));
             exit;
