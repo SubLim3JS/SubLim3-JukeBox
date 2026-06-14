@@ -31,6 +31,21 @@ if (!is_array($characters)) {
     $characters = [];
 }
 
+function getCharacterId($character) {
+    return $character["id"]
+        ?? $character["code"]
+        ?? $character["character_id"]
+        ?? "";
+}
+
+function getCharacterName($character) {
+    return $character["name"]
+        ?? $character["character_name"]
+        ?? $character["player_name"]
+        ?? $character["code"]
+        ?? "Unknown";
+}
+
 $message = "";
 $messageType = "info";
 
@@ -49,10 +64,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $updated = false;
 
         foreach ($characters as &$character) {
-            $id = $character["id"] ?? "";
+            $id = getCharacterId($character);
 
             if ($id === $characterId) {
                 $character["rfid_id"] = $cardId;
+                $character["card_id"] = $cardId;
 
                 if ($cubeId !== "") {
                     $character["cube_id"] = $cubeId;
@@ -139,7 +155,7 @@ html_bootstrap3_createHeader(
                         autofocus
                     >
                     <p class="help-block">
-                        For now, this field accepts the RFID/card ID manually. Next we can make this auto-fill from the Book RFID reader.
+                        For now, enter or paste the RFID card ID manually. Later this can auto-fill from the Book RFID reader.
                     </p>
                 </div>
 
@@ -150,26 +166,24 @@ html_bootstrap3_createHeader(
 
                         <?php foreach ($characters as $character): ?>
                             <?php
-                                $id = $character["id"] ?? "";
-                                $name =
-    $character["name"] ??
-    $character["character_name"] ??
-    $character["player_name"] ??
-    $character["code"] ??
-    "Unknown";
-                                $rfid = $character["rfid_id"] ?? "";
+                                $id = getCharacterId($character);
+                                $name = getCharacterName($character);
+                                $rfid = $character["rfid_id"] ?? $character["card_id"] ?? "";
                                 $cube = $character["cube_id"] ?? "";
                             ?>
 
-                            <option value="<?= htmlspecialchars($id) ?>">
-                                <?= htmlspecialchars($name) ?>
-                                <?php if ($rfid !== ""): ?>
-                                    — RFID: <?= htmlspecialchars($rfid) ?>
-                                <?php endif; ?>
-                                <?php if ($cube !== ""): ?>
-                                    — Cube: <?= htmlspecialchars($cube) ?>
-                                <?php endif; ?>
-                            </option>
+                            <?php if ($id !== ""): ?>
+                                <option value="<?= htmlspecialchars($id) ?>">
+                                    <?= htmlspecialchars($name) ?>
+                                    <?php if ($rfid !== ""): ?>
+                                        — RFID: <?= htmlspecialchars($rfid) ?>
+                                    <?php endif; ?>
+                                    <?php if ($cube !== ""): ?>
+                                        — Cube: <?= htmlspecialchars($cube) ?>
+                                    <?php endif; ?>
+                                </option>
+                            <?php endif; ?>
+
                         <?php endforeach; ?>
 
                     </select>
@@ -186,7 +200,7 @@ html_bootstrap3_createHeader(
                         autocomplete="off"
                     >
                     <p class="help-block">
-                        This can be used later by the ESP32 Feather to identify itself.
+                        Optional for now. The RFID card will be the main character identity.
                     </p>
                 </div>
 
@@ -227,22 +241,25 @@ html_bootstrap3_createHeader(
 
                         <tbody>
                             <?php foreach ($characters as $character): ?>
+                                <?php
+                                    $name = getCharacterName($character);
+                                    $rfid = $character["rfid_id"] ?? $character["card_id"] ?? "Not Registered";
+                                    $cube = $character["cube_id"] ?? "Not Assigned";
+                                    $hp = $character["hp"] ?? $character["current_hp"] ?? 0;
+                                    $maxHp = $character["max_hp"] ?? 0;
+                                    $tempHp = $character["temp_hp"] ?? 0;
+                                ?>
+
                                 <tr>
-                                    <?= htmlspecialchars(
-    $character["name"] ??
-    $character["character_name"] ??
-    $character["player_name"] ??
-    $character["code"] ??
-    "Unknown"
-) ?>
-                                    <td><?= htmlspecialchars($character["rfid_id"] ?? "Not Registered") ?></td>
-                                    <td><?= htmlspecialchars($character["cube_id"] ?? "Not Assigned") ?></td>
+                                    <td><?= htmlspecialchars($name) ?></td>
+                                    <td><?= htmlspecialchars($rfid) ?></td>
+                                    <td><?= htmlspecialchars($cube) ?></td>
                                     <td>
-                                        <?= htmlspecialchars($character["hp"] ?? "0") ?>
+                                        <?= htmlspecialchars($hp) ?>
                                         /
-                                        <?= htmlspecialchars($character["max_hp"] ?? "0") ?>
+                                        <?= htmlspecialchars($maxHp) ?>
                                     </td>
-                                    <td><?= htmlspecialchars($character["temp_hp"] ?? "0") ?></td>
+                                    <td><?= htmlspecialchars($tempHp) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
