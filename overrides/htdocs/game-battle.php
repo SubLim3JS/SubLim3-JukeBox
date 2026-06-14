@@ -14,6 +14,13 @@ function cleanInt($value, $default = 0) {
     return is_numeric($value) ? intval($value) : $default;
 }
 
+function saveBattle($battleFile, $battle) {
+    file_put_contents(
+        $battleFile,
+        json_encode($battle, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+    );
+}
+
 if ($gameId === "" || !file_exists($gameFile)) {
     html_bootstrap3_createHeader("en", "Battle Mode | Game Not Found", $conf['base_url']);
     ?>
@@ -42,6 +49,18 @@ if (!is_array($characters)) {
     $characters = [];
 }
 
+foreach ($characters as $index => &$character) {
+    if (!isset($character["character_id"]) || $character["character_id"] === "") {
+        $character["character_id"] = "character_" . $index;
+    }
+}
+unset($character);
+
+file_put_contents(
+    $charactersFile,
+    json_encode($characters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+);
+
 if (!file_exists($battleFile)) {
     file_put_contents($battleFile, json_encode([
         "enemies" => [],
@@ -63,13 +82,6 @@ if (!isset($battle["enemies"]) || !is_array($battle["enemies"])) {
 
 if (!isset($battle["order"]) || !is_array($battle["order"])) {
     $battle["order"] = [];
-}
-
-function saveBattle($battleFile, $battle) {
-    file_put_contents(
-        $battleFile,
-        json_encode($battle, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
-    );
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -131,29 +143,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($action === "save_order") {
-        $orderRaw = trim($_POST["battle_order"] ?? "");
+        $orderJson = $_POST["battle_order_json"] ?? "";
+        $decodedOrder = json_decode($orderJson, true);
+
         $newOrder = [];
 
-        if ($orderRaw !== "") {
-            $lines = preg_split("/\r\n|\n|\r/", $orderRaw);
+        if (is_array($decodedOrder)) {
+            foreach ($decodedOrder as $entry) {
+                $type = $entry["type"] ?? "";
+                $id = $entry["id"] ?? "";
 
-            foreach ($lines as $line) {
-                $line = trim($line);
-
-                if ($line !== "") {
-                    $parts = explode(":", $line, 2);
-
-                    if (count($parts) === 2) {
-                        $type = trim($parts[0]);
-                        $id = trim($parts[1]);
-
-                        if (($type === "character" || $type === "enemy") && $id !== "") {
-                            $newOrder[] = [
-                                "type" => $type,
-                                "id" => $id
-                            ];
-                        }
-                    }
+                if (($type === "character" || $type === "enemy") && $id !== "") {
+                    $newOrder[] = [
+                        "type" => $type,
+                        "id" => $id
+                    ];
                 }
             }
         }
@@ -254,104 +258,123 @@ html_bootstrap3_createHeader(
 
         <div class="panel-body">
 
-            <?php if (empty($battle["order"])): ?>
+            <form method="post" id="orderForm">
+                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                <input type="hidden" name="action" value="save_order">
+                <input type="hidden" name="battle_order_json" id="battle_order_json" value="">
 
-                <div class="alert alert-info">
-                    No attack order has been set yet.
-                </div>
+                <p class="text-muted">
+                    Drag and drop characters or enemies to set the attack order.
+                </p>
 
-            <?php else: ?>
+                <ul id="battleOrderList" class="list-group">
 
-                <ol class="list-group">
-                    <?php foreach ($battle["order"] as $entry): ?>
-                        <?php
+                    <?php
+                    $displayed = [];
+
+                    foreach ($battle["order"] as $entry):
                         $type = $entry["type"] ?? "";
                         $id = $entry["id"] ?? "";
+                        $key = $type . ":" . $id;
 
                         $displayName = "";
                         $displaySub = "";
+                        $labelClass = "label-default";
 
                         if ($type === "character" && isset($characterMap[$id])) {
                             $displayName = $characterMap[$id]["character_name"] ?? "Character";
                             $displaySub = "Player: " . ($characterMap[$id]["player_name"] ?? "");
+                            $labelClass = "label-primary";
                         }
 
                         if ($type === "enemy" && isset($enemyMap[$id])) {
                             $displayName = $enemyMap[$id]["name"] ?? "Enemy";
                             $displaySub = "Enemy HP: " . ($enemyMap[$id]["hp"] ?? 0) . "/" . ($enemyMap[$id]["max_hp"] ?? 0);
+                            $labelClass = "label-danger";
                         }
 
                         if ($displayName === "") {
                             continue;
                         }
+
+                        $displayed[$key] = true;
+                    ?>
+
+                        <li class="list-group-item"
+                            data-type="<?= htmlspecialchars($type) ?>"
+                            data-id="<?= htmlspecialchars($id) ?>"
+                            style="cursor:move;">
+                            <span class="label <?= htmlspecialchars($labelClass) ?>">
+                                <?= htmlspecialchars(strtoupper($type)) ?>
+                            </span>
+                            <strong style="margin-left:10px;">
+                                <?= htmlspecialchars($displayName) ?>
+                            </strong>
+                            <br>
+                            <small style="margin-left:85px;">
+                                <?= htmlspecialchars($displaySub) ?>
+                            </small>
+                        </li>
+
+                    <?php endforeach; ?>
+
+                    <?php foreach ($characters as $index => $character): ?>
+                        <?php
+                        $characterId = $character["character_id"] ?? ("character_" . $index);
+                        $key = "character:" . $characterId;
+
+                        if (isset($displayed[$key])) {
+                            continue;
+                        }
                         ?>
 
-                        <li class="list-group-item">
-                            <strong><?= htmlspecialchars($displayName) ?></strong>
+                        <li class="list-group-item"
+                            data-type="character"
+                            data-id="<?= htmlspecialchars($characterId) ?>"
+                            style="cursor:move;">
+                            <span class="label label-primary">CHARACTER</span>
+                            <strong style="margin-left:10px;">
+                                <?= htmlspecialchars($character["character_name"] ?? "Character") ?>
+                            </strong>
                             <br>
-                            <small><?= htmlspecialchars($displaySub) ?></small>
+                            <small style="margin-left:85px;">
+                                Player: <?= htmlspecialchars($character["player_name"] ?? "") ?>
+                            </small>
                         </li>
                     <?php endforeach; ?>
-                </ol>
 
-            <?php endif; ?>
+                    <?php foreach ($battle["enemies"] as $enemy): ?>
+                        <?php
+                        $enemyId = $enemy["enemy_id"] ?? "";
+                        $key = "enemy:" . $enemyId;
 
-            <hr>
+                        if ($enemyId === "" || isset($displayed[$key])) {
+                            continue;
+                        }
+                        ?>
 
-            <form method="post">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                <input type="hidden" name="action" value="save_order">
+                        <li class="list-group-item"
+                            data-type="enemy"
+                            data-id="<?= htmlspecialchars($enemyId) ?>"
+                            style="cursor:move;">
+                            <span class="label label-danger">ENEMY</span>
+                            <strong style="margin-left:10px;">
+                                <?= htmlspecialchars($enemy["name"] ?? "Enemy") ?>
+                            </strong>
+                            <br>
+                            <small style="margin-left:85px;">
+                                Enemy HP: <?= htmlspecialchars(($enemy["hp"] ?? 0) . "/" . ($enemy["max_hp"] ?? 0)) ?>
+                            </small>
+                        </li>
+                    <?php endforeach; ?>
 
-                <p>
-                    Edit the attack order below. One entry per line.
-                </p>
+                </ul>
 
-                <textarea name="battle_order" class="form-control" rows="10"><?php
-foreach ($battle["order"] as $entry) {
-    echo htmlspecialchars(($entry["type"] ?? "") . ":" . ($entry["id"] ?? "")) . "\n";
-}
-?></textarea>
-
-                <br>
-
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary btn-lg">
                     <i class="mdi mdi-content-save"></i>
                     Save Attack Order
                 </button>
             </form>
-
-            <hr>
-
-            <h4>Available Entries</h4>
-
-            <div class="row">
-                <div class="col-sm-6">
-                    <h4>Characters</h4>
-                    <ul>
-                        <?php foreach ($characters as $index => $character): ?>
-                            <?php $characterId = $character["character_id"] ?? ("character_" . $index); ?>
-                            <li>
-                                <code>character:<?= htmlspecialchars($characterId) ?></code>
-                                —
-                                <?= htmlspecialchars($character["character_name"] ?? "Character") ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-
-                <div class="col-sm-6">
-                    <h4>Enemies</h4>
-                    <ul>
-                        <?php foreach ($battle["enemies"] as $enemy): ?>
-                            <li>
-                                <code>enemy:<?= htmlspecialchars($enemy["enemy_id"] ?? "") ?></code>
-                                —
-                                <?= htmlspecialchars($enemy["name"] ?? "Enemy") ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            </div>
 
         </div>
     </div>
@@ -453,6 +476,38 @@ foreach ($battle["order"] as $entry) {
     </a>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var list = document.getElementById("battleOrderList");
+    var form = document.getElementById("orderForm");
+    var hiddenInput = document.getElementById("battle_order_json");
+
+    if (list) {
+        Sortable.create(list, {
+            animation: 150
+        });
+    }
+
+    if (form && hiddenInput && list) {
+        form.addEventListener("submit", function () {
+            var order = [];
+            var items = list.querySelectorAll("li");
+
+            items.forEach(function (item) {
+                order.push({
+                    type: item.getAttribute("data-type"),
+                    id: item.getAttribute("data-id")
+                });
+            });
+
+            hiddenInput.value = JSON.stringify(order);
+        });
+    }
+});
+</script>
 
 <?php
 include("inc.footer.php");
