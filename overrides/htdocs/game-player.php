@@ -339,15 +339,17 @@ html_bootstrap3_createHeader(
         </div>
     </div>
 
-    <p>
-        <a href="game-dashboard.php?game_id=<?php print urlencode($gameId); ?>" class="btn btn-primary">
-            Back to DM Dashboard
-        </a>
+    <?php if (isset($_GET["dm"])): ?>
+<p>
+    <a href="game-dashboard.php?game_id=<?php print urlencode($gameId); ?>" class="btn btn-primary">
+        Back to DM Dashboard
+    </a>
 
-        <a href="game-players.php" class="btn btn-default">
-            Back to Manage Players
-        </a>
-    </p>
+    <a href="game-players.php" class="btn btn-default">
+        Back to Manage Players
+    </a>
+</p>
+<?php endif; ?>
 
 </div>
 
