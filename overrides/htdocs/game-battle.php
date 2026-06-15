@@ -619,8 +619,8 @@ function setLiveHtml(type, id, field, html) {
 }
 
 function refreshBattleStatsOnly() {
-    fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID), {
-        cache: "no-store"
+    fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + Date.now(), {
+    cache: "no-store"
     })
     .then(function(response) {
         return response.json();
