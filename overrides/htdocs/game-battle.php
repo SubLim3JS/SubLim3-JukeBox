@@ -15,23 +15,11 @@ function cleanInt($value, $default = 0) {
 }
 
 function saveBattle($battleFile, $battle) {
-    file_put_contents(
-        $battleFile,
-        json_encode($battle, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
-    );
+    file_put_contents($battleFile, json_encode($battle, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 }
 
 function getCharacterId($character, $index = 0) {
-    return $character["character_id"]
-        ?? $character["id"]
-        ?? $character["code"]
-        ?? ("character_" . $index);
-}
-
-function getCharacterName($character) {
-    return $character["character_name"]
-        ?? $character["name"]
-        ?? "Character";
+    return $character["character_id"] ?? $character["id"] ?? $character["code"] ?? ("character_" . $index);
 }
 
 if ($gameId === "" || !file_exists($gameFile)) {
@@ -69,10 +57,7 @@ foreach ($characters as $index => &$character) {
 }
 unset($character);
 
-file_put_contents(
-    $charactersFile,
-    json_encode($characters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
-);
+file_put_contents($charactersFile, json_encode($characters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
 if (!file_exists($battleFile)) {
     file_put_contents($battleFile, json_encode([
@@ -265,7 +250,6 @@ html_bootstrap3_createHeader(
         </div>
 
         <div class="panel-body">
-
             <p class="text-muted">
                 Enter D20 initiative rolls, then click Sort Attack Order. Higher rolls go first. Ties are randomized.
             </p>
@@ -291,7 +275,6 @@ html_bootstrap3_createHeader(
                     Next
                 </button>
             </form>
-
         </div>
     </div>
 
@@ -347,6 +330,25 @@ html_bootstrap3_createHeader(
 
 <script>
 var GAME_ID = <?= json_encode(basename($gameId)) ?>;
+var battleFormDirty = false;
+var battleFormSubmitting = false;
+
+document.addEventListener("input", function(e) {
+    if (e.target && e.target.closest && e.target.closest("#battleOrderList")) {
+        battleFormDirty = true;
+
+        var liveStatus = document.getElementById("liveStatus");
+        if (liveStatus) {
+            liveStatus.textContent = "Editing";
+        }
+    }
+});
+
+document.addEventListener("submit", function(e) {
+    if (e.target && e.target.id === "sortOrderForm") {
+        battleFormSubmitting = true;
+    }
+});
 
 function escapeHtml(value) {
     value = value === null || value === undefined ? "" : String(value);
@@ -636,7 +638,7 @@ function renderBattle(data) {
         return;
     }
 
-    if (isTypingInBattleList()) {
+    if (isTypingInBattleList() || battleFormDirty || battleFormSubmitting) {
         return;
     }
 
@@ -699,7 +701,7 @@ function refreshBattle() {
 
         renderBattle(data);
 
-        if (liveStatus) {
+        if (liveStatus && !battleFormDirty && !battleFormSubmitting) {
             liveStatus.textContent = "Updated " + new Date().toLocaleTimeString();
         }
     })
