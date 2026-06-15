@@ -239,10 +239,36 @@ function getNumber(character, keys, fallback) {
     return fallback || 0;
 }
 
-function renderCharacters(characters) {
-    if (!characters || !characters.length) {
-        return;
+function normalizeCharacters(characters) {
+    if (!characters) {
+        return [];
     }
+
+    if (Array.isArray(characters)) {
+        return characters;
+    }
+
+    var list = [];
+
+    for (var id in characters) {
+        if (characters.hasOwnProperty(id)) {
+            var character = characters[id];
+
+            if (character && typeof character === "object") {
+                if (!character.character_id) {
+                    character.character_id = id;
+                }
+
+                list.push(character);
+            }
+        }
+    }
+
+    return list;
+}
+
+function renderCharacters(charactersRaw) {
+    var characters = normalizeCharacters(charactersRaw);
 
     var tbody = document.getElementById("charactersTableBody");
     var totalCharactersCount = document.getElementById("totalCharactersCount");
@@ -251,6 +277,28 @@ function renderCharacters(characters) {
     var noCharactersAlert = document.getElementById("noCharactersAlert");
 
     if (!tbody) {
+        return;
+    }
+
+    if (!characters.length) {
+        tbody.innerHTML = "";
+
+        if (tableWrap) {
+            tableWrap.style.display = "none";
+        }
+
+        if (noCharactersAlert) {
+            noCharactersAlert.style.display = "";
+        }
+
+        if (totalCharactersCount) {
+            totalCharactersCount.innerHTML = "0";
+        }
+
+        if (assignedCubesCount) {
+            assignedCubesCount.innerHTML = "0/0";
+        }
+
         return;
     }
 
@@ -312,7 +360,7 @@ function refreshDashboardStats() {
     var liveStatus = document.getElementById("liveStatus");
 
     var xhr = new XMLHttpRequest();
-    var url = "game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + new Date().getTime();
+    var url = "/api/dnd/game-state.php?_=" + new Date().getTime();
 
     xhr.open("GET", url, true);
 
@@ -331,9 +379,16 @@ function refreshDashboardStats() {
         try {
             var data = JSON.parse(xhr.responseText);
 
-            if (!data.success || !data.characters || !data.characters.length) {
+            if (!data.success) {
                 if (liveStatus) {
-                    liveStatus.innerHTML = "No Live Data";
+                    liveStatus.innerHTML = data.error ? escapeHtml(data.error) : "No Live Data";
+                }
+                return;
+            }
+
+            if (data.game_id && data.game_id !== GAME_ID) {
+                if (liveStatus) {
+                    liveStatus.innerHTML = "Active game mismatch";
                 }
                 return;
             }
@@ -353,8 +408,10 @@ function refreshDashboardStats() {
     xhr.send();
 }
 
-setInterval(refreshDashboardStats, 5000);
+refreshDashboardStats();
+setInterval(refreshDashboardStats, 3000);
 </script>
+
 <?php
 include("inc.footer.php");
 ?>
