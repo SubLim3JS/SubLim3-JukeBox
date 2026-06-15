@@ -240,18 +240,18 @@ function getNumber(character, keys, fallback) {
 }
 
 function renderCharacters(characters) {
-    var tbody = document.getElementById("charactersTableBody");
-    var tableWrap = document.getElementById("charactersTableWrap");
-    var noCharactersAlert = document.getElementById("noCharactersAlert");
-    var totalCharactersCount = document.getElementById("totalCharactersCount");
-    var assignedCubesCount = document.getElementById("assignedCubesCount");
-
-    if (!tbody) {
+    if (!characters || !characters.length) {
         return;
     }
 
-    if (!characters || !characters.length) {
-        characters = [];
+    var tbody = document.getElementById("charactersTableBody");
+    var totalCharactersCount = document.getElementById("totalCharactersCount");
+    var assignedCubesCount = document.getElementById("assignedCubesCount");
+    var tableWrap = document.getElementById("charactersTableWrap");
+    var noCharactersAlert = document.getElementById("noCharactersAlert");
+
+    if (!tbody) {
+        return;
     }
 
     var assignedCubes = 0;
@@ -261,7 +261,7 @@ function renderCharacters(characters) {
         var character = characters[i];
 
         var playerName = character.player_name || "";
-        var characterName = character.character_name || character.name || "";
+        var characterName = character.character_name || character.name || character.code || character.character_id || "";
         var hp = getNumber(character, ["hp", "current_hp"], 0);
         var maxHp = getNumber(character, ["max_hp"], 0);
         var tempHp = getNumber(character, ["temp_hp"], 0);
@@ -291,12 +291,12 @@ function renderCharacters(characters) {
 
     tbody.innerHTML = html;
 
-    if (characters.length === 0) {
-        if (tableWrap) tableWrap.style.display = "none";
-        if (noCharactersAlert) noCharactersAlert.style.display = "";
-    } else {
-        if (tableWrap) tableWrap.style.display = "";
-        if (noCharactersAlert) noCharactersAlert.style.display = "none";
+    if (tableWrap) {
+        tableWrap.style.display = "";
+    }
+
+    if (noCharactersAlert) {
+        noCharactersAlert.style.display = "none";
     }
 
     if (totalCharactersCount) {
@@ -311,15 +311,10 @@ function renderCharacters(characters) {
 function refreshDashboardStats() {
     var liveStatus = document.getElementById("liveStatus");
 
-    if (liveStatus) {
-        liveStatus.innerHTML = "Checking...";
-    }
-
     var xhr = new XMLHttpRequest();
     var url = "game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + new Date().getTime();
 
     xhr.open("GET", url, true);
-    xhr.setRequestHeader("Cache-Control", "no-cache");
 
     xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) {
@@ -336,9 +331,9 @@ function refreshDashboardStats() {
         try {
             var data = JSON.parse(xhr.responseText);
 
-            if (!data.success || !data.characters) {
+            if (!data.success || !data.characters || !data.characters.length) {
                 if (liveStatus) {
-                    liveStatus.innerHTML = "Bad Data";
+                    liveStatus.innerHTML = "No Live Data";
                 }
                 return;
             }
@@ -352,24 +347,13 @@ function refreshDashboardStats() {
             if (liveStatus) {
                 liveStatus.innerHTML = "JSON Error";
             }
-
-            console.log("Dashboard JSON parse failed", e, xhr.responseText);
-        }
-    };
-
-    xhr.onerror = function() {
-        if (liveStatus) {
-            liveStatus.innerHTML = "Offline";
         }
     };
 
     xhr.send();
 }
 
-window.onload = function() {
-    refreshDashboardStats();
-    setInterval(refreshDashboardStats, 5000);
-};
+setInterval(refreshDashboardStats, 5000);
 </script>
 <?php
 include("inc.footer.php");
