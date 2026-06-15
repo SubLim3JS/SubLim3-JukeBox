@@ -1,5 +1,8 @@
 <?php
 header("Content-Type: application/json");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 $baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game";
 $lastScanFile = $baseDir . "/last-scan";
@@ -11,6 +14,19 @@ function jsonResponse($data) {
 
 if (!file_exists($baseDir)) {
     mkdir($baseDir, 0775, true);
+}
+
+$action = $_GET["action"] ?? $_POST["action"] ?? "";
+
+if ($action === "clear") {
+    if (file_exists($lastScanFile)) {
+        unlink($lastScanFile);
+    }
+
+    jsonResponse([
+        "success" => true,
+        "message" => "Last scan cleared."
+    ]);
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -38,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     file_put_contents(
         $lastScanFile,
-        json_encode($scanData, JSON_PRETTY_PRINT)
+        json_encode($scanData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
     );
 
     jsonResponse([
