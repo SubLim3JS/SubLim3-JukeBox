@@ -608,10 +608,17 @@ function getNumber(obj, keys, fallback) {
     return fallback || 0;
 }
 
+function safeSelectorValue(value) {
+    return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
 function setLiveHtml(type, id, field, html) {
-    const el = document.querySelector(
-        '[data-live-type="' + type + '"][data-live-id="' + CSS.escape(id) + '"][data-live-field="' + field + '"]'
-    );
+    const selector =
+        '[data-live-type="' + safeSelectorValue(type) + '"]' +
+        '[data-live-id="' + safeSelectorValue(id) + '"]' +
+        '[data-live-field="' + safeSelectorValue(field) + '"]';
+
+    const el = document.querySelector(selector);
 
     if (el) {
         el.innerHTML = html;
@@ -620,7 +627,7 @@ function setLiveHtml(type, id, field, html) {
 
 function refreshBattleStatsOnly() {
     fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + Date.now(), {
-    cache: "no-store"
+        cache: "no-store"
     })
     .then(function(response) {
         return response.json();
@@ -686,6 +693,7 @@ function refreshBattleStatsOnly() {
     });
 }
 
+refreshBattleStatsOnly();
 setInterval(refreshBattleStatsOnly, 5000);
 </script>
 
