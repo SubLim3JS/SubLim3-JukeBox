@@ -170,10 +170,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $characterId = getCharacterId($character, $index);
             $key = "character:" . $characterId;
 
+            $roll = cleanInt($orderValues[$key] ?? 1, 1);
+            $roll = max(1, min($roll, 20));
+
             $newOrder[] = [
                 "type" => "character",
                 "id" => $characterId,
-                "sort" => cleanInt($orderValues[$key] ?? 999, 999)
+                "roll" => $roll,
+                "tie_breaker" => rand(1, 1000000)
             ];
         }
 
@@ -186,19 +190,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $key = "enemy:" . $enemyId;
 
+            $roll = cleanInt($orderValues[$key] ?? 1, 1);
+            $roll = max(1, min($roll, 20));
+
             $newOrder[] = [
                 "type" => "enemy",
                 "id" => $enemyId,
-                "sort" => cleanInt($orderValues[$key] ?? 999, 999)
+                "roll" => $roll,
+                "tie_breaker" => rand(1, 1000000)
             ];
         }
 
         usort($newOrder, function($a, $b) {
-            if ($a["sort"] === $b["sort"]) {
-                return strcmp($a["type"] . $a["id"], $b["type"] . $b["id"]);
+            if ($a["roll"] === $b["roll"]) {
+                return $a["tie_breaker"] <=> $b["tie_breaker"];
             }
 
-            return $a["sort"] <=> $b["sort"];
+            return $b["roll"] <=> $a["roll"];
         });
 
         $battle["order"] = array_map(function($entry) {
@@ -322,7 +330,7 @@ html_bootstrap3_createHeader(
         <div class="panel-body">
 
             <p class="text-muted">
-                Enter turn order numbers, then click Sort Attack Order. Lower numbers go first.
+                Enter D20 initiative rolls, then click Sort Attack Order. Higher rolls go first. Ties are randomized.
             </p>
 
             <form method="post" id="sortOrderForm">
@@ -336,7 +344,11 @@ html_bootstrap3_createHeader(
                         $type = $entry["type"];
                         $id = $entry["id"];
                         $key = $type . ":" . $id;
-                        $orderNumber = $position + 1;
+                        $orderNumber = 20 - $position;
+
+                        if ($orderNumber < 1) {
+                            $orderNumber = 1;
+                        }
                         ?>
 
                         <?php if ($type === "character" && isset($characterMap[$id])): ?>
@@ -356,13 +368,14 @@ html_bootstrap3_createHeader(
                             <li class="list-group-item" data-type="character" data-id="<?= htmlspecialchars($id) ?>">
                                 <div class="row">
                                     <div class="col-sm-2">
-                                        <label>Order</label>
+                                        <label>D20 Roll</label>
                                         <input
                                             type="number"
                                             class="form-control input-lg"
                                             name="order_value[<?= htmlspecialchars($key) ?>]"
                                             value="<?= htmlspecialchars($orderNumber) ?>"
                                             min="1"
+                                            max="20"
                                         >
                                     </div>
 
@@ -435,13 +448,14 @@ html_bootstrap3_createHeader(
                             <li class="list-group-item" data-type="enemy" data-id="<?= htmlspecialchars($id) ?>">
                                 <div class="row">
                                     <div class="col-sm-2">
-                                        <label>Order</label>
+                                        <label>D20 Roll</label>
                                         <input
                                             type="number"
                                             class="form-control input-lg"
                                             name="order_value[<?= htmlspecialchars($key) ?>]"
                                             value="<?= htmlspecialchars($orderNumber) ?>"
                                             min="1"
+                                            max="20"
                                         >
                                     </div>
 
@@ -500,7 +514,7 @@ html_bootstrap3_createHeader(
                 </ul>
 
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="mdi mdi-sort-numeric-ascending"></i>
+                    <i class="mdi mdi-dice-d20"></i>
                     Sort Attack Order
                 </button>
             </form>
