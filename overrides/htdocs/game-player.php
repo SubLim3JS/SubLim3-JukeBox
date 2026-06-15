@@ -155,7 +155,7 @@ html_bootstrap3_createHeader(
 
     <h1>
         <i class="mdi mdi-account-heart"></i>
-        <?= htmlspecialchars($name) ?>
+        <span id="playerName"><?= htmlspecialchars($name) ?></span>
     </h1>
 
     <p class="lead">
@@ -179,6 +179,7 @@ html_bootstrap3_createHeader(
     <div class="panel panel-primary">
         <div class="panel-heading">
             <strong>Stats</strong>
+            <span id="liveStatus" class="pull-right small">Live</span>
         </div>
 
         <div class="panel-body">
@@ -196,15 +197,16 @@ html_bootstrap3_createHeader(
                     <label for="hp">HP</label>
                     <input
                         id="hp"
-                        class="form-control input-lg"
+                        class="form-control input-lg js-live-field"
                         type="number"
                         name="hp"
                         value="<?= htmlspecialchars($hp) ?>"
                         min="0"
                         max="<?= htmlspecialchars($maxHp) ?>"
+                        data-live-key="hp"
                     >
                     <p class="help-block">
-                        Max HP: <?= htmlspecialchars($maxHp) ?>
+                        Max HP: <span id="maxHpDisplay"><?= htmlspecialchars($maxHp) ?></span>
                     </p>
                 </div>
 
@@ -212,11 +214,12 @@ html_bootstrap3_createHeader(
                     <label for="temp_hp">Temp HP</label>
                     <input
                         id="temp_hp"
-                        class="form-control input-lg"
+                        class="form-control input-lg js-live-field"
                         type="number"
                         name="temp_hp"
                         value="<?= htmlspecialchars($tempHp) ?>"
                         min="0"
+                        data-live-key="temp_hp"
                     >
                 </div>
 
@@ -224,12 +227,13 @@ html_bootstrap3_createHeader(
                     <label for="death_success">Death Saves - Success</label>
                     <input
                         id="death_success"
-                        class="form-control input-lg"
+                        class="form-control input-lg js-live-field"
                         type="number"
                         name="death_success"
                         value="<?= htmlspecialchars($deathSuccess) ?>"
                         min="0"
                         max="3"
+                        data-live-key="death_success"
                     >
                 </div>
 
@@ -237,12 +241,13 @@ html_bootstrap3_createHeader(
                     <label for="death_fail">Death Saves - Fail</label>
                     <input
                         id="death_fail"
-                        class="form-control input-lg"
+                        class="form-control input-lg js-live-field"
                         type="number"
                         name="death_fail"
                         value="<?= htmlspecialchars($deathFail) ?>"
                         min="0"
                         max="3"
+                        data-live-key="death_fail"
                     >
                 </div>
 
@@ -264,7 +269,35 @@ html_bootstrap3_createHeader(
 </div>
 
 <script>
+const GAME_ID = <?= json_encode($gameId) ?>;
+const CHARACTER_ID = <?= json_encode($characterId) ?>;
+
 let isEditing = false;
+
+function getCharacterId(character) {
+    return character.id
+        || character.code
+        || character.character_id
+        || "";
+}
+
+function getCharacterName(character) {
+    return character.name
+        || character.character_name
+        || character.player_name
+        || character.code
+        || "Unknown";
+}
+
+function getNumber(character, keys, fallback) {
+    for (let i = 0; i < keys.length; i++) {
+        if (character[keys[i]] !== undefined && character[keys[i]] !== null && character[keys[i]] !== "") {
+            return parseInt(character[keys[i]], 10) || 0;
+        }
+    }
+
+    return fallback || 0;
+}
 
 document.querySelectorAll("input, select, textarea").forEach(function(el) {
     el.addEventListener("focus", function() {
@@ -272,15 +305,91 @@ document.querySelectorAll("input, select, textarea").forEach(function(el) {
     });
 
     el.addEventListener("blur", function() {
-        isEditing = false;
+        setTimeout(function() {
+            isEditing = false;
+        }, 500);
     });
 });
 
-setInterval(function() {
-    if (!isEditing) {
-        location.reload();
+function updateField(id, value) {
+    const field = document.getElementById(id);
+
+    if (!field) {
+        return;
     }
-}, 5000);
+
+    if (document.activeElement === field) {
+        return;
+    }
+
+    field.value = value;
+}
+
+function refreshPlayerStats() {
+    if (isEditing) {
+        return;
+    }
+
+    fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID), {
+        cache: "no-store"
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (!data.success || !Array.isArray(data.characters)) {
+            return;
+        }
+
+        let character = null;
+
+        data.characters.forEach(function(item) {
+            if (getCharacterId(item) === CHARACTER_ID) {
+                character = item;
+            }
+        });
+
+        if (!character) {
+            return;
+        }
+
+        const name = getCharacterName(character);
+        const hp = getNumber(character, ["hp", "current_hp"], 0);
+        const maxHp = getNumber(character, ["max_hp"], 0);
+        const tempHp = getNumber(character, ["temp_hp"], 0);
+        const deathSuccess = getNumber(character, ["death_success", "death_saves_success"], 0);
+        const deathFail = getNumber(character, ["death_fail", "death_saves_fail"], 0);
+
+        document.getElementById("playerName").textContent = name;
+        document.getElementById("maxHpDisplay").textContent = maxHp;
+
+        const hpField = document.getElementById("hp");
+
+        if (hpField) {
+            hpField.max = maxHp;
+        }
+
+        updateField("hp", hp);
+        updateField("temp_hp", tempHp);
+        updateField("death_success", deathSuccess);
+        updateField("death_fail", deathFail);
+
+        const liveStatus = document.getElementById("liveStatus");
+
+        if (liveStatus) {
+            liveStatus.textContent = "Live";
+        }
+    })
+    .catch(function() {
+        const liveStatus = document.getElementById("liveStatus");
+
+        if (liveStatus) {
+            liveStatus.textContent = "Offline";
+        }
+    });
+}
+
+setInterval(refreshPlayerStats, 5000);
 </script>
 
 <?php
