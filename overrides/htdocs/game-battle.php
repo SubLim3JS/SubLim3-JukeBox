@@ -21,6 +21,19 @@ function saveBattle($battleFile, $battle) {
     );
 }
 
+function getCharacterId($character, $index = 0) {
+    return $character["character_id"]
+        ?? $character["id"]
+        ?? $character["code"]
+        ?? ("character_" . $index);
+}
+
+function getCharacterName($character) {
+    return $character["character_name"]
+        ?? $character["name"]
+        ?? "Character";
+}
+
 if ($gameId === "" || !file_exists($gameFile)) {
     html_bootstrap3_createHeader("en", "Battle Mode | Game Not Found", $conf['base_url']);
     ?>
@@ -51,7 +64,7 @@ if (!is_array($characters)) {
 
 foreach ($characters as $index => &$character) {
     if (!isset($character["character_id"]) || $character["character_id"] === "") {
-        $character["character_id"] = "character_" . $index;
+        $character["character_id"] = getCharacterId($character, $index);
     }
 }
 unset($character);
@@ -149,27 +162,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }));
     }
 
-    if ($action === "save_order") {
-        $orderJson = $_POST["battle_order_json"] ?? "";
-        $decodedOrder = json_decode($orderJson, true);
-
+    if ($action === "sort_order") {
+        $orderValues = $_POST["order_value"] ?? [];
         $newOrder = [];
 
-        if (is_array($decodedOrder)) {
-            foreach ($decodedOrder as $entry) {
-                $type = $entry["type"] ?? "";
-                $id = $entry["id"] ?? "";
+        foreach ($characters as $index => $character) {
+            $characterId = getCharacterId($character, $index);
+            $key = "character:" . $characterId;
 
-                if (($type === "character" || $type === "enemy") && $id !== "") {
-                    $newOrder[] = [
-                        "type" => $type,
-                        "id" => $id
-                    ];
-                }
-            }
+            $newOrder[] = [
+                "type" => "character",
+                "id" => $characterId,
+                "sort" => cleanInt($orderValues[$key] ?? 999, 999)
+            ];
         }
 
-        $battle["order"] = $newOrder;
+        foreach ($battle["enemies"] as $enemy) {
+            $enemyId = $enemy["enemy_id"] ?? "";
+
+            if ($enemyId === "") {
+                continue;
+            }
+
+            $key = "enemy:" . $enemyId;
+
+            $newOrder[] = [
+                "type" => "enemy",
+                "id" => $enemyId,
+                "sort" => cleanInt($orderValues[$key] ?? 999, 999)
+            ];
+        }
+
+        usort($newOrder, function($a, $b) {
+            if ($a["sort"] === $b["sort"]) {
+                return strcmp($a["type"] . $a["id"], $b["type"] . $b["id"]);
+            }
+
+            return $a["sort"] <=> $b["sort"];
+        });
+
+        $battle["order"] = array_map(function($entry) {
+            return [
+                "type" => $entry["type"],
+                "id" => $entry["id"]
+            ];
+        }, $newOrder);
     }
 
     if ($action === "clear_battle") {
@@ -189,7 +226,7 @@ $gameName = $game["game_name"] ?? $gameId;
 
 $characterMap = [];
 foreach ($characters as $index => $character) {
-    $characterId = $character["character_id"] ?? ("character_" . $index);
+    $characterId = getCharacterId($character, $index);
     $characterMap[$characterId] = $character;
 }
 
@@ -198,6 +235,55 @@ foreach ($battle["enemies"] as $enemy) {
     $enemyId = $enemy["enemy_id"] ?? "";
     if ($enemyId !== "") {
         $enemyMap[$enemyId] = $enemy;
+    }
+}
+
+$displayEntries = [];
+$displayed = [];
+
+foreach ($battle["order"] as $entry) {
+    $type = $entry["type"] ?? "";
+    $id = $entry["id"] ?? "";
+    $key = $type . ":" . $id;
+
+    if ($type === "character" && isset($characterMap[$id])) {
+        $displayEntries[] = [
+            "type" => "character",
+            "id" => $id
+        ];
+        $displayed[$key] = true;
+    }
+
+    if ($type === "enemy" && isset($enemyMap[$id])) {
+        $displayEntries[] = [
+            "type" => "enemy",
+            "id" => $id
+        ];
+        $displayed[$key] = true;
+    }
+}
+
+foreach ($characters as $index => $character) {
+    $characterId = getCharacterId($character, $index);
+    $key = "character:" . $characterId;
+
+    if (!isset($displayed[$key])) {
+        $displayEntries[] = [
+            "type" => "character",
+            "id" => $characterId
+        ];
+    }
+}
+
+foreach ($battle["enemies"] as $enemy) {
+    $enemyId = $enemy["enemy_id"] ?? "";
+    $key = "enemy:" . $enemyId;
+
+    if ($enemyId !== "" && !isset($displayed[$key])) {
+        $displayEntries[] = [
+            "type" => "enemy",
+            "id" => $enemyId
+        ];
     }
 }
 
@@ -230,289 +316,194 @@ html_bootstrap3_createHeader(
                 <i class="mdi mdi-format-list-numbered"></i>
                 Attack Order
             </strong>
+            <span id="liveStatus" class="pull-right small">Live</span>
         </div>
 
         <div class="panel-body">
 
-            <form method="post" id="orderForm" style="display:none;">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                <input type="hidden" name="action" value="save_order">
-                <input type="hidden" name="battle_order_json" id="battle_order_json" value="">
-            </form>
-
             <p class="text-muted">
-                Drag and drop characters or enemies to change the attack order. Changes save automatically.
+                Enter turn order numbers, then click Sort Attack Order. Lower numbers go first.
             </p>
 
-            <ul id="battleOrderList" class="list-group">
+            <form method="post" id="sortOrderForm">
+                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                <input type="hidden" name="action" value="sort_order">
 
-                <?php
-                $displayed = [];
+                <ul id="battleOrderList" class="list-group">
 
-                foreach ($battle["order"] as $entry):
-                    $type = $entry["type"] ?? "";
-                    $id = $entry["id"] ?? "";
-                    $key = $type . ":" . $id;
+                    <?php foreach ($displayEntries as $position => $entry): ?>
+                        <?php
+                        $type = $entry["type"];
+                        $id = $entry["id"];
+                        $key = $type . ":" . $id;
+                        $orderNumber = $position + 1;
+                        ?>
 
-                    if ($type === "character" && isset($characterMap[$id])):
-                        $c = $characterMap[$id];
+                        <?php if ($type === "character" && isset($characterMap[$id])): ?>
+                            <?php
+                            $c = $characterMap[$id];
 
-                        $characterName = $c["character_name"] ?? "Character";
-                        $playerName = $c["player_name"] ?? "";
-                        $hp = $c["hp"] ?? 0;
-                        $maxHp = $c["max_hp"] ?? 0;
-                        $tempHp = $c["temp_hp"] ?? 0;
-                        $deathSuccess = $c["death_success"] ?? 0;
-                        $deathFail = $c["death_fail"] ?? 0;
-                        $cubeId = $c["cube_id"] ?? "";
+                            $characterName = getCharacterName($c);
+                            $playerName = $c["player_name"] ?? "";
+                            $hp = $c["hp"] ?? $c["current_hp"] ?? 0;
+                            $maxHp = $c["max_hp"] ?? 0;
+                            $tempHp = $c["temp_hp"] ?? 0;
+                            $deathSuccess = $c["death_success"] ?? $c["death_saves_success"] ?? 0;
+                            $deathFail = $c["death_fail"] ?? $c["death_saves_fail"] ?? 0;
+                            $cubeId = $c["cube_id"] ?? "";
+                            ?>
 
-                        $displayed[$key] = true;
-                ?>
+                            <li class="list-group-item" data-type="character" data-id="<?= htmlspecialchars($id) ?>">
+                                <div class="row">
+                                    <div class="col-sm-2">
+                                        <label>Order</label>
+                                        <input
+                                            type="number"
+                                            class="form-control input-lg"
+                                            name="order_value[<?= htmlspecialchars($key) ?>]"
+                                            value="<?= htmlspecialchars($orderNumber) ?>"
+                                            min="1"
+                                        >
+                                    </div>
 
-                    <li class="list-group-item"
-                        data-type="character"
-                        data-id="<?= htmlspecialchars($id) ?>"
-                        style="cursor:move;">
-                        <span class="label label-primary">CHARACTER</span>
+                                    <div class="col-sm-10">
+                                        <span class="label label-primary">CHARACTER</span>
 
-                        <strong style="margin-left:10px;">
-                            <?= htmlspecialchars($characterName) ?>
-                        </strong>
+                                        <strong style="margin-left:10px;">
+                                            <?= htmlspecialchars($characterName) ?>
+                                        </strong>
 
-                        <div class="row" style="margin-top:10px;">
-                            <div class="col-sm-2">
-                                <strong>Player</strong><br>
-                                <?= htmlspecialchars($playerName) ?>
-                            </div>
+                                        <div class="row" style="margin-top:10px;">
+                                            <div class="col-sm-2">
+                                                <strong>Player</strong><br>
+                                                <span data-live-type="character" data-live-id="<?= htmlspecialchars($id) ?>" data-live-field="player_name">
+                                                    <?= htmlspecialchars($playerName) ?>
+                                                </span>
+                                            </div>
 
-                            <div class="col-sm-2">
-                                <strong>HP</strong><br>
-                                <?= htmlspecialchars($hp) ?>/<?= htmlspecialchars($maxHp) ?>
-                            </div>
+                                            <div class="col-sm-2">
+                                                <strong>HP</strong><br>
+                                                <span data-live-type="character" data-live-id="<?= htmlspecialchars($id) ?>" data-live-field="hp">
+                                                    <?= htmlspecialchars($hp) ?>/<?= htmlspecialchars($maxHp) ?>
+                                                </span>
+                                            </div>
 
-                            <div class="col-sm-2">
-                                <strong>Temp HP</strong><br>
-                                <?= htmlspecialchars($tempHp) ?>
-                            </div>
+                                            <div class="col-sm-2">
+                                                <strong>Temp HP</strong><br>
+                                                <span data-live-type="character" data-live-id="<?= htmlspecialchars($id) ?>" data-live-field="temp_hp">
+                                                    <?= htmlspecialchars($tempHp) ?>
+                                                </span>
+                                            </div>
 
-                            <div class="col-sm-3">
-                                <strong>Death Saves</strong><br>
-                                Success <?= htmlspecialchars($deathSuccess) ?>/3<br>
-                                Fail <?= htmlspecialchars($deathFail) ?>/3
-                            </div>
+                                            <div class="col-sm-3">
+                                                <strong>Death Saves</strong><br>
+                                                <span data-live-type="character" data-live-id="<?= htmlspecialchars($id) ?>" data-live-field="death_saves">
+                                                    Success <?= htmlspecialchars($deathSuccess) ?>/3<br>
+                                                    Fail <?= htmlspecialchars($deathFail) ?>/3
+                                                </span>
+                                            </div>
 
-                            <div class="col-sm-3">
-                                <strong>Cube</strong><br>
-                                <?php if ($cubeId !== ""): ?>
-                                    <span class="label label-success">
-                                        <?= htmlspecialchars($cubeId) ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="label label-default">
-                                        Not assigned
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </li>
+                                            <div class="col-sm-3">
+                                                <strong>Cube</strong><br>
+                                                <span data-live-type="character" data-live-id="<?= htmlspecialchars($id) ?>" data-live-field="cube">
+                                                    <?php if ($cubeId !== ""): ?>
+                                                        <span class="label label-success">
+                                                            <?= htmlspecialchars($cubeId) ?>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="label label-default">
+                                                            Not assigned
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        <?php endif; ?>
 
-                <?php
-                    endif;
+                        <?php if ($type === "enemy" && isset($enemyMap[$id])): ?>
+                            <?php
+                            $enemy = $enemyMap[$id];
 
-                    if ($type === "enemy" && isset($enemyMap[$id])):
-                        $enemy = $enemyMap[$id];
+                            $enemyName = $enemy["name"] ?? "Enemy";
+                            $enemyHp = $enemy["hp"] ?? 0;
+                            $enemyMaxHp = $enemy["max_hp"] ?? 0;
+                            ?>
 
-                        $enemyName = $enemy["name"] ?? "Enemy";
-                        $enemyHp = $enemy["hp"] ?? 0;
-                        $enemyMaxHp = $enemy["max_hp"] ?? 0;
+                            <li class="list-group-item" data-type="enemy" data-id="<?= htmlspecialchars($id) ?>">
+                                <div class="row">
+                                    <div class="col-sm-2">
+                                        <label>Order</label>
+                                        <input
+                                            type="number"
+                                            class="form-control input-lg"
+                                            name="order_value[<?= htmlspecialchars($key) ?>]"
+                                            value="<?= htmlspecialchars($orderNumber) ?>"
+                                            min="1"
+                                        >
+                                    </div>
 
-                        $displayed[$key] = true;
-                ?>
+                                    <div class="col-sm-10">
+                                        <span class="label label-danger">ENEMY</span>
 
-                    <li class="list-group-item"
-                        data-type="enemy"
-                        data-id="<?= htmlspecialchars($id) ?>"
-                        style="cursor:move;">
-                        <span class="label label-danger">ENEMY</span>
+                                        <strong style="margin-left:10px;">
+                                            <?= htmlspecialchars($enemyName) ?>
+                                        </strong>
 
-                        <strong style="margin-left:10px;">
-                            <?= htmlspecialchars($enemyName) ?>
-                        </strong>
+                                        <div class="row" style="margin-top:10px;">
+                                            <div class="col-sm-3">
+                                                <strong>HP</strong><br>
+                                                <span data-live-type="enemy" data-live-id="<?= htmlspecialchars($id) ?>" data-live-field="hp">
+                                                    <?= htmlspecialchars($enemyHp) ?>/<?= htmlspecialchars($enemyMaxHp) ?>
+                                                </span>
+                                            </div>
 
-                        <div class="row" style="margin-top:10px;">
-                            <div class="col-sm-3">
-                                <strong>HP</strong><br>
-                                <?= htmlspecialchars($enemyHp) ?>/<?= htmlspecialchars($enemyMaxHp) ?>
-                            </div>
+                                            <div class="col-sm-9">
+                                                <strong>Adjust HP</strong><br>
 
-                            <div class="col-sm-9">
-                                <strong>Adjust HP</strong><br>
+                                                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
+                                                    <form method="post" style="display:inline;">
+                                                        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                                        <input type="hidden" name="action" value="adjust_enemy_hp">
+                                                        <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($id) ?>">
+                                                        <input type="hidden" name="change" value="<?= htmlspecialchars($amount) ?>">
 
-                                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
-                                    <form method="post" style="display:inline;">
-                                        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                                        <input type="hidden" name="action" value="adjust_enemy_hp">
-                                        <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($id) ?>">
-                                        <input type="hidden" name="change" value="<?= htmlspecialchars($amount) ?>">
+                                                        <button type="submit" class="btn btn-default btn-sm">
+                                                            <?= htmlspecialchars(($amount > 0 ? "+" : "") . $amount) ?>
+                                                        </button>
+                                                    </form>
+                                                <?php endforeach; ?>
 
-                                        <button type="submit" class="btn btn-default btn-sm">
-                                            <?= htmlspecialchars(($amount > 0 ? "+" : "") . $amount) ?>
-                                        </button>
-                                    </form>
-                                <?php endforeach; ?>
+                                                <form method="post"
+                                                      style="display:inline;"
+                                                      onsubmit="return confirm('Remove this temporary enemy?');">
+                                                    <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+                                                    <input type="hidden" name="action" value="delete_enemy">
+                                                    <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($id) ?>">
 
-                                <form method="post"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('Remove this temporary enemy?');">
-                                    <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                                    <input type="hidden" name="action" value="delete_enemy">
-                                    <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($id) ?>">
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="mdi mdi-delete"></i>
+                                                        Remove
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        <?php endif; ?>
 
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="mdi mdi-delete"></i>
-                                        Remove
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </li>
+                    <?php endforeach; ?>
 
-                <?php
-                    endif;
-                endforeach;
-                ?>
+                </ul>
 
-                <?php foreach ($characters as $index => $c): ?>
-                    <?php
-                    $characterId = $c["character_id"] ?? ("character_" . $index);
-                    $key = "character:" . $characterId;
-
-                    if (isset($displayed[$key])) {
-                        continue;
-                    }
-
-                    $characterName = $c["character_name"] ?? "Character";
-                    $playerName = $c["player_name"] ?? "";
-                    $hp = $c["hp"] ?? 0;
-                    $maxHp = $c["max_hp"] ?? 0;
-                    $tempHp = $c["temp_hp"] ?? 0;
-                    $deathSuccess = $c["death_success"] ?? 0;
-                    $deathFail = $c["death_fail"] ?? 0;
-                    $cubeId = $c["cube_id"] ?? "";
-                    ?>
-
-                    <li class="list-group-item"
-                        data-type="character"
-                        data-id="<?= htmlspecialchars($characterId) ?>"
-                        style="cursor:move;">
-                        <span class="label label-primary">CHARACTER</span>
-
-                        <strong style="margin-left:10px;">
-                            <?= htmlspecialchars($characterName) ?>
-                        </strong>
-
-                        <div class="row" style="margin-top:10px;">
-                            <div class="col-sm-2">
-                                <strong>Player</strong><br>
-                                <?= htmlspecialchars($playerName) ?>
-                            </div>
-
-                            <div class="col-sm-2">
-                                <strong>HP</strong><br>
-                                <?= htmlspecialchars($hp) ?>/<?= htmlspecialchars($maxHp) ?>
-                            </div>
-
-                            <div class="col-sm-2">
-                                <strong>Temp HP</strong><br>
-                                <?= htmlspecialchars($tempHp) ?>
-                            </div>
-
-                            <div class="col-sm-3">
-                                <strong>Death Saves</strong><br>
-                                Success <?= htmlspecialchars($deathSuccess) ?>/3<br>
-                                Fail <?= htmlspecialchars($deathFail) ?>/3
-                            </div>
-
-                            <div class="col-sm-3">
-                                <strong>Cube</strong><br>
-                                <?php if ($cubeId !== ""): ?>
-                                    <span class="label label-success">
-                                        <?= htmlspecialchars($cubeId) ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="label label-default">
-                                        Not assigned
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-
-                <?php foreach ($battle["enemies"] as $enemy): ?>
-                    <?php
-                    $enemyId = $enemy["enemy_id"] ?? "";
-                    $key = "enemy:" . $enemyId;
-
-                    if ($enemyId === "" || isset($displayed[$key])) {
-                        continue;
-                    }
-
-                    $enemyName = $enemy["name"] ?? "Enemy";
-                    $enemyHp = $enemy["hp"] ?? 0;
-                    $enemyMaxHp = $enemy["max_hp"] ?? 0;
-                    ?>
-
-                    <li class="list-group-item"
-                        data-type="enemy"
-                        data-id="<?= htmlspecialchars($enemyId) ?>"
-                        style="cursor:move;">
-                        <span class="label label-danger">ENEMY</span>
-
-                        <strong style="margin-left:10px;">
-                            <?= htmlspecialchars($enemyName) ?>
-                        </strong>
-
-                        <div class="row" style="margin-top:10px;">
-                            <div class="col-sm-3">
-                                <strong>HP</strong><br>
-                                <?= htmlspecialchars($enemyHp) ?>/<?= htmlspecialchars($enemyMaxHp) ?>
-                            </div>
-
-                            <div class="col-sm-9">
-                                <strong>Adjust HP</strong><br>
-
-                                <?php foreach ([-5, -1, 1, 5] as $amount): ?>
-                                    <form method="post" style="display:inline;">
-                                        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                                        <input type="hidden" name="action" value="adjust_enemy_hp">
-                                        <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($enemyId) ?>">
-                                        <input type="hidden" name="change" value="<?= htmlspecialchars($amount) ?>">
-
-                                        <button type="submit" class="btn btn-default btn-sm">
-                                            <?= htmlspecialchars(($amount > 0 ? "+" : "") . $amount) ?>
-                                        </button>
-                                    </form>
-                                <?php endforeach; ?>
-
-                                <form method="post"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('Remove this temporary enemy?');">
-                                    <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                                    <input type="hidden" name="action" value="delete_enemy">
-                                    <input type="hidden" name="enemy_id" value="<?= htmlspecialchars($enemyId) ?>">
-
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="mdi mdi-delete"></i>
-                                        Remove
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-
-            </ul>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="mdi mdi-sort-numeric-ascending"></i>
+                    Sort Attack Order
+                </button>
+            </form>
 
             <form method="post" style="display:inline;">
                 <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
@@ -577,50 +568,111 @@ html_bootstrap3_createHeader(
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    var list = document.getElementById("battleOrderList");
-    var form = document.getElementById("orderForm");
-    var hiddenInput = document.getElementById("battle_order_json");
+const GAME_ID = <?= json_encode(basename($gameId)) ?>;
 
-    function saveBattleOrder() {
-        if (!list || !form || !hiddenInput) {
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getCharacterId(character, index) {
+    return character.character_id || character.id || character.code || ("character_" + index);
+}
+
+function getNumber(obj, keys, fallback) {
+    for (let i = 0; i < keys.length; i++) {
+        if (obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== "") {
+            return parseInt(obj[keys[i]], 10) || 0;
+        }
+    }
+
+    return fallback || 0;
+}
+
+function setLiveHtml(type, id, field, html) {
+    const el = document.querySelector(
+        '[data-live-type="' + type + '"][data-live-id="' + CSS.escape(id) + '"][data-live-field="' + field + '"]'
+    );
+
+    if (el) {
+        el.innerHTML = html;
+    }
+}
+
+function refreshBattleStatsOnly() {
+    fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID), {
+        cache: "no-store"
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (!data.success) {
             return;
         }
 
-        var order = [];
-        var items = list.querySelectorAll("li");
+        const characters = data.characters || [];
+        const battle = data.battle || { enemies: [], order: [] };
+        const enemies = battle.enemies || [];
 
-        items.forEach(function (item) {
-            order.push({
-                type: item.getAttribute("data-type"),
-                id: item.getAttribute("data-id")
-            });
-        });
+        characters.forEach(function(character, index) {
+            const id = getCharacterId(character, index);
+            const playerName = character.player_name || "";
+            const hp = getNumber(character, ["hp", "current_hp"], 0);
+            const maxHp = getNumber(character, ["max_hp"], 0);
+            const tempHp = getNumber(character, ["temp_hp"], 0);
+            const deathSuccess = getNumber(character, ["death_success", "death_saves_success"], 0);
+            const deathFail = getNumber(character, ["death_fail", "death_saves_fail"], 0);
+            const cubeId = character.cube_id || "";
 
-        hiddenInput.value = JSON.stringify(order);
-        form.submit();
-    }
+            setLiveHtml("character", id, "player_name", escapeHtml(playerName));
+            setLiveHtml("character", id, "hp", escapeHtml(hp + "/" + maxHp));
+            setLiveHtml("character", id, "temp_hp", escapeHtml(tempHp));
+            setLiveHtml(
+                "character",
+                id,
+                "death_saves",
+                "Success " + escapeHtml(deathSuccess) + "/3<br>Fail " + escapeHtml(deathFail) + "/3"
+            );
 
-    if (list) {
-        Sortable.create(list, {
-            animation: 150,
-            filter: "button, input, form",
-            preventOnFilter: false,
-            onEnd: function () {
-                saveBattleOrder();
+            if (cubeId !== "") {
+                setLiveHtml("character", id, "cube", '<span class="label label-success">' + escapeHtml(cubeId) + '</span>');
+            } else {
+                setLiveHtml("character", id, "cube", '<span class="label label-default">Not assigned</span>');
             }
         });
-    }
-});
-</script>
 
-<script>
-setTimeout(function () {
-    window.location.reload();
-}, 5000);
+        enemies.forEach(function(enemy) {
+            const id = enemy.enemy_id || "";
+            const hp = getNumber(enemy, ["hp"], 0);
+            const maxHp = getNumber(enemy, ["max_hp"], 0);
+
+            if (id !== "") {
+                setLiveHtml("enemy", id, "hp", escapeHtml(hp + "/" + maxHp));
+            }
+        });
+
+        const liveStatus = document.getElementById("liveStatus");
+
+        if (liveStatus) {
+            liveStatus.textContent = "Live";
+        }
+    })
+    .catch(function() {
+        const liveStatus = document.getElementById("liveStatus");
+
+        if (liveStatus) {
+            liveStatus.textContent = "Offline";
+        }
+    });
+}
+
+setInterval(refreshBattleStatsOnly, 5000);
 </script>
 
 <?php
