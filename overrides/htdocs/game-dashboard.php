@@ -23,7 +23,6 @@ if ($gameId === "" || !file_exists($gameFile)) {
 }
 
 $game = json_decode(file_get_contents($gameFile), true);
-
 if (!is_array($game)) {
     $game = [];
 }
@@ -33,7 +32,6 @@ if (!file_exists($charactersFile)) {
 }
 
 $characters = json_decode(file_get_contents($charactersFile), true);
-
 if (!is_array($characters)) {
     $characters = [];
 }
@@ -101,48 +99,29 @@ html_bootstrap3_createHeader(
                             <th>Cube</th>
                         </tr>
                     </thead>
-
                     <tbody id="charactersTableBody">
                         <?php foreach ($characters as $c): ?>
                             <?php
                             $cubeId = $c["cube_id"] ?? "";
-                            $cubeText = $cubeId !== "" ? $cubeId : "Not assigned";
                             $deathSuccess = $c["death_success"] ?? $c["death_saves_success"] ?? 0;
                             $deathFail = $c["death_fail"] ?? $c["death_saves_fail"] ?? 0;
                             $hp = $c["hp"] ?? $c["current_hp"] ?? 0;
                             $maxHp = $c["max_hp"] ?? 0;
                             ?>
-
                             <tr>
                                 <td><?= htmlspecialchars($c["player_name"] ?? "") ?></td>
-
+                                <td><strong><?= htmlspecialchars($c["character_name"] ?? $c["name"] ?? "") ?></strong></td>
+                                <td><?= htmlspecialchars($hp . "/" . $maxHp) ?></td>
+                                <td><?= htmlspecialchars($c["temp_hp"] ?? 0) ?></td>
                                 <td>
-                                    <strong><?= htmlspecialchars($c["character_name"] ?? $c["name"] ?? "") ?></strong>
-                                </td>
-
-                                <td>
-                                    <?= htmlspecialchars($hp . "/" . $maxHp) ?>
-                                </td>
-
-                                <td>
-                                    <?= htmlspecialchars($c["temp_hp"] ?? 0) ?>
-                                </td>
-
-                                <td>
-                                    Success <?= htmlspecialchars($deathSuccess) ?>/3
-                                    <br>
+                                    Success <?= htmlspecialchars($deathSuccess) ?>/3<br>
                                     Fail <?= htmlspecialchars($deathFail) ?>/3
                                 </td>
-
                                 <td>
                                     <?php if ($cubeId !== ""): ?>
-                                        <span class="label label-success">
-                                            <?= htmlspecialchars($cubeText) ?>
-                                        </span>
+                                        <span class="label label-success"><?= htmlspecialchars($cubeId) ?></span>
                                     <?php else: ?>
-                                        <span class="label label-default">
-                                            Not assigned
-                                        </span>
+                                        <span class="label label-default">Not assigned</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -312,32 +291,40 @@ function renderCharacters(characters) {
         noCharactersAlert.style.display = "none";
     }
 
-    totalCharactersCount.textContent = characters.length;
-    assignedCubesCount.textContent = assignedCubes + "/" + characters.length;
+    if (totalCharactersCount) {
+        totalCharactersCount.textContent = characters.length;
+    }
+
+    if (assignedCubesCount) {
+        assignedCubesCount.textContent = assignedCubes + "/" + characters.length;
+    }
 }
 
 function refreshDashboardStats() {
+    const liveStatus = document.getElementById("liveStatus");
+
     fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + Date.now(), {
-    cache: "no-store"
+        cache: "no-store"
     })
     .then(function(response) {
         return response.json();
     })
     .then(function(data) {
         if (!data.success || !Array.isArray(data.characters)) {
+            if (liveStatus) {
+                liveStatus.textContent = "Live Error";
+            }
             return;
         }
 
         renderCharacters(data.characters);
 
-        const liveStatus = document.getElementById("liveStatus");
-
         if (liveStatus) {
-            liveStatus.textContent = "Live";
+            liveStatus.textContent = "Live " + new Date().toLocaleTimeString();
         }
     })
-    .catch(function() {
-        const liveStatus = document.getElementById("liveStatus");
+    .catch(function(error) {
+        console.log("Dashboard live refresh failed:", error);
 
         if (liveStatus) {
             liveStatus.textContent = "Offline";
@@ -345,6 +332,7 @@ function refreshDashboardStats() {
     });
 }
 
+refreshDashboardStats();
 setInterval(refreshDashboardStats, 5000);
 </script>
 
