@@ -1,5 +1,9 @@
 <?php
 header("Content-Type: application/json");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
 
 $baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game";
 $gamesDir = $baseDir . "/games";
@@ -22,6 +26,9 @@ if ($gameId === "" || !is_dir($gamePath)) {
     ]);
     exit;
 }
+
+clearstatcache(true, $charactersFile);
+clearstatcache(true, $battleFile);
 
 $characters = [];
 
@@ -57,6 +64,7 @@ if (!isset($battle["order"]) || !is_array($battle["order"])) {
 echo json_encode([
     "success" => true,
     "game_id" => $gameId,
+    "timestamp" => time(),
     "characters" => $characters,
     "battle" => $battle
 ]);
