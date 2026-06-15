@@ -1,5 +1,8 @@
 <?php
 header("Content-Type: application/json");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 $baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game";
 $gamesDir = $baseDir . "/games";
@@ -21,6 +24,10 @@ function getInputData() {
     return $_POST;
 }
 
+function cleanId($value) {
+    return preg_replace("/[^a-zA-Z0-9\-_]/", "", trim($value));
+}
+
 function getCharacterId($character) {
     return $character["id"]
         ?? $character["code"]
@@ -40,11 +47,12 @@ $data = getInputData();
 
 $cardId = trim($data["card_id"] ?? "");
 $characterId = trim($data["character_id"] ?? "");
+$cubeId = cleanId($data["cube_id"] ?? "");
 
-if ($cardId === "" && $characterId === "") {
+if ($cardId === "" && $characterId === "" && $cubeId === "") {
     jsonResponse([
         "success" => false,
-        "message" => "Missing card_id or character_id."
+        "message" => "Missing card_id, character_id, or cube_id."
     ]);
 }
 
@@ -55,8 +63,7 @@ if (!file_exists($activeGameFile)) {
     ]);
 }
 
-$gameId = trim(file_get_contents($activeGameFile));
-$gameId = basename($gameId);
+$gameId = basename(trim(file_get_contents($activeGameFile)));
 
 $gamePath = $gamesDir . "/" . $gameId;
 $charactersFile = $gamePath . "/characters.json";
@@ -85,11 +92,13 @@ $updatedCharacter = null;
 foreach ($characters as &$character) {
     $thisCharacterId = getCharacterId($character);
     $thisCardId = $character["card_id"] ?? $character["rfid_id"] ?? "";
+    $thisCubeId = $character["cube_id"] ?? "";
 
     $matchesCard = ($cardId !== "" && (string)$thisCardId === (string)$cardId);
     $matchesCharacter = ($characterId !== "" && (string)$thisCharacterId === (string)$characterId);
+    $matchesCube = ($cubeId !== "" && (string)$thisCubeId === (string)$cubeId);
 
-    if ($matchesCard || $matchesCharacter) {
+    if ($matchesCard || $matchesCharacter || $matchesCube) {
         if (isset($data["hp"])) {
             $hp = intval($data["hp"]);
             $maxHp = intval($character["max_hp"] ?? 0);
@@ -141,13 +150,14 @@ if (!$updated) {
         "message" => "Character not found.",
         "game_id" => $gameId,
         "card_id" => $cardId,
-        "character_id" => $characterId
+        "character_id" => $characterId,
+        "cube_id" => $cubeId
     ]);
 }
 
 file_put_contents(
     $charactersFile,
-    json_encode($characters, JSON_PRETTY_PRINT)
+    json_encode($characters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
 );
 
 jsonResponse([
@@ -156,13 +166,18 @@ jsonResponse([
     "game_id" => $gameId,
     "character" => [
         "id" => getCharacterId($updatedCharacter),
+        "character_id" => getCharacterId($updatedCharacter),
         "name" => getCharacterName($updatedCharacter),
+        "character_name" => getCharacterName($updatedCharacter),
+        "player_name" => $updatedCharacter["player_name"] ?? "",
         "hp" => intval($updatedCharacter["hp"] ?? $updatedCharacter["current_hp"] ?? 0),
+        "current_hp" => intval($updatedCharacter["hp"] ?? $updatedCharacter["current_hp"] ?? 0),
         "max_hp" => intval($updatedCharacter["max_hp"] ?? 0),
         "temp_hp" => intval($updatedCharacter["temp_hp"] ?? 0),
         "death_success" => intval($updatedCharacter["death_success"] ?? $updatedCharacter["death_saves_success"] ?? 0),
         "death_fail" => intval($updatedCharacter["death_fail"] ?? $updatedCharacter["death_saves_fail"] ?? 0),
-        "card_id" => $updatedCharacter["card_id"] ?? $updatedCharacter["rfid_id"] ?? ""
+        "card_id" => $updatedCharacter["card_id"] ?? $updatedCharacter["rfid_id"] ?? "",
+        "cube_id" => $updatedCharacter["cube_id"] ?? ""
     ]
 ]);
 ?>
