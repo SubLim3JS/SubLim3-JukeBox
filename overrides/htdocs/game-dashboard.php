@@ -212,10 +212,12 @@ html_bootstrap3_createHeader(
 </div>
 
 <script>
-const GAME_ID = <?= json_encode(basename($gameId)) ?>;
+var GAME_ID = <?= json_encode(basename($gameId)) ?>;
 
 function escapeHtml(value) {
-    return String(value ?? "")
+    value = value === null || value === undefined ? "" : String(value);
+
+    return value
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -224,8 +226,12 @@ function escapeHtml(value) {
 }
 
 function getNumber(character, keys, fallback) {
-    for (let i = 0; i < keys.length; i++) {
-        if (character[keys[i]] !== undefined && character[keys[i]] !== null && character[keys[i]] !== "") {
+    for (var i = 0; i < keys.length; i++) {
+        if (
+            character[keys[i]] !== undefined &&
+            character[keys[i]] !== null &&
+            character[keys[i]] !== ""
+        ) {
             return parseInt(character[keys[i]], 10) || 0;
         }
     }
@@ -234,32 +240,34 @@ function getNumber(character, keys, fallback) {
 }
 
 function renderCharacters(characters) {
-    const tbody = document.getElementById("charactersTableBody");
-    const tableWrap = document.getElementById("charactersTableWrap");
-    const noCharactersAlert = document.getElementById("noCharactersAlert");
-    const totalCharactersCount = document.getElementById("totalCharactersCount");
-    const assignedCubesCount = document.getElementById("assignedCubesCount");
+    var tbody = document.getElementById("charactersTableBody");
+    var tableWrap = document.getElementById("charactersTableWrap");
+    var noCharactersAlert = document.getElementById("noCharactersAlert");
+    var totalCharactersCount = document.getElementById("totalCharactersCount");
+    var assignedCubesCount = document.getElementById("assignedCubesCount");
 
     if (!tbody) {
         return;
     }
 
-    if (!Array.isArray(characters)) {
+    if (!characters || !characters.length) {
         characters = [];
     }
 
-    let assignedCubes = 0;
-    let html = "";
+    var assignedCubes = 0;
+    var html = "";
 
-    characters.forEach(function(character) {
-        const playerName = character.player_name || "";
-        const characterName = character.character_name || character.name || "";
-        const hp = getNumber(character, ["hp", "current_hp"], 0);
-        const maxHp = getNumber(character, ["max_hp"], 0);
-        const tempHp = getNumber(character, ["temp_hp"], 0);
-        const deathSuccess = getNumber(character, ["death_success", "death_saves_success"], 0);
-        const deathFail = getNumber(character, ["death_fail", "death_saves_fail"], 0);
-        const cubeId = character.cube_id || "";
+    for (var i = 0; i < characters.length; i++) {
+        var character = characters[i];
+
+        var playerName = character.player_name || "";
+        var characterName = character.character_name || character.name || "";
+        var hp = getNumber(character, ["hp", "current_hp"], 0);
+        var maxHp = getNumber(character, ["max_hp"], 0);
+        var tempHp = getNumber(character, ["temp_hp"], 0);
+        var deathSuccess = getNumber(character, ["death_success", "death_saves_success"], 0);
+        var deathFail = getNumber(character, ["death_fail", "death_saves_fail"], 0);
+        var cubeId = character.cube_id || "";
 
         if (cubeId !== "") {
             assignedCubes++;
@@ -279,63 +287,90 @@ function renderCharacters(characters) {
         }
 
         html += "</tr>";
-    });
+    }
 
     tbody.innerHTML = html;
 
     if (characters.length === 0) {
-        tableWrap.style.display = "none";
-        noCharactersAlert.style.display = "";
+        if (tableWrap) tableWrap.style.display = "none";
+        if (noCharactersAlert) noCharactersAlert.style.display = "";
     } else {
-        tableWrap.style.display = "";
-        noCharactersAlert.style.display = "none";
+        if (tableWrap) tableWrap.style.display = "";
+        if (noCharactersAlert) noCharactersAlert.style.display = "none";
     }
 
     if (totalCharactersCount) {
-        totalCharactersCount.textContent = characters.length;
+        totalCharactersCount.innerHTML = characters.length;
     }
 
     if (assignedCubesCount) {
-        assignedCubesCount.textContent = assignedCubes + "/" + characters.length;
+        assignedCubesCount.innerHTML = assignedCubes + "/" + characters.length;
     }
 }
 
 function refreshDashboardStats() {
-    const liveStatus = document.getElementById("liveStatus");
+    var liveStatus = document.getElementById("liveStatus");
 
-    fetch("game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + Date.now(), {
-        cache: "no-store"
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (!data.success || !Array.isArray(data.characters)) {
+    if (liveStatus) {
+        liveStatus.innerHTML = "Checking...";
+    }
+
+    var xhr = new XMLHttpRequest();
+    var url = "game-live-state.php?game_id=" + encodeURIComponent(GAME_ID) + "&_=" + new Date().getTime();
+
+    xhr.open("GET", url, true);
+    xhr.setRequestHeader("Cache-Control", "no-cache");
+
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) {
+            return;
+        }
+
+        if (xhr.status !== 200) {
             if (liveStatus) {
-                liveStatus.textContent = "Live Error";
+                liveStatus.innerHTML = "Live Error " + xhr.status;
             }
             return;
         }
 
-        renderCharacters(data.characters);
+        try {
+            var data = JSON.parse(xhr.responseText);
 
-        if (liveStatus) {
-            liveStatus.textContent = "Live " + new Date().toLocaleTimeString();
-        }
-    })
-    .catch(function(error) {
-        console.log("Dashboard live refresh failed:", error);
+            if (!data.success || !data.characters) {
+                if (liveStatus) {
+                    liveStatus.innerHTML = "Bad Data";
+                }
+                return;
+            }
 
-        if (liveStatus) {
-            liveStatus.textContent = "Offline";
+            renderCharacters(data.characters);
+
+            if (liveStatus) {
+                liveStatus.innerHTML = "Updated " + new Date().toLocaleTimeString();
+            }
+        } catch (e) {
+            if (liveStatus) {
+                liveStatus.innerHTML = "JSON Error";
+            }
+
+            console.log("Dashboard JSON parse failed", e, xhr.responseText);
         }
-    });
+    };
+
+    xhr.onerror = function() {
+        if (liveStatus) {
+            liveStatus.innerHTML = "Offline";
+        }
+    };
+
+    xhr.send();
 }
 
-refreshDashboardStats();
-setInterval(refreshDashboardStats, 5000);
+window.onload = function() {
+    refreshDashboardStats();
+    setInterval(refreshDashboardStats, 5000);
+};
 </script>
-
 <?php
 include("inc.footer.php");
 ?>
