@@ -3,719 +3,594 @@ include("inc.header.php");
 
 $gameId = $_GET["game_id"] ?? $_POST["game_id"] ?? "";
 
-$baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game/games";
-$gamePath = $baseDir . "/" . basename($gameId);
+$baseDir = "/home/pi/RPi-Jukebox-RFID/shared/dnd-game";
+$gameDir = $baseDir . "/games/" . basename($gameId);
 
-$gameFile = $gamePath . "/game.json";
-$charactersFile = $gamePath . "/characters.json";
-$battleFile = $gamePath . "/battle.json";
-
-function cleanInt($value, $default = 0) {
-    return is_numeric($value) ? intval($value) : $default;
-}
-
-function saveBattle($battleFile, $battle) {
-    file_put_contents($battleFile, json_encode($battle, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-}
-
-function getCharacterId($character, $index = 0) {
-    return $character["character_id"] ?? $character["id"] ?? $character["code"] ?? ("character_" . $index);
-}
+$gameFile = $gameDir . "/game.json";
+$charactersFile = $gameDir . "/characters.json";
+$battleFile = $gameDir . "/battle.json";
 
 if ($gameId === "" || !file_exists($gameFile)) {
-    html_bootstrap3_createHeader("en", "Battle Mode | Game Not Found", $conf['base_url']);
-    ?>
-    <body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
-    <div class="container">
-        <?php include("inc.navigation.php"); ?>
-        <div class="alert alert-danger">Game not found.</div>
-        <a class="btn btn-default btn-lg" href="game.php">Back</a>
-    </div>
-    <?php
-    include("inc.footer.php");
+    html_bootstrap3_createHeader("en", "Battle Mode", $conf['base_url']);
+    echo "<body><div class='container'><h2>Campaign not found.</h2></div></body></html>";
     exit;
-}
-
-$game = json_decode(file_get_contents($gameFile), true);
-if (!is_array($game)) {
-    $game = [];
 }
 
 if (!file_exists($charactersFile)) {
     file_put_contents($charactersFile, json_encode([], JSON_PRETTY_PRINT));
 }
 
+if (!file_exists($battleFile)) {
+    file_put_contents($battleFile, json_encode([
+        "attack_order" => [],
+        "temp_enemies" => []
+    ], JSON_PRETTY_PRINT));
+}
+
+$game = json_decode(file_get_contents($gameFile), true);
 $characters = json_decode(file_get_contents($charactersFile), true);
+$battle = json_decode(file_get_contents($battleFile), true);
+
 if (!is_array($characters)) {
     $characters = [];
 }
 
-foreach ($characters as $index => &$character) {
-    if (!isset($character["character_id"]) || $character["character_id"] === "") {
-        $character["character_id"] = getCharacterId($character, $index);
-    }
-}
-unset($character);
-
-file_put_contents($charactersFile, json_encode($characters, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-
-if (!file_exists($battleFile)) {
-    file_put_contents($battleFile, json_encode([
-        "enemies" => [],
-        "order" => []
-    ], JSON_PRETTY_PRINT));
-}
-
-$battle = json_decode(file_get_contents($battleFile), true);
 if (!is_array($battle)) {
     $battle = [
-        "enemies" => [],
-        "order" => []
+        "attack_order" => [],
+        "temp_enemies" => []
     ];
 }
 
-if (!isset($battle["enemies"]) || !is_array($battle["enemies"])) {
-    $battle["enemies"] = [];
+if (!isset($battle["attack_order"]) || !is_array($battle["attack_order"])) {
+    $battle["attack_order"] = [];
 }
 
-if (!isset($battle["order"]) || !is_array($battle["order"])) {
-    $battle["order"] = [];
+if (!isset($battle["temp_enemies"]) || !is_array($battle["temp_enemies"])) {
+    $battle["temp_enemies"] = [];
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $action = $_POST["action"] ?? "";
+function saveBattle($battleFile, $battle)
+{
+    file_put_contents($battleFile, json_encode($battle, JSON_PRETTY_PRINT));
+}
 
-    if ($action === "next_turn") {
-        if (count($battle["order"]) > 1) {
-            $first = array_shift($battle["order"]);
-            $battle["order"][] = $first;
-        }
-    }
+function saveCharacters($charactersFile, $characters)
+{
+    file_put_contents($charactersFile, json_encode($characters, JSON_PRETTY_PRINT));
+}
 
-    if ($action === "add_enemy") {
-        $enemyName = trim($_POST["enemy_name"] ?? "");
-        $enemyHp = cleanInt($_POST["enemy_hp"] ?? 1, 1);
-
-        if ($enemyName !== "") {
-            $enemyId = "enemy_" . time() . "_" . rand(1000, 9999);
-
-            $battle["enemies"][] = [
-                "enemy_id" => $enemyId,
-                "name" => $enemyName,
-                "hp" => $enemyHp,
-                "max_hp" => $enemyHp
-            ];
-
-            $battle["order"][] = [
-                "type" => "enemy",
-                "id" => $enemyId
-            ];
-        }
-    }
-
-    if ($action === "adjust_enemy_hp") {
-        $enemyId = $_POST["enemy_id"] ?? "";
-        $change = cleanInt($_POST["change"] ?? 0, 0);
-
-        foreach ($battle["enemies"] as &$enemy) {
-            if (($enemy["enemy_id"] ?? "") === $enemyId) {
-                $enemy["hp"] = cleanInt($enemy["hp"] ?? 0) + $change;
-
-                if ($enemy["hp"] < 0) {
-                    $enemy["hp"] = 0;
-                }
-
-                if ($enemy["hp"] > cleanInt($enemy["max_hp"] ?? 0)) {
-                    $enemy["hp"] = cleanInt($enemy["max_hp"] ?? 0);
-                }
-
-                break;
-            }
-        }
-        unset($enemy);
-    }
-
-    if ($action === "delete_enemy") {
-        $enemyId = $_POST["enemy_id"] ?? "";
-
-        $battle["enemies"] = array_values(array_filter($battle["enemies"], function($enemy) use ($enemyId) {
-            return ($enemy["enemy_id"] ?? "") !== $enemyId;
-        }));
-
-        $battle["order"] = array_values(array_filter($battle["order"], function($entry) use ($enemyId) {
-            return !(($entry["type"] ?? "") === "enemy" && ($entry["id"] ?? "") === $enemyId);
-        }));
-    }
-
-    if ($action === "sort_order") {
-        $orderValues = $_POST["order_value"] ?? [];
-        $newOrder = [];
-
-        foreach ($characters as $index => $character) {
-            $characterId = getCharacterId($character, $index);
-            $key = "character:" . $characterId;
-
-            $roll = cleanInt($orderValues[$key] ?? 1, 1);
-            $roll = max(1, min($roll, 20));
-
-            $newOrder[] = [
-                "type" => "character",
-                "id" => $characterId,
-                "roll" => $roll,
-                "tie_breaker" => rand(1, 1000000)
-            ];
-        }
-
-        foreach ($battle["enemies"] as $enemy) {
-            $enemyId = $enemy["enemy_id"] ?? "";
-
-            if ($enemyId === "") {
-                continue;
-            }
-
-            $key = "enemy:" . $enemyId;
-
-            $roll = cleanInt($orderValues[$key] ?? 1, 1);
-            $roll = max(1, min($roll, 20));
-
-            $newOrder[] = [
-                "type" => "enemy",
-                "id" => $enemyId,
-                "roll" => $roll,
-                "tie_breaker" => rand(1, 1000000)
-            ];
-        }
-
-        usort($newOrder, function($a, $b) {
-            if ($a["roll"] === $b["roll"]) {
-                return $a["tie_breaker"] <=> $b["tie_breaker"];
-            }
-
-            return $b["roll"] <=> $a["roll"];
-        });
-
-        $battle["order"] = array_map(function($entry) {
-            return [
-                "type" => $entry["type"],
-                "id" => $entry["id"]
-            ];
-        }, $newOrder);
-    }
-
-    if ($action === "clear_battle") {
-        $battle = [
-            "enemies" => [],
-            "order" => []
-        ];
-    }
-
-    saveBattle($battleFile, $battle);
-
+function redirectBattle($gameId)
+{
     header("Location: game-battle.php?game_id=" . urlencode($gameId));
     exit;
 }
 
-$gameName = $game["game_name"] ?? $gameId;
+function getCombatantName($id, $characters, $battle)
+{
+    if (isset($characters[$id])) {
+        return $characters[$id]["character_name"] ?? $characters[$id]["player_name"] ?? $id;
+    }
+
+    if (isset($battle["temp_enemies"][$id])) {
+        return $battle["temp_enemies"][$id]["name"] ?? $id;
+    }
+
+    return $id;
+}
+
+function getCombatantInitiative($id, $characters, $battle)
+{
+    if (isset($characters[$id])) {
+        return intval($characters[$id]["initiative"] ?? 0);
+    }
+
+    if (isset($battle["temp_enemies"][$id])) {
+        return intval($battle["temp_enemies"][$id]["initiative"] ?? 0);
+    }
+
+    return 0;
+}
+
+function getCombatantType($id, $characters, $battle)
+{
+    if (isset($characters[$id])) {
+        return "character";
+    }
+
+    if (isset($battle["temp_enemies"][$id])) {
+        return "enemy";
+    }
+
+    return "unknown";
+}
+
+/*
+    POST actions
+*/
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $action = $_POST["action"] ?? "";
+
+    /*
+        Add temp enemy
+    */
+    if ($action === "add_enemy") {
+        $enemyName = trim($_POST["enemy_name"] ?? "");
+        $enemyHp = intval($_POST["enemy_hp"] ?? 0);
+        $enemyInitiative = intval($_POST["enemy_initiative"] ?? 0);
+
+        if ($enemyName !== "") {
+            $enemyId = "enemy_" . time() . "_" . rand(1000, 9999);
+
+            $battle["temp_enemies"][$enemyId] = [
+                "id" => $enemyId,
+                "name" => $enemyName,
+                "max_hp" => $enemyHp,
+                "hp" => $enemyHp,
+                "temp_hp" => 0,
+                "initiative" => $enemyInitiative
+            ];
+
+            if (!in_array($enemyId, $battle["attack_order"], true)) {
+                $battle["attack_order"][] = $enemyId;
+            }
+
+            saveBattle($battleFile, $battle);
+        }
+
+        redirectBattle($gameId);
+    }
+
+    /*
+        Delete temp enemy
+    */
+    if ($action === "delete_enemy") {
+        $enemyId = $_POST["enemy_id"] ?? "";
+
+        if (isset($battle["temp_enemies"][$enemyId])) {
+            unset($battle["temp_enemies"][$enemyId]);
+        }
+
+        $battle["attack_order"] = array_values(array_filter(
+            $battle["attack_order"],
+            function ($id) use ($enemyId) {
+                return $id !== $enemyId;
+            }
+        ));
+
+        saveBattle($battleFile, $battle);
+        redirectBattle($gameId);
+    }
+
+    /*
+        Update enemy HP
+    */
+    if ($action === "update_enemy_hp") {
+        $enemyId = $_POST["enemy_id"] ?? "";
+        $amount = intval($_POST["amount"] ?? 0);
+        $mode = $_POST["mode"] ?? "";
+
+        if (isset($battle["temp_enemies"][$enemyId])) {
+            if ($mode === "add") {
+                $battle["temp_enemies"][$enemyId]["hp"] += $amount;
+            } elseif ($mode === "subtract") {
+                $battle["temp_enemies"][$enemyId]["hp"] -= $amount;
+            } elseif ($mode === "set") {
+                $battle["temp_enemies"][$enemyId]["hp"] = $amount;
+            }
+
+            if ($battle["temp_enemies"][$enemyId]["hp"] < 0) {
+                $battle["temp_enemies"][$enemyId]["hp"] = 0;
+            }
+        }
+
+        saveBattle($battleFile, $battle);
+        redirectBattle($gameId);
+    }
+
+    /*
+        Save attack order from drag/drop
+    */
+    if ($action === "save_attack_order") {
+        $orderJson = $_POST["attack_order"] ?? "[]";
+        $newOrder = json_decode($orderJson, true);
+
+        if (is_array($newOrder)) {
+            $cleanOrder = [];
+
+            foreach ($newOrder as $id) {
+                if (isset($characters[$id]) || isset($battle["temp_enemies"][$id])) {
+                    $cleanOrder[] = $id;
+                }
+            }
+
+            $battle["attack_order"] = $cleanOrder;
+            saveBattle($battleFile, $battle);
+        }
+
+        echo json_encode(["success" => true]);
+        exit;
+    }
+
+    /*
+        Sort attack order by entered D20 initiative values.
+
+        This is the important fix:
+        - It reads the values typed into the page.
+        - It saves those values.
+        - It sorts by those values.
+        - It does NOT reset them to 20, 19, 18, etc.
+    */
+    if ($action === "sort_attack_order") {
+        $initiativeValues = $_POST["initiative"] ?? [];
+
+        foreach ($initiativeValues as $id => $value) {
+            $initiative = intval($value);
+
+            if (isset($characters[$id])) {
+                $characters[$id]["initiative"] = $initiative;
+            }
+
+            if (isset($battle["temp_enemies"][$id])) {
+                $battle["temp_enemies"][$id]["initiative"] = $initiative;
+            }
+        }
+
+        $allCombatantIds = [];
+
+        foreach ($characters as $characterId => $character) {
+            $allCombatantIds[] = $characterId;
+        }
+
+        foreach ($battle["temp_enemies"] as $enemyId => $enemy) {
+            $allCombatantIds[] = $enemyId;
+        }
+
+        usort($allCombatantIds, function ($a, $b) use ($characters, $battle) {
+            $aInit = getCombatantInitiative($a, $characters, $battle);
+            $bInit = getCombatantInitiative($b, $characters, $battle);
+
+            if ($aInit === $bInit) {
+                $aName = getCombatantName($a, $characters, $battle);
+                $bName = getCombatantName($b, $characters, $battle);
+                return strcasecmp($aName, $bName);
+            }
+
+            return $bInit <=> $aInit;
+        });
+
+        $battle["attack_order"] = $allCombatantIds;
+
+        saveCharacters($charactersFile, $characters);
+        saveBattle($battleFile, $battle);
+
+        redirectBattle($gameId);
+    }
+
+    /*
+        Move current turn to bottom
+    */
+    if ($action === "next_turn") {
+        if (count($battle["attack_order"]) > 1) {
+            $current = array_shift($battle["attack_order"]);
+            $battle["attack_order"][] = $current;
+            saveBattle($battleFile, $battle);
+        }
+
+        redirectBattle($gameId);
+    }
+}
+
+/*
+    Ensure attack order includes all current characters and enemies.
+    Do not overwrite initiative values.
+*/
+foreach ($characters as $characterId => $character) {
+    if (!in_array($characterId, $battle["attack_order"], true)) {
+        $battle["attack_order"][] = $characterId;
+    }
+
+    if (!isset($characters[$characterId]["initiative"])) {
+        $characters[$characterId]["initiative"] = 0;
+    }
+}
+
+foreach ($battle["temp_enemies"] as $enemyId => $enemy) {
+    if (!in_array($enemyId, $battle["attack_order"], true)) {
+        $battle["attack_order"][] = $enemyId;
+    }
+
+    if (!isset($battle["temp_enemies"][$enemyId]["initiative"])) {
+        $battle["temp_enemies"][$enemyId]["initiative"] = 0;
+    }
+}
+
+/*
+    Remove deleted/missing combatants from attack order.
+*/
+$battle["attack_order"] = array_values(array_filter(
+    $battle["attack_order"],
+    function ($id) use ($characters, $battle) {
+        return isset($characters[$id]) || isset($battle["temp_enemies"][$id]);
+    }
+));
+
+saveCharacters($charactersFile, $characters);
+saveBattle($battleFile, $battle);
 
 html_bootstrap3_createHeader(
     "en",
-    "Battle Mode | SubLim3 JukeBox",
+    "Battle Mode",
     $conf['base_url']
 );
 ?>
 
-<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : 'sublim3-theme-green'); ?>">
+<body class="<?php print htmlspecialchars(isset($sublim3ThemeClass) ? $sublim3ThemeClass : ""); ?>">
+
+<?php
+include("inc.navigation.php");
+?>
 
 <div class="container">
 
-<?php include("inc.navigation.php"); ?>
+    <div class="row">
+        <div class="col-lg-12">
+            <h1>
+                <i class="mdi mdi-sword-cross"></i>
+                Battle Mode
+            </h1>
 
-    <h1>
-        <i class="mdi mdi-sword-cross"></i>
-        Battle Mode
-    </h1>
+            <p>
+                Campaign:
+                <strong><?php echo htmlspecialchars($game["game_name"] ?? $gameId); ?></strong>
+            </p>
 
-    <p class="lead">
-        Campaign:
-        <strong><?= htmlspecialchars($gameName) ?></strong>
-    </p>
+            <p>
+                <a href="game-dashboard.php?game_id=<?php echo urlencode($gameId); ?>" class="btn btn-default">
+                    <i class="mdi mdi-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </p>
+        </div>
+    </div>
 
+    <!-- Attack Order -->
     <div class="panel panel-primary">
         <div class="panel-heading">
             <strong>
                 <i class="mdi mdi-format-list-numbered"></i>
                 Attack Order
             </strong>
-            <span id="liveStatus" class="pull-right small">Live</span>
         </div>
 
         <div class="panel-body">
-            <p class="text-muted">
-                Enter D20 initiative rolls, then click Sort Attack Order. Higher rolls go first. Ties are randomized.
-            </p>
 
-            <form method="post" id="sortOrderForm">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                <input type="hidden" name="action" value="sort_order">
+            <form method="post" id="initiativeForm">
+                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($gameId); ?>">
+                <input type="hidden" name="action" value="sort_attack_order">
 
-                <ul id="battleOrderList" class="list-group"></ul>
+                <div id="attackOrderList">
 
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="mdi mdi-dice-d20"></i>
+                    <?php foreach ($battle["attack_order"] as $combatantId): ?>
+
+                        <?php
+                        $type = getCombatantType($combatantId, $characters, $battle);
+                        $name = getCombatantName($combatantId, $characters, $battle);
+                        $initiative = getCombatantInitiative($combatantId, $characters, $battle);
+
+                        if ($type === "character") {
+                            $c = $characters[$combatantId];
+
+                            $hp = intval($c["hp"] ?? 0);
+                            $maxHp = intval($c["max_hp"] ?? 0);
+                            $tempHp = intval($c["temp_hp"] ?? 0);
+                            $deathSuccess = intval($c["death_success"] ?? 0);
+                            $deathFail = intval($c["death_fail"] ?? 0);
+                        } elseif ($type === "enemy") {
+                            $e = $battle["temp_enemies"][$combatantId];
+
+                            $hp = intval($e["hp"] ?? 0);
+                            $maxHp = intval($e["max_hp"] ?? 0);
+                            $tempHp = intval($e["temp_hp"] ?? 0);
+                            $deathSuccess = 0;
+                            $deathFail = 0;
+                        } else {
+                            continue;
+                        }
+                        ?>
+
+                        <div class="panel panel-default attack-card" data-id="<?php echo htmlspecialchars($combatantId); ?>">
+                            <div class="panel-body">
+
+                                <div class="row">
+                                    <div class="col-sm-1 text-center">
+                                        <span class="drag-handle" style="cursor: move; font-size: 22px;">
+                                            <i class="mdi mdi-drag"></i>
+                                        </span>
+                                    </div>
+
+                                    <div class="col-sm-3">
+                                        <h4 style="margin-top: 5px;">
+                                            <?php echo htmlspecialchars($name); ?>
+
+                                            <?php if ($type === "enemy"): ?>
+                                                <span class="label label-danger">Enemy</span>
+                                            <?php else: ?>
+                                                <span class="label label-info">Player</span>
+                                            <?php endif; ?>
+                                        </h4>
+                                    </div>
+
+                                    <div class="col-sm-2">
+                                        <label>D20 Roll</label>
+                                        <input
+                                            type="number"
+                                            class="form-control"
+                                            name="initiative[<?php echo htmlspecialchars($combatantId); ?>]"
+                                            value="<?php echo htmlspecialchars($initiative); ?>"
+                                        >
+                                    </div>
+
+                                    <div class="col-sm-2">
+                                        <label>HP</label>
+                                        <div>
+                                            <strong><?php echo htmlspecialchars($hp); ?></strong>
+                                            /
+                                            <?php echo htmlspecialchars($maxHp); ?>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-2">
+                                        <label>Temp HP</label>
+                                        <div>
+                                            <strong><?php echo htmlspecialchars($tempHp); ?></strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-2">
+                                        <label>Death Saves</label>
+                                        <div>
+                                            S:
+                                            <strong><?php echo htmlspecialchars($deathSuccess); ?></strong>
+                                            /
+                                            F:
+                                            <strong><?php echo htmlspecialchars($deathFail); ?></strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <?php if ($type === "enemy"): ?>
+                                    <hr>
+
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <form method="post" class="form-inline" style="display:inline-block;">
+                                                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($gameId); ?>">
+                                                <input type="hidden" name="action" value="update_enemy_hp">
+                                                <input type="hidden" name="enemy_id" value="<?php echo htmlspecialchars($combatantId); ?>">
+
+                                                <div class="form-group">
+                                                    <input type="number" name="amount" class="form-control" placeholder="HP" style="width: 90px;">
+                                                </div>
+
+                                                <button type="submit" name="mode" value="add" class="btn btn-success btn-sm">
+                                                    + HP
+                                                </button>
+
+                                                <button type="submit" name="mode" value="subtract" class="btn btn-warning btn-sm">
+                                                    - HP
+                                                </button>
+
+                                                <button type="submit" name="mode" value="set" class="btn btn-info btn-sm">
+                                                    Set HP
+                                                </button>
+                                            </form>
+
+                                            <form method="post" style="display:inline-block; margin-left: 10px;">
+                                                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($gameId); ?>">
+                                                <input type="hidden" name="action" value="delete_enemy">
+                                                <input type="hidden" name="enemy_id" value="<?php echo htmlspecialchars($combatantId); ?>">
+
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this enemy?');">
+                                                    Delete Enemy
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                            </div>
+                        </div>
+
+                    <?php endforeach; ?>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="mdi mdi-sort-descending"></i>
                     Sort Attack Order
                 </button>
-            </form>
 
-            <form method="post" style="display:inline;">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                <input type="hidden" name="action" value="next_turn">
-
-                <button type="submit" class="btn btn-success btn-lg">
+                <button
+                    type="submit"
+                    class="btn btn-success"
+                    onclick="document.getElementById('nextTurnAction').name='action'; document.getElementById('nextTurnAction').value='next_turn';"
+                >
                     <i class="mdi mdi-skip-next"></i>
                     Next
                 </button>
+
+                <input type="hidden" id="nextTurnAction" value="">
             </form>
+
         </div>
     </div>
 
+    <!-- Add Temp Enemy -->
     <div class="panel panel-danger">
         <div class="panel-heading">
             <strong>
-                <i class="mdi mdi-plus-circle"></i>
+                <i class="mdi mdi-account-alert"></i>
                 Add Temporary Enemy
             </strong>
         </div>
 
         <div class="panel-body">
-            <form method="post" class="form-inline">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+            <form method="post">
+                <input type="hidden" name="game_id" value="<?php echo htmlspecialchars($gameId); ?>">
                 <input type="hidden" name="action" value="add_enemy">
 
-                <div class="form-group">
-                    <label>Enemy Name</label>
-                    <input type="text" name="enemy_name" class="form-control" placeholder="Goblin" required>
-                </div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <label>Enemy Name</label>
+                        <input type="text" name="enemy_name" class="form-control" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>HP</label>
-                    <input type="number" name="enemy_hp" class="form-control" value="10" min="1" required>
-                </div>
+                    <div class="col-sm-3">
+                        <label>HP</label>
+                        <input type="number" name="enemy_hp" class="form-control" value="10">
+                    </div>
 
-                <button type="submit" class="btn btn-danger">
-                    <i class="mdi mdi-plus"></i>
-                    Add Enemy
-                </button>
+                    <div class="col-sm-3">
+                        <label>D20 Roll</label>
+                        <input type="number" name="enemy_initiative" class="form-control" value="0">
+                    </div>
+
+                    <div class="col-sm-2">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn btn-danger btn-block">
+                            Add Enemy
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 
-    <form method="post"
-          onsubmit="return confirm('Clear battle mode? This removes all temporary enemies and attack order.');"
-          style="display:inline;">
-        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-        <input type="hidden" name="action" value="clear_battle">
-
-        <button type="submit" class="btn btn-warning btn-lg">
-            <i class="mdi mdi-broom"></i>
-            Clear Battle
-        </button>
-    </form>
-
-    <a class="btn btn-default btn-lg" href="game-dashboard.php?game_id=<?= urlencode($gameId) ?>">
-        <i class="mdi mdi-arrow-left"></i>
-        Back to Dashboard
-    </a>
-
 </div>
 
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
 <script>
-var GAME_ID = <?= json_encode(basename($gameId)) ?>;
-var battleFormDirty = false;
-var battleFormSubmitting = false;
+$(function () {
+    $("#attackOrderList").sortable({
+        handle: ".drag-handle",
+        update: function () {
+            var order = [];
 
-document.addEventListener("input", function(e) {
-    if (e.target && e.target.closest && e.target.closest("#battleOrderList")) {
-        battleFormDirty = true;
-
-        var liveStatus = document.getElementById("liveStatus");
-        if (liveStatus) {
-            liveStatus.textContent = "Editing";
-        }
-    }
-});
-
-document.addEventListener("submit", function(e) {
-    if (e.target && e.target.id === "sortOrderForm") {
-        battleFormSubmitting = true;
-    }
-});
-
-function escapeHtml(value) {
-    value = value === null || value === undefined ? "" : String(value);
-
-    return value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function getNumber(obj, keys, fallback) {
-    for (var i = 0; i < keys.length; i++) {
-        if (
-            obj[keys[i]] !== undefined &&
-            obj[keys[i]] !== null &&
-            obj[keys[i]] !== ""
-        ) {
-            return parseInt(obj[keys[i]], 10) || 0;
-        }
-    }
-
-    return fallback || 0;
-}
-
-function normalizeCharacters(characters) {
-    if (!characters) {
-        return [];
-    }
-
-    if (Array.isArray(characters)) {
-        return characters;
-    }
-
-    var list = [];
-
-    for (var id in characters) {
-        if (characters.hasOwnProperty(id)) {
-            var character = characters[id];
-
-            if (character && typeof character === "object") {
-                if (!character.character_id) {
-                    character.character_id = id;
-                }
-
-                list.push(character);
-            }
-        }
-    }
-
-    return list;
-}
-
-function getCharacterId(character, index) {
-    return character.character_id || character.id || character.code || ("character_" + index);
-}
-
-function getCharacterName(character) {
-    return character.character_name || character.name || character.code || character.character_id || "Character";
-}
-
-function getCurrentRollValues() {
-    var values = {};
-    var inputs = document.querySelectorAll("#battleOrderList input[name^='order_value']");
-
-    for (var i = 0; i < inputs.length; i++) {
-        values[inputs[i].name] = inputs[i].value;
-    }
-
-    return values;
-}
-
-function isTypingInBattleList() {
-    var active = document.activeElement;
-
-    if (!active) {
-        return false;
-    }
-
-    return active.closest && active.closest("#battleOrderList");
-}
-
-function buildMaps(characters, enemies) {
-    var characterMap = {};
-    var enemyMap = {};
-
-    for (var i = 0; i < characters.length; i++) {
-        var characterId = getCharacterId(characters[i], i);
-        characterMap[characterId] = characters[i];
-    }
-
-    for (var e = 0; e < enemies.length; e++) {
-        var enemyId = enemies[e].enemy_id || "";
-        if (enemyId !== "") {
-            enemyMap[enemyId] = enemies[e];
-        }
-    }
-
-    return {
-        characterMap: characterMap,
-        enemyMap: enemyMap
-    };
-}
-
-function buildDisplayEntries(characters, enemies, order) {
-    var maps = buildMaps(characters, enemies);
-    var characterMap = maps.characterMap;
-    var enemyMap = maps.enemyMap;
-    var displayEntries = [];
-    var displayed = {};
-
-    order = Array.isArray(order) ? order : [];
-
-    for (var i = 0; i < order.length; i++) {
-        var entry = order[i] || {};
-        var type = entry.type || "";
-        var id = entry.id || "";
-        var key = type + ":" + id;
-
-        if (type === "character" && characterMap[id]) {
-            displayEntries.push({
-                type: "character",
-                id: id
+            $(".attack-card").each(function () {
+                order.push($(this).data("id"));
             });
-            displayed[key] = true;
-        }
 
-        if (type === "enemy" && enemyMap[id]) {
-            displayEntries.push({
-                type: "enemy",
-                id: id
+            $.post("game-battle.php?game_id=<?php echo urlencode($gameId); ?>", {
+                action: "save_attack_order",
+                game_id: "<?php echo htmlspecialchars($gameId); ?>",
+                attack_order: JSON.stringify(order)
             });
-            displayed[key] = true;
-        }
-    }
-
-    for (var c = 0; c < characters.length; c++) {
-        var characterId = getCharacterId(characters[c], c);
-        var characterKey = "character:" + characterId;
-
-        if (!displayed[characterKey]) {
-            displayEntries.push({
-                type: "character",
-                id: characterId
-            });
-            displayed[characterKey] = true;
-        }
-    }
-
-    for (var e = 0; e < enemies.length; e++) {
-        var enemyId = enemies[e].enemy_id || "";
-        var enemyKey = "enemy:" + enemyId;
-
-        if (enemyId !== "" && !displayed[enemyKey]) {
-            displayEntries.push({
-                type: "enemy",
-                id: enemyId
-            });
-            displayed[enemyKey] = true;
-        }
-    }
-
-    return {
-        entries: displayEntries,
-        characterMap: characterMap,
-        enemyMap: enemyMap
-    };
-}
-
-function renderCharacterCard(character, id, position, savedRolls) {
-    var key = "character:" + id;
-    var inputName = "order_value[" + key + "]";
-    var defaultRoll = 20 - position;
-
-    if (defaultRoll < 1) {
-        defaultRoll = 1;
-    }
-
-    var rollValue = savedRolls[inputName] !== undefined ? savedRolls[inputName] : defaultRoll;
-
-    var characterName = getCharacterName(character);
-    var playerName = character.player_name || "";
-    var hp = getNumber(character, ["hp", "current_hp"], 0);
-    var maxHp = getNumber(character, ["max_hp"], 0);
-    var tempHp = getNumber(character, ["temp_hp"], 0);
-    var deathSuccess = getNumber(character, ["death_success", "death_saves_success"], 0);
-    var deathFail = getNumber(character, ["death_fail", "death_saves_fail"], 0);
-    var cubeId = character.cube_id || "";
-
-    var cubeHtml = cubeId !== ""
-        ? '<span class="label label-success">' + escapeHtml(cubeId) + '</span>'
-        : '<span class="label label-default">Not assigned</span>';
-
-    var html = "";
-
-    html += '<li class="list-group-item" data-type="character" data-id="' + escapeHtml(id) + '">';
-    html += '<div class="row">';
-    html += '<div class="col-sm-2">';
-    html += '<label>D20 Roll</label>';
-    html += '<input type="number" class="form-control input-lg" name="' + escapeHtml(inputName) + '" value="' + escapeHtml(rollValue) + '" min="1" max="20">';
-    html += '</div>';
-
-    html += '<div class="col-sm-10">';
-    html += '<span class="label label-primary">CHARACTER</span>';
-    html += '<strong style="margin-left:10px;">' + escapeHtml(characterName) + '</strong>';
-
-    html += '<div class="row" style="margin-top:10px;">';
-    html += '<div class="col-sm-2"><strong>Player</strong><br>' + escapeHtml(playerName) + '</div>';
-    html += '<div class="col-sm-2"><strong>HP</strong><br>' + escapeHtml(hp + "/" + maxHp) + '</div>';
-    html += '<div class="col-sm-2"><strong>Temp HP</strong><br>' + escapeHtml(tempHp) + '</div>';
-    html += '<div class="col-sm-3"><strong>Death Saves</strong><br>Success ' + escapeHtml(deathSuccess) + '/3<br>Fail ' + escapeHtml(deathFail) + '/3</div>';
-    html += '<div class="col-sm-3"><strong>Cube</strong><br>' + cubeHtml + '</div>';
-    html += '</div>';
-
-    html += '</div>';
-    html += '</div>';
-    html += '</li>';
-
-    return html;
-}
-
-function renderEnemyCard(enemy, id, position, savedRolls) {
-    var key = "enemy:" + id;
-    var inputName = "order_value[" + key + "]";
-    var defaultRoll = 20 - position;
-
-    if (defaultRoll < 1) {
-        defaultRoll = 1;
-    }
-
-    var rollValue = savedRolls[inputName] !== undefined ? savedRolls[inputName] : defaultRoll;
-
-    var enemyName = enemy.name || "Enemy";
-    var hp = getNumber(enemy, ["hp"], 0);
-    var maxHp = getNumber(enemy, ["max_hp"], 0);
-
-    var html = "";
-
-    html += '<li class="list-group-item" data-type="enemy" data-id="' + escapeHtml(id) + '">';
-    html += '<div class="row">';
-    html += '<div class="col-sm-2">';
-    html += '<label>D20 Roll</label>';
-    html += '<input type="number" class="form-control input-lg" name="' + escapeHtml(inputName) + '" value="' + escapeHtml(rollValue) + '" min="1" max="20">';
-    html += '</div>';
-
-    html += '<div class="col-sm-10">';
-    html += '<span class="label label-danger">ENEMY</span>';
-    html += '<strong style="margin-left:10px;">' + escapeHtml(enemyName) + '</strong>';
-
-    html += '<div class="row" style="margin-top:10px;">';
-    html += '<div class="col-sm-3"><strong>HP</strong><br>' + escapeHtml(hp + "/" + maxHp) + '</div>';
-
-    html += '<div class="col-sm-9">';
-    html += '<strong>Adjust HP</strong><br>';
-
-    [-5, -1, 1, 5].forEach(function(amount) {
-        html += '<form method="post" style="display:inline;">';
-        html += '<input type="hidden" name="game_id" value="' + escapeHtml(GAME_ID) + '">';
-        html += '<input type="hidden" name="action" value="adjust_enemy_hp">';
-        html += '<input type="hidden" name="enemy_id" value="' + escapeHtml(id) + '">';
-        html += '<input type="hidden" name="change" value="' + escapeHtml(amount) + '">';
-        html += '<button type="submit" class="btn btn-default btn-sm">' + escapeHtml((amount > 0 ? "+" : "") + amount) + '</button> ';
-        html += '</form>';
-    });
-
-    html += '<form method="post" style="display:inline;" onsubmit="return confirm(\'Remove this temporary enemy?\');">';
-    html += '<input type="hidden" name="game_id" value="' + escapeHtml(GAME_ID) + '">';
-    html += '<input type="hidden" name="action" value="delete_enemy">';
-    html += '<input type="hidden" name="enemy_id" value="' + escapeHtml(id) + '">';
-    html += '<button type="submit" class="btn btn-danger btn-sm"><i class="mdi mdi-delete"></i> Remove</button>';
-    html += '</form>';
-
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</li>';
-
-    return html;
-}
-
-function renderBattle(data) {
-    var list = document.getElementById("battleOrderList");
-
-    if (!list) {
-        return;
-    }
-
-    if (isTypingInBattleList() || battleFormDirty || battleFormSubmitting) {
-        return;
-    }
-
-    var savedRolls = getCurrentRollValues();
-
-    var characters = normalizeCharacters(data.characters || []);
-    var battle = data.battle || {};
-    var enemies = Array.isArray(battle.enemies) ? battle.enemies : [];
-    var order = Array.isArray(battle.order) ? battle.order : [];
-
-    var display = buildDisplayEntries(characters, enemies, order);
-    var entries = display.entries;
-    var characterMap = display.characterMap;
-    var enemyMap = display.enemyMap;
-
-    var html = "";
-
-    if (!entries.length) {
-        html = '<li class="list-group-item text-muted">No characters or enemies available.</li>';
-    }
-
-    for (var i = 0; i < entries.length; i++) {
-        var entry = entries[i];
-
-        if (entry.type === "character" && characterMap[entry.id]) {
-            html += renderCharacterCard(characterMap[entry.id], entry.id, i, savedRolls);
-        }
-
-        if (entry.type === "enemy" && enemyMap[entry.id]) {
-            html += renderEnemyCard(enemyMap[entry.id], entry.id, i, savedRolls);
-        }
-    }
-
-    list.innerHTML = html;
-}
-
-function refreshBattle() {
-    var liveStatus = document.getElementById("liveStatus");
-
-    fetch("/api/dnd/game-state.php?_=" + Date.now(), {
-        cache: "no-store"
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (!data.success) {
-            if (liveStatus) {
-                liveStatus.textContent = data.error || "No Live Data";
-            }
-            return;
-        }
-
-        if (data.game_id && data.game_id !== GAME_ID) {
-            if (liveStatus) {
-                liveStatus.textContent = "Active game mismatch";
-            }
-            return;
-        }
-
-        renderBattle(data);
-
-        if (liveStatus && !battleFormDirty && !battleFormSubmitting) {
-            liveStatus.textContent = "Updated " + new Date().toLocaleTimeString();
-        }
-    })
-    .catch(function() {
-        if (liveStatus) {
-            liveStatus.textContent = "Offline";
         }
     });
-}
-
-refreshBattle();
-setInterval(refreshBattle, 3000);
+});
 </script>
 
-<?php
-include("inc.footer.php");
-?>
+</body>
+</html>
