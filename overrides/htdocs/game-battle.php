@@ -22,6 +22,10 @@ function getCharacterId($character, $index = 0) {
     return $character["character_id"] ?? $character["id"] ?? $character["code"] ?? ("character_" . $index);
 }
 
+function getEntryRoll($entry, $default = 0) {
+    return cleanInt($entry["roll"] ?? $default, $default);
+}
+
 if ($gameId === "" || !file_exists($gameFile)) {
     html_bootstrap3_createHeader("en", "Battle Mode | Game Not Found", $conf['base_url']);
     ?>
@@ -108,7 +112,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $battle["order"][] = [
                 "type" => "enemy",
-                "id" => $enemyId
+                "id" => $enemyId,
+                "roll" => 0
             ];
         }
     }
@@ -155,8 +160,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $characterId = getCharacterId($character, $index);
             $key = "character:" . $characterId;
 
-            $roll = cleanInt($orderValues[$key] ?? 1, 1);
-            $roll = max(1, min($roll, 20));
+            $roll = cleanInt($orderValues[$key] ?? 0, 0);
+            $roll = max(0, min($roll, 99));
 
             $newOrder[] = [
                 "type" => "character",
@@ -175,8 +180,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $key = "enemy:" . $enemyId;
 
-            $roll = cleanInt($orderValues[$key] ?? 1, 1);
-            $roll = max(1, min($roll, 20));
+            $roll = cleanInt($orderValues[$key] ?? 0, 0);
+            $roll = max(0, min($roll, 99));
 
             $newOrder[] = [
                 "type" => "enemy",
@@ -197,7 +202,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $battle["order"] = array_map(function($entry) {
             return [
                 "type" => $entry["type"],
-                "id" => $entry["id"]
+                "id" => $entry["id"],
+                "roll" => $entry["roll"]
             ];
         }, $newOrder);
     }
@@ -467,12 +473,19 @@ function buildDisplayEntries(characters, enemies, order) {
         var entry = order[i] || {};
         var type = entry.type || "";
         var id = entry.id || "";
+        var roll = parseInt(entry.roll, 10);
+
+        if (isNaN(roll)) {
+            roll = 0;
+        }
+
         var key = type + ":" + id;
 
         if (type === "character" && characterMap[id]) {
             displayEntries.push({
                 type: "character",
-                id: id
+                id: id,
+                roll: roll
             });
             displayed[key] = true;
         }
@@ -480,7 +493,8 @@ function buildDisplayEntries(characters, enemies, order) {
         if (type === "enemy" && enemyMap[id]) {
             displayEntries.push({
                 type: "enemy",
-                id: id
+                id: id,
+                roll: roll
             });
             displayed[key] = true;
         }
@@ -493,7 +507,8 @@ function buildDisplayEntries(characters, enemies, order) {
         if (!displayed[characterKey]) {
             displayEntries.push({
                 type: "character",
-                id: characterId
+                id: characterId,
+                roll: 0
             });
             displayed[characterKey] = true;
         }
@@ -506,7 +521,8 @@ function buildDisplayEntries(characters, enemies, order) {
         if (enemyId !== "" && !displayed[enemyKey]) {
             displayEntries.push({
                 type: "enemy",
-                id: enemyId
+                id: enemyId,
+                roll: 0
             });
             displayed[enemyKey] = true;
         }
@@ -519,16 +535,24 @@ function buildDisplayEntries(characters, enemies, order) {
     };
 }
 
-function renderCharacterCard(character, id, position, savedRolls) {
-    var key = "character:" + id;
-    var inputName = "order_value[" + key + "]";
-    var defaultRoll = 20 - position;
-
-    if (defaultRoll < 1) {
-        defaultRoll = 1;
+function getSavedRollValue(inputName, savedRolls, storedRoll) {
+    if (savedRolls[inputName] !== undefined) {
+        return savedRolls[inputName];
     }
 
-    var rollValue = savedRolls[inputName] !== undefined ? savedRolls[inputName] : defaultRoll;
+    storedRoll = parseInt(storedRoll, 10);
+
+    if (isNaN(storedRoll)) {
+        storedRoll = 0;
+    }
+
+    return storedRoll;
+}
+
+function renderCharacterCard(character, id, position, savedRolls, storedRoll) {
+    var key = "character:" + id;
+    var inputName = "order_value[" + key + "]";
+    var rollValue = getSavedRollValue(inputName, savedRolls, storedRoll);
 
     var characterName = getCharacterName(character);
     var playerName = character.player_name || "";
@@ -549,7 +573,7 @@ function renderCharacterCard(character, id, position, savedRolls) {
     html += '<div class="row">';
     html += '<div class="col-sm-2">';
     html += '<label>D20 Roll</label>';
-    html += '<input type="number" class="form-control input-lg" name="' + escapeHtml(inputName) + '" value="' + escapeHtml(rollValue) + '" min="1" max="20">';
+    html += '<input type="number" class="form-control input-lg" name="' + escapeHtml(inputName) + '" value="' + escapeHtml(rollValue) + '" min="0" max="99">';
     html += '</div>';
 
     html += '<div class="col-sm-10">';
@@ -571,16 +595,10 @@ function renderCharacterCard(character, id, position, savedRolls) {
     return html;
 }
 
-function renderEnemyCard(enemy, id, position, savedRolls) {
+function renderEnemyCard(enemy, id, position, savedRolls, storedRoll) {
     var key = "enemy:" + id;
     var inputName = "order_value[" + key + "]";
-    var defaultRoll = 20 - position;
-
-    if (defaultRoll < 1) {
-        defaultRoll = 1;
-    }
-
-    var rollValue = savedRolls[inputName] !== undefined ? savedRolls[inputName] : defaultRoll;
+    var rollValue = getSavedRollValue(inputName, savedRolls, storedRoll);
 
     var enemyName = enemy.name || "Enemy";
     var hp = getNumber(enemy, ["hp"], 0);
@@ -592,7 +610,7 @@ function renderEnemyCard(enemy, id, position, savedRolls) {
     html += '<div class="row">';
     html += '<div class="col-sm-2">';
     html += '<label>D20 Roll</label>';
-    html += '<input type="number" class="form-control input-lg" name="' + escapeHtml(inputName) + '" value="' + escapeHtml(rollValue) + '" min="1" max="20">';
+    html += '<input type="number" class="form-control input-lg" name="' + escapeHtml(inputName) + '" value="' + escapeHtml(rollValue) + '" min="0" max="99">';
     html += '</div>';
 
     html += '<div class="col-sm-10">';
@@ -606,21 +624,14 @@ function renderEnemyCard(enemy, id, position, savedRolls) {
     html += '<strong>Adjust HP</strong><br>';
 
     [-5, -1, 1, 5].forEach(function(amount) {
-        html += '<form method="post" style="display:inline;">';
-        html += '<input type="hidden" name="game_id" value="' + escapeHtml(GAME_ID) + '">';
-        html += '<input type="hidden" name="action" value="adjust_enemy_hp">';
-        html += '<input type="hidden" name="enemy_id" value="' + escapeHtml(id) + '">';
-        html += '<input type="hidden" name="change" value="' + escapeHtml(amount) + '">';
-        html += '<button type="submit" class="btn btn-default btn-sm">' + escapeHtml((amount > 0 ? "+" : "") + amount) + '</button> ';
-        html += '</form>';
+        html += '<button type="button" class="btn btn-default btn-sm" onclick="submitEnemyHp(\'' + escapeHtml(id) + '\', ' + amount + ')">';
+        html += escapeHtml((amount > 0 ? "+" : "") + amount);
+        html += '</button> ';
     });
 
-    html += '<form method="post" style="display:inline;" onsubmit="return confirm(\'Remove this temporary enemy?\');">';
-    html += '<input type="hidden" name="game_id" value="' + escapeHtml(GAME_ID) + '">';
-    html += '<input type="hidden" name="action" value="delete_enemy">';
-    html += '<input type="hidden" name="enemy_id" value="' + escapeHtml(id) + '">';
-    html += '<button type="submit" class="btn btn-danger btn-sm"><i class="mdi mdi-delete"></i> Remove</button>';
-    html += '</form>';
+    html += '<button type="button" class="btn btn-danger btn-sm" onclick="submitDeleteEnemy(\'' + escapeHtml(id) + '\')">';
+    html += '<i class="mdi mdi-delete"></i> Remove';
+    html += '</button>';
 
     html += '</div>';
     html += '</div>';
@@ -629,6 +640,46 @@ function renderEnemyCard(enemy, id, position, savedRolls) {
     html += '</li>';
 
     return html;
+}
+
+function submitHiddenPost(fields) {
+    var form = document.createElement("form");
+    form.method = "post";
+    form.style.display = "none";
+
+    for (var key in fields) {
+        if (fields.hasOwnProperty(key)) {
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
+        }
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function submitEnemyHp(enemyId, change) {
+    submitHiddenPost({
+        game_id: GAME_ID,
+        action: "adjust_enemy_hp",
+        enemy_id: enemyId,
+        change: change
+    });
+}
+
+function submitDeleteEnemy(enemyId) {
+    if (!confirm("Remove this temporary enemy?")) {
+        return;
+    }
+
+    submitHiddenPost({
+        game_id: GAME_ID,
+        action: "delete_enemy",
+        enemy_id: enemyId
+    });
 }
 
 function renderBattle(data) {
@@ -664,11 +715,11 @@ function renderBattle(data) {
         var entry = entries[i];
 
         if (entry.type === "character" && characterMap[entry.id]) {
-            html += renderCharacterCard(characterMap[entry.id], entry.id, i, savedRolls);
+            html += renderCharacterCard(characterMap[entry.id], entry.id, i, savedRolls, entry.roll);
         }
 
         if (entry.type === "enemy" && enemyMap[entry.id]) {
-            html += renderEnemyCard(enemyMap[entry.id], entry.id, i, savedRolls);
+            html += renderEnemyCard(enemyMap[entry.id], entry.id, i, savedRolls, entry.roll);
         }
     }
 
