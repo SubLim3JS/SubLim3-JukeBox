@@ -246,6 +246,16 @@ html_bootstrap3_createHeader(
         <strong><?= htmlspecialchars($gameName) ?></strong>
     </p>
 
+    <form method="post" style="margin-bottom:20px;">
+        <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
+        <input type="hidden" name="action" value="next_turn">
+
+        <button type="submit" class="btn btn-success btn-lg btn-block">
+            <i class="mdi mdi-skip-next"></i>
+            Next
+        </button>
+    </form>
+
     <div class="panel panel-primary">
         <div class="panel-heading">
             <strong>
@@ -272,15 +282,6 @@ html_bootstrap3_createHeader(
                 </button>
             </form>
 
-            <form method="post" style="display:inline;">
-                <input type="hidden" name="game_id" value="<?= htmlspecialchars($gameId) ?>">
-                <input type="hidden" name="action" value="next_turn">
-
-                <button type="submit" class="btn btn-success btn-lg">
-                    <i class="mdi mdi-skip-next"></i>
-                    Next
-                </button>
-            </form>
         </div>
     </div>
 
